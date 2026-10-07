@@ -3,20 +3,21 @@
 ## Read architecture
 
 ```text
-Browser
-  ├─ lists, filters, wallet lookups, decoded records
-  ├─ SDK → public relay → ZKProofport device → relay result
-  ├─ offchain JSON → local EIP-712/UID checks (no raw upload)
-  └─ direct EAS transaction insight
-          ↓ same-origin API
-Cloudflare Worker
-  ├─ GIWA Blockscout /api/v2/addresses/.../logs (discovery)
-  ├─ pinned EAS / SchemaRegistry / SchemaBook / AttesterBook reads
-  ├─ DojangScroll / AttestationIndexer wallet reads
-  └─ pinned CIP-4 verifier eth_call (read only)
+Static HTML / React browser app
+  ├─ Public GIWA RPC → fixed EAS / SchemaRegistry / Book contracts
+  ├─ Public explorer API → indexed logs, registration and role discovery
+  ├─ EIP-712 JSON → browser-local signature / UID / domain checks
+  ├─ Fixed CIP-4 verifier → browser RPC eth_call
+  └─ User-triggered SDK relay request → ZKProofport device → relay result
 ```
 
-Sources are fixed hosts. The service is not an arbitrary RPC proxy. Contract and verifier addresses are fixed in source, not chosen by a relay response. Catalog discovery is validated against current registry calls. Responses contain timestamps and explicit coverage. Unavailable data produce errors/warnings rather than fabricated activity. No database/authentication is needed for these public reads. Cache coalesces simultaneous reads but is isolate-local, not a durable index. Production-scale historical search requires a durable indexer with cursors, reorg/finality policy, and rate-limited refresh.
+There is no application API server, cloud runtime, database, authentication layer, publishing helper, or wallet extension. Vite serves local development on 127.0.0.1:4317 and builds plain HTML/CSS/JS into dist. Relative asset paths and query-string navigation preserve future GitHub Pages project subpaths. Source can be pushed to GitHub; no deployment workflow or hosting configuration is included.
+
+RPC/explorer hosts and contract addresses are fixed in code. CORS and public rate limits are service dependencies. In-memory request coalescing is browser-local. Discovery logs are cached for ten minutes; mapped issuer/schema state and role checks are read at a pinned block. Every catalog carries that block and a check timestamp. Recent records use the same block for issuer classification and EAS record reads. Counts describe the loaded log range, not the whole chain.
+
+Dojang membership, issuer registration, management privileges, and credential validity are independent facts. Role candidates are discovered from RoleGranted/RoleRevoked and then checked by hasRole on the official SchemaBook and DojangAttesterBook. DEFAULT_ADMIN_ROLE and UPGRADER_ROLE are separate. These contracts are AccessControl rather than Ownable or AccessControlEnumerable. Contract roles do not prove a publisher's legal organizational identity, so there is no automatic GIWA-direct-issuer badge. Unknown/incomplete discovery produces an unconfirmed classification, not an unregistered verdict.
+
+Offchain examples are actual signatures by ephemeral local keys over explicitly fictional data. Keys are neither exported nor persisted. They prove signature integrity, not bank balance truth. The recipe uses the existing GIWA EAS and a resolver-free user schema; it constructs ABI calls without submitting transactions. Mobile requests are user-triggered; SDK 0.3.1 marks GIWA as planned and does not require a browser-wallet signature for that circuit. The device flow still proves private wallet ownership.
 
 ## Credential and schema profiles
 
@@ -40,8 +41,10 @@ No direct reference to a private source UID is published. A public refUID would 
 
 The contract owner governs profiles and status roots. This is a centralized testnet trust assumption. Deployment requires a documented issuer trust set, audited circuit/adapter, derived SchemaRegistry registration, acceptable root publisher and consumption policy, then explicit activation. No private key is required to use the read explorer; these deployment prerequisites are separate.
 
-## Snap
+## Role workspace and localization
 
-The embedded insight reads direct EAS attest/revoke calldata without making transactions. The supplied MetaMask Snap uses the same decoder, checks chain 91342 and EAS target, and queries the real SchemaRegistry before presenting fields. Permissions: network-access and transaction-insight only. No account keys, signing, credential storage, notifications or arbitrary origins. Unsupported batch/delegated/resolver methods explicitly say they are unsupported.
+The workspace prepares EAS register/attest/revoke calls and Book register/grantRole calls using fixed GIWA contract addresses. Permissions are read at one pinned block using getRoleAdmin(role) and hasRole(actualAdminRole, caller); no grant authority is inferred merely from a badge. Simulations reject contract senders to avoid treating eth_call impersonation as wallet control. No eth_sendTransaction path exists. Wallet EIP-712 signing is explicit and local, with the current EAS domain version fetched from RPC.
 
-The official EAS Snap's current public chain configuration has no GIWA entry and falls back to an EASScan host. Reusing that unchanged would query the wrong network. A GIWA Snap needs distribution, SES validation, MetaMask Flask tests and allowlisting before a production install button is appropriate.
+The balance profile builder verifies the signed source and expected issuer, restricts the example to the canonical uint256 balanceKRW schema, rejects expired/future sources and compares a positive threshold locally. Its exported design excludes the source UID, exact balance, source bytes and signature. Flags explicitly identify that no ZK proof, revocation check or onchain registration has occurred. The profile records required circuit checks, private/public inputs and the undeployed adapter/registry status.
+
+The bilingual catalog covers navigation, data labels, evidence, guide, workspaces, examples, validation and known errors. Locale and theme are persisted locally. Document language, number/date locale, color scheme, cards, dialogs, inputs and badge colors follow the selected preferences. Theme is initialized before the app loads to reduce flashing.

@@ -1,6 +1,6 @@
 import { BrowserProvider, type Eip1193Provider } from 'ethers';
 import { NETWORK } from './giwa';
 export type WalletProvider = Eip1193Provider & { isMetaMask?: boolean; on?: (event: string, callback: (...args: unknown[]) => void) => void; removeListener?: (event: string, callback: (...args: unknown[]) => void) => void };
-export function injected(): WalletProvider { const provider = (window as Window & { ethereum?: WalletProvider }).ethereum; if (!provider) throw new Error('브라우저 지갑이 없습니다. MetaMask를 설치하거나 주소로 조회해 주세요.'); return provider; }
+export function injected(): WalletProvider { const provider = (window as Window & { ethereum?: WalletProvider }).ethereum; if (!provider) throw new Error('브라우저 지갑이 감지되지 않습니다. 지갑 주소로 조회할 수 있어요.'); return provider; }
 export async function connectWallet() { const provider = new BrowserProvider(injected()); await provider.send('eth_requestAccounts', []); return { provider, signer: await provider.getSigner() }; }
 export async function addGiwa() { const provider = injected(); try { await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x164ce' }] }); } catch(e) { if ((e as { code?: number }).code !== 4902) throw e; await provider.request({ method: 'wallet_addEthereumChain', params: [{ chainId: '0x164ce', chainName: NETWORK.name, nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: [NETWORK.rpc], blockExplorerUrls: [NETWORK.explorer] }] }); } }
