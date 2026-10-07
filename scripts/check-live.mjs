@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+const origin='http://127.0.0.1:4317';
+async function request(kind,params={}){const response=await fetch(origin+'/api/scan?'+new URLSearchParams({kind,...params}));assert.equal(response.status,200,await response.clone().text());return response.json();}
+const overview=await request('overview');assert(overview.block>0);assert(overview.attestations.length>0);assert(overview.schemas.some(s=>s.current));assert(overview.issuers.length>0);const first=overview.attestations[0];
+const [detail,schema,tx,wallet,contracts,search,offchain,older,page]=await Promise.all([
+request('attestation',{uid:first.uid}),request('schema',{uid:first.schema}),request('transaction',{hash:first.tx}),request('wallet',{address:first.recipient}),request('contracts'),request('search',{value:first.uid}),request('offchain',{issuer:first.attester,uid:first.uid}),request('attestations',{cursor:JSON.stringify(overview.next)}),fetch(origin+'/')
+]);
+assert.equal(detail.uid,first.uid);assert(detail.fields.length>0);assert.equal(schema.uid.toLowerCase(),first.schema.toLowerCase());assert(tx.attestations.some(a=>a?.uid===first.uid));assert.equal(wallet.address.toLowerCase(),first.recipient.toLowerCase());assert(contracts.contracts.every(c=>c.deployed===true));assert.equal(search.type,'attestation');assert.equal(offchain.easVersion,'1.4.1-beta.3');assert(older.attestations.length>0);assert(!older.attestations.some(a=>a.uid===first.uid));assert.equal(page.status,200);
+const invalid=await fetch(origin+'/api/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope:'x',response:{circuit:'giwa_attestation',chainId:1}})});assert.equal(invalid.status,400);
+console.log(JSON.stringify({checkedBlock:overview.block,records:overview.attestations.length,activeSchemas:overview.schemas.filter(s=>s.current).length,issuers:overview.issuers.length,detail:true,schema:true,transaction:true,wallet:true,contracts:contracts.contracts.length,uidSearch:true,offchainStatus:true,pagination:true,htmlStatus:page.status,rejectWrongChain:true}));
