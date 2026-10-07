@@ -10,9 +10,12 @@ const coder = AbiCoder.defaultAbiCoder();
 type Log = { topics: (string | null)[]; data: string; transaction_hash: string; block_number: number; block_timestamp: string; decoded?: { method_call: string; parameters: { name: string; value: string }[] } };
 type Page = { items: Log[]; next_page_params: Record<string, number> | null };
 const cache = new Map<string, { expiry: number; value: unknown }>(); const pending = new Map<string, Promise<unknown>>();
+let cacheEpoch = 0;
+export function invalidateScanCache() { cacheEpoch++; cache.clear(); pending.clear(); }
 export async function cached<T>(key: string, ttl: number, fn: () => Promise<T>): Promise<T> {
  const existing = cache.get(key); if (existing && existing.expiry > Date.now()) return existing.value as T; if (pending.has(key)) return pending.get(key) as Promise<T>;
- const task = fn().then(value => { cache.set(key, { expiry: Date.now() + ttl, value }); if (cache.size > 200) cache.delete(cache.keys().next().value!); return value; }).finally(() => pending.delete(key)); pending.set(key, task); return task;
+ const epoch=cacheEpoch;
+ const task = fn().then(value => { if(epoch===cacheEpoch){cache.set(key, { expiry: Date.now() + ttl, value }); if (cache.size > 200) cache.delete(cache.keys().next().value!);} return value; }).finally(() => {if(pending.get(key)===task)pending.delete(key);}); pending.set(key, task); return task;
 }
 let rpcQueue:Promise<unknown>=Promise.resolve();
 let rpcStartedAt=0;

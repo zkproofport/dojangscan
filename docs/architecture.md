@@ -17,7 +17,7 @@ RPC/explorer hosts and contract addresses are fixed in code. CORS and public rat
 
 Dojang membership, issuer registration, management privileges, and credential validity are independent facts. Role candidates are discovered from RoleGranted/RoleRevoked and then checked by hasRole on the official SchemaBook and DojangAttesterBook. DEFAULT_ADMIN_ROLE and UPGRADER_ROLE are separate. These contracts are AccessControl rather than Ownable or AccessControlEnumerable. Contract roles do not prove a publisher's legal organizational identity, so there is no automatic GIWA-direct-issuer badge. Unknown/incomplete discovery produces an unconfirmed classification, not an unregistered verdict.
 
-Offchain examples are actual signatures by ephemeral local keys over explicitly fictional data. Keys are neither exported nor persisted. They prove signature integrity, not bank balance truth. The recipe uses the existing GIWA EAS and a resolver-free user schema; it constructs ABI calls without submitting transactions. Mobile requests are user-triggered; SDK 0.3.1 marks GIWA as planned and does not require a browser-wallet signature for that circuit. The device flow still proves private wallet ownership.
+Offchain examples are actual signatures by ephemeral local keys over explicitly fictional data. Keys are neither exported nor persisted. They prove signature integrity, not bank balance truth. The recipe uses the existing GIWA EAS and a resolver-free user schema; it constructs ABI calls without submitting transactions in that recipe tab; the wallet workspace executes the operations. Mobile requests are user-triggered; SDK 0.3.1 marks GIWA as planned and does not require a browser-wallet signature for that circuit. The device flow still proves private wallet ownership.
 
 ## Credential and schema profiles
 
@@ -29,7 +29,7 @@ Foreign registration / professional credential: authoritative issuer, jurisdicti
 
 Institutions mentioned by the user are extension targets, not verified live deployments. Discovery of an unknown registration does not assign an institutional name. A schema matching an official schema is insufficient to trust its issuer.
 
-## Offchain → ZK → onchain
+## Original root-based draft design
 
 A dedicated circuit must verify the canonical EAS EIP-712 digest/signature and signer membership, holder control, predicates, domain, issuer expiration/freshness and an authenticated current non-revocation witness. It must bind every public field in the registry's canonical statement digest, including chain and registry address. A generic `verify(proof)` or a proof for an unrelated mock profile is insufficient.
 
@@ -43,8 +43,12 @@ The contract owner governs profiles and status roots. This is a centralized test
 
 ## Role workspace and localization
 
-The workspace prepares EAS register/attest/revoke calls and Book register/grantRole calls using fixed GIWA contract addresses. Permissions are read at one pinned block using getRoleAdmin(role) and hasRole(actualAdminRole, caller); no grant authority is inferred merely from a badge. Simulations reject contract senders to avoid treating eth_call impersonation as wallet control. No eth_sendTransaction path exists. Wallet EIP-712 signing is explicit and local, with the current EAS domain version fetched from RPC.
+The workspace prepares EAS register/attest/revoke calls and Book register/grantRole calls using fixed GIWA contract addresses. Permissions are read at one pinned block using getRoleAdmin(role) and hasRole(actualAdminRole, caller); no grant authority is inferred merely from a badge. Simulations reject contract senders to avoid treating eth_call impersonation as wallet control. An explicit wallet eth_sendTransaction path preflights with eth_call and estimateGas, pins chain 91342, checks the reviewed account before sending, and retains submitted hashes if receipt polling fails. Book registration and resolver allowlisting are independent writes. Wallet EIP-712 signing is explicit and local, with the current EAS domain version fetched from RPC.
 
-The balance profile builder verifies the signed source and expected issuer, restricts the example to the canonical uint256 balanceKRW schema, rejects expired/future sources and compares a positive threshold locally. Its exported design excludes the source UID, exact balance, source bytes and signature. Flags explicitly identify that no ZK proof, revocation check or onchain registration has occurred. The profile records required circuit checks, private/public inputs and the undeployed adapter/registry status.
+The dedicated offchain-balance circuit implements canonical EAS v2 EIP-712 signature verification, expected issuer, signed recipient, uint128 threshold, finite expiry and a salt/recipient/issuer/registry/scope-bound nullifier. Noir beta.8 and bb.js nightly.20250723 are pinned; keccakZK is required. Browser proving runs in a cancellable Worker with Buffer compatibility. Imported envelopes must match all 159 public fields, circuit hash and actual VK hash before verification.
+
+BalanceProofReceipt uses the exact ZK Solidity verifier and immutable issuer/domain/scope/minimum threshold policy. The same recipient must submit, registry bytes must equal address(this), sources expire within a day, and nullifiers cannot be reused. It issues a derived record through the existing EAS. Source UID, data, signature and exact balance are not published. Source non-revocation is explicitly false and issuer registration/real-world truth are not asserted. This separate prototype does not implement the original PrivateAttestationRegistry digest adapter or root policy. Both must remain distinct.
+
+The ZK Solidity template is Apache-2.0 code from the existing zkproofport/circuits verifier generated with the same pinned bb build. The bb.js getSolidityVerifier API emits the non-ZK template even when passed a ZK key; the reproducible script combines its key section with the pinned BaseZKHonkVerifier template. Actual generated proofs are accepted by this Solidity verifier on a local GIWA fork. Do not silently replace the template with BaseHonkVerifier or use non-ZK proof mode.
 
 The bilingual catalog covers navigation, data labels, evidence, guide, workspaces, examples, validation and known errors. Locale and theme are persisted locally. Document language, number/date locale, color scheme, cards, dialogs, inputs and badge colors follow the selected preferences. Theme is initialized before the app loads to reduce flashing.
