@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>Dojang Scan social preview</title>
+  <rect width="1200" height="630" fill="#F5F5F7"/>
+  <g transform="translate(70 78) scale(1.65)" fill="#B84536">
+    <path d="M22 32V16a10 10 0 0 1 20 0v16l12 12v4H10v-4l12-12ZM10 51q22 10 44 0l-3 6q-19 8-38 0l-3-6Z"/>
+  </g>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <text x="1120" y="118" text-anchor="end" font-size="20" font-weight="500" letter-spacing="2" fill="#65656B">GIWA SEPOLIA</text>
+    <text x="80" y="312" font-size="88" font-weight="700" letter-spacing="-4" fill="#1D1D1F">Dojang Scan</text>
+    <text x="84" y="372" font-size="30" fill="#65656B">Explore and manage GIWA attestations.</text>
+    <path d="M84 473H1116" stroke="#DADADD"/>
+    <text x="84" y="531" font-size="24" fill="#65656B">Powered by <tspan font-weight="600" fill="#1D1D1F">Masse Labs</tspan></text>
+    <text x="1116" y="531" text-anchor="end" font-size="24" fill="#65656B">dojangscan.com</text>
+  </g>
+</svg>
