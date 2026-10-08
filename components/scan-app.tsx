@@ -894,26 +894,24 @@ export default function ScanApp() {
             ) : walletError ? null : walletData ? (
               <>
                 <div className="wallet-summary">
-                  <div>
-                    <Badge variant="blue">{tr("공개 지갑 기록")}</Badge>
-                    <h2 className="mono">
-                      {tr(short(walletData.address, 10))}
-                    </h2>
-                    <p>
-                      {tr(
-                        walletData.verifiedBy.length
-                          ? tr("DojangScroll 주소 인증 확인 · {0}", [
-                              walletData.verifiedBy
-                                .map((i) => i.name)
-                                .join(", "),
-                            ])
-                          : tr(
-                              "조회한 등록 발행자 기준 주소 인증이 확인되지 않았습니다.",
-                            ),
-                      )}
-                    </p>
+                  <h2>{tr("공개 지갑 기록")}</h2>
+                  <div className="wallet-summary-address">
+                    <code>{walletData.address}</code>
+                    <CopyButton value={walletData.address} />
                   </div>
-                  <CopyButton value={walletData.address} />
+                  <p>
+                    {tr(
+                      walletData.verifiedBy.length
+                        ? tr("DojangScroll 주소 인증 확인 · {0}", [
+                            walletData.verifiedBy
+                              .map((i) => tr(i.name))
+                              .join(", "),
+                          ])
+                        : tr(
+                            "조회한 등록 발행자 기준 주소 인증이 확인되지 않았습니다.",
+                          ),
+                    )}
+                  </p>
                 </div>
                 {walletData.attestations.length ? (
                   <ScanCards
