@@ -33,22 +33,27 @@ export default function LearningGuide({ data }: { data: ScanData | null }) {
     <div className="guide-page">
       <Relationship full />
       <section className="guide-example">
-        <div>
+        <div className="guide-example-copy">
           <span className="section-kicker">{tr("도장에 담긴 정보")}</span>
           <h2>
             {tr("누가, 누구에게,")}
-            <br />
-            {tr("무엇을 확인했는가.")}
+            <br /> {tr("무엇을 확인했는가.")}
           </h2>
-          <div className="pill-buttons">
+          <div
+            className="pill-buttons"
+            role="group"
+            aria-label={tr("도장에 담긴 정보")}
+          >
             <button
               className={example === "address" ? "selected" : ""}
+              aria-pressed={example === "address"}
               onClick={() => setExample("address")}
             >
               {tr("주소 인증")}
             </button>
             <button
               className={example === "balance" ? "selected" : ""}
+              aria-pressed={example === "balance"}
               onClick={() => setExample("balance")}
             >
               {tr("잔액 인증")}
@@ -60,7 +65,7 @@ export default function LearningGuide({ data }: { data: ScanData | null }) {
             )}
           </p>
         </div>
-        <div className="example-credential">
+        <div className="example-credential" aria-live="polite">
           <span className="sample-watermark">{tr("설명용 예시")}</span>
           <Stamp size={30} />
           <h3>{tr(e.title)}</h3>
@@ -164,17 +169,16 @@ export default function LearningGuide({ data }: { data: ScanData | null }) {
         </details>
         {data && (
           <p className="fine-print">
-            {tr("현재 조회 블록")}
-            {tr(data.governance.block.toLocaleString())}
-            {tr("· 관리자")}
+            {tr("현재 조회 블록")} {tr(data.governance.block.toLocaleString())}{" "}
+            {tr("· 관리자")}{" "}
             {tr(
               new Set(
                 data.governance.roles
                   .filter((r) => r.role === "admin" && r.active === true)
                   .map((r) => r.address.toLowerCase()),
               ).size,
-            )}
-            {tr("개 주소 발견 ·")}
+            )}{" "}
+            {tr("개 주소 발견 ·")}{" "}
             {tr(
               data.governance.complete
                 ? tr("발견한 후보의 현재 권한 확인")
@@ -185,28 +189,31 @@ export default function LearningGuide({ data }: { data: ScanData | null }) {
       </section>
       <section className="guide-section sources">
         <h3>{tr("확인한 공식 기준")}</h3>
-        <a
-          href="https://docs.giwa.io/giwa-ecosystem/dojang"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {tr("Dojang 소개")}
-          <ExternalLink size={14} />
-        </a>
-        <a
-          href="https://github.com/giwa-io/dojang"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {tr("Dojang 컨트랙트 소스")}
-          <ExternalLink size={14} />
-        </a>
+        <div className="source-links">
+          <a
+            href="https://docs.giwa.io/giwa-ecosystem/dojang"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {tr("Dojang 소개")}
+            <ExternalLink size={14} />
+          </a>
+          <a
+            href="https://github.com/giwa-io/dojang"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {tr("Dojang 컨트랙트 소스")}
+            <ExternalLink size={14} />
+          </a>
+        </div>
         <div className="source-address">
           <span>{tr("기존 EAS")}</span>
           <code>{tr(CONTRACTS.EAS)}</code>
           <CopyButton value={CONTRACTS.EAS} />
           <a
             href={`${NETWORK.explorer}/address/${CONTRACTS.EAS}`}
+            aria-label={tr("탐색기")}
             target="_blank"
             rel="noreferrer"
           >

@@ -85,7 +85,6 @@
   "한국어": "한국어",
   "다크 테마": "Dark theme",
   "라이트 테마": "Light theme",
-  "처음이라면": "Guide",
   "도장": "Attestation",
   "공개 기록": "Public records",
   "발행자 확인": "Issuer checks",
@@ -491,5 +490,6 @@
   "지갑 요청 또는 온체인 조회를 처리 중입니다. 지갑에 요청이 표시되면 확인하세요.": "Processing a wallet request or onchain lookup. Check your wallet if a request appears.",
   "영수증을 확인하고 있습니다.": "Checking the transaction receipt.",
   "실행 상태를 확인하고 있습니다.": "Checking execution status.",
-  "공개 RPC 응답을 기다리고 있습니다. 완료되면 자동으로 표시됩니다.": "Waiting for the public RPC. Results will appear automatically."
+  "공개 RPC 응답을 기다리고 있습니다. 완료되면 자동으로 표시됩니다.": "Waiting for the public RPC. Results will appear automatically.",
+  "가이드": "Guide"
 }

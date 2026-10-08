@@ -390,7 +390,7 @@ export default function ScanApp() {
       text: tr("개인정보 공개를 줄이는 ZKProofport 증명."),
     },
     guide: {
-      title: tr("사용 안내"),
+      title: tr("가이드"),
       text: tr("도장의 구조와 배지의 의미를 몇 가지 예로 살펴봅니다."),
     },
   };
@@ -453,7 +453,7 @@ export default function ScanApp() {
             onClick={() => navigate("guide")}
           >
             <CircleHelp size={17} />
-            {tr("처음이라면")}
+            {tr("가이드")}
           </button>
           <a
             className="giwa-network"
@@ -967,7 +967,7 @@ export default function ScanApp() {
             </div>
             <nav aria-label={tr("푸터 링크")}>
               <button className="text-button" onClick={() => navigate("guide")}>
-                {tr("사용 안내")}
+                {tr("가이드")}
               </button>
               <a
                 href="https://docs.giwa.io/giwa-ecosystem/dojang"
