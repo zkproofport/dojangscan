@@ -1,6 +1,6 @@
 # Dojang Scan
 
-[한국어](#한국어) · [English](#english)
+[한국어](#한국어) · [English](#english) · [Website](https://zkproofport.github.io/dojangscan/)
 
 ## 한국어
 
@@ -34,6 +34,10 @@ npm run build
 npm run test:live # 개발 서버 실행 중, 공개 체인 읽기 전용 검사
 ```
 
+### GitHub Pages
+
+`main`에 푸시하면 GitHub Actions에서 테스트·빌드 후 `dist/`를 자동 배포합니다. [배포 상태](https://github.com/zkproofport/dojangscan/actions/workflows/pages.yml)
+
 ## English
 
 Explore and manage Dojang on GIWA Sepolia.
@@ -53,6 +57,10 @@ EAS provides the underlying attestation contracts. Dojang adds registered schema
 Requires Node.js 22.13 or newer. Run `npm ci` and `npm run dev`, then open <http://127.0.0.1:4317>. Wallet actions use **GIWA Sepolia (91342)**.
 
 Validation: `npm run check`, `npm test`, `npm run build`. `npm run test:live` performs read-only public-chain checks while the development server is running.
+
+### GitHub Pages
+
+Pushes to `main` run tests, build, and deploy `dist/` through GitHub Actions. [Deployment status](https://github.com/zkproofport/dojangscan/actions/workflows/pages.yml)
 
 ---
 
