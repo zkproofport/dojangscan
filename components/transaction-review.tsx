@@ -10,6 +10,7 @@ import {
 } from "@/lib/transactions";
 import { simulateCall, type PreparedCall } from "@/lib/workspace";
 import { downloadJSON } from "./scan-detail";
+import { ChainLoading } from "./chain-loading";
 import { Badge } from "./scan-ui";
 export function TransactionReview({
   call,
@@ -106,6 +107,12 @@ export function TransactionReview({
           {tr(busy ? "처리 중" : "지갑으로 실행")}
         </button>
       </div>
+      {busy && (
+        <ChainLoading
+          title="실행 상태를 확인하고 있습니다."
+          description="지갑 요청 또는 온체인 조회를 처리 중입니다. 지갑에 요청이 표시되면 확인하세요."
+        />
+      )}
       {chain !== NETWORK.chainId && address && (
         <p className="notice">
           {tr("지갑 네트워크를 GIWA Sepolia로 변경하세요.")}

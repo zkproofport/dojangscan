@@ -6,6 +6,7 @@ import {
   useTransactionHistory,
 } from "@/lib/transaction-history";
 import { refreshReceipt, explainError } from "@/lib/transactions";
+import { ChainLoading } from "./chain-loading";
 import { Badge } from "./scan-ui";
 export function TransactionHistory() {
   const entries = useTransactionHistory();
@@ -22,6 +23,7 @@ export function TransactionHistory() {
           "이 탭의 공개 tx hash와 결과만 보관합니다. 화면·지갑을 바꿔도 제출한 거래를 다시 확인할 수 있습니다.",
         )}
       </p>
+      {busy && <ChainLoading title="영수증을 확인하고 있습니다." />}
       {entries.map((tx) => (
         <div className="capability-row" key={tx.hash}>
           <strong>{tx.operation}</strong>
@@ -61,11 +63,15 @@ export function TransactionHistory() {
                 .finally(() => setBusy(""));
             }}
           >
-            {tr("영수증 새로고침")}
+            {tr(busy === tx.hash ? "조회 중" : "영수증 새로고침")}
           </button>
         </div>
       ))}
-      {error && <p className="notice danger">{tr(error)}</p>}
+      {error && (
+        <p className="notice danger" role="alert">
+          {tr(error)}
+        </p>
+      )}
     </details>
   );
 }

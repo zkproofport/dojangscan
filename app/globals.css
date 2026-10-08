@@ -100,3 +100,13 @@ button>svg,a>svg,.relationship-flow>.flow-arrow{flex-shrink:0}
 .proof-benefits p{font-size:13px;line-height:1.7;color:var(--muted);margin:0;max-width:490px}
 @media(max-width:1000px){.proof-pipeline{grid-template-columns:minmax(0,1fr) 42px minmax(0,1.18fr) 42px minmax(0,1fr)}.proof-stage{padding:16px}.proof-stage h3{font-size:14px}.proof-sealed{padding:10px;gap:8px}.proof-stage>strong{font-size:16px}}
 @media(max-width:720px){.proof-diagram{padding:16px}.proof-diagram-toolbar{align-items:flex-start;flex-direction:column;gap:10px;margin-bottom:16px}.proof-pipeline,.proof-benefits{grid-template-columns:1fr}.proof-stage{padding:18px}.proof-stage header{margin-bottom:16px}.proof-stage h3{font-size:16px}.proof-connector{flex-direction:row;gap:10px;padding:12px}.proof-connector svg{transform:rotate(90deg)}.proof-connector span{font-size:11px}.proof-benefits{gap:18px;margin:20px 0}.proof-coming-heading h2{letter-spacing:-.6px}.proof-coming-heading p{font-size:14px}}
+
+/* Read progress stays beside the content it describes. */
+.read-feedback { display: grid; gap: 8px; overflow-wrap: anywhere; }
+.read-feedback button { justify-self: start; }
+.read-complete { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+.read-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.workspace > .chain-loading { position: sticky; top: 12px; z-index: 5; }
+.chain-loading { min-width: 0; }
+.chain-loading > svg, .chain-loading-time { flex-shrink: 0; }
+.detail-body > .chain-loading { margin: 0; }

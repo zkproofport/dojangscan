@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { tr } from "@/lib/i18n";
 
-export function ChainLoading() {
+export function ChainLoading({
+  title = "온체인 정보를 불러오고 있습니다.",
+  description = "공개 RPC 응답을 기다리고 있습니다. 완료되면 자동으로 표시됩니다.",
+}: {
+  title?: string;
+  description?: string;
+}) {
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     const start = Date.now();
@@ -13,19 +19,15 @@ export function ChainLoading() {
     return () => window.clearInterval(timer);
   }, []);
   return (
-    <div className="chain-loading">
+    <div className="chain-loading" aria-busy="true">
       <RefreshCw size={17} className="spinning" aria-hidden="true" />
       <div role="status">
-        <strong>
-          {tr(
-            seconds >= 30
-              ? "온체인 정보를 계속 확인하고 있습니다."
-              : "온체인 정보를 불러오고 있습니다.",
-          )}
-        </strong>
+        <strong>{tr(title)}</strong>
         <p>
           {tr(
-            "공개 RPC에서 등록·권한·도장 상태를 확인합니다. 첫 조회는 수십 초 이상 걸릴 수 있습니다.",
+            seconds >= 30
+              ? "응답이 지연되고 있습니다. 아직 조회 중이며, 완료되면 자동으로 표시됩니다."
+              : description,
           )}
         </p>
       </div>

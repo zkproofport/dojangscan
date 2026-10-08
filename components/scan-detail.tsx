@@ -1,23 +1,512 @@
-import { tr } from '@/lib/i18n';
-import { getLocale } from '@/lib/preferences';
-import { useEffect, useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ExternalLink, Download, ShieldCheck, CheckCircle2, AlertCircle, Fingerprint, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
-import { ZeroAddress } from 'ethers';
-import { type Attestation, type SchemaRecord, NETWORK, ZERO, short } from '@/lib/giwa';
-import { ISSUER_EXPLANATIONS } from '@/lib/trust';
-import { shareURL } from '@/lib/navigation';
-import { getData, CopyButton, Badge, Status, IssuerStamp, describeRecord } from './scan-ui';
-export function downloadJSON(value: unknown, name: string) { const blob=new Blob([JSON.stringify(value,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }
-const FIELD_LABELS:Record<string,string>={isVerified:'주소 인증 여부',balance:'기록된 잔액',salt:'솔트',proofs:'Merkle 검증 경로',coinType:'자산 종류',snapshotAt:'스냅샷 기준 시각',leafCount:'묶인 잔액 수',totalAmount:'합산 금액',root:'잔액 스냅샷 root',codeHash:'인증 코드 해시',domain:'인증 코드 사용처'};
-export default function ScanDetail({record,schema,close,goWallet,goSchema}:{record:Attestation|null;schema:SchemaRecord|null;close:()=>void;goWallet:(address:string)=>void;goSchema:(uid:string)=>void}){
- const [live,setLive]=useState<Attestation&{checkedBlock?:number;checkedAt?:string}|null>(record);const [error,setError]=useState('');const [busy,setBusy]=useState(false);
- useEffect(()=>{let ignore=false;setLive(record);setError('');if(record){setBusy(true);getData('attestation',{uid:record.uid}).then(d=>{if(!ignore)setLive({...record,...d});}).catch(e=>{if(!ignore)setError(e.message);}).finally(()=>{if(!ignore)setBusy(false);});}return()=>{ignore=true;};},[record]);
- const a=live;const title=schema?.label??a?.schemaLabel??tr("도장");
- return <Sheet open={!!record||!!schema} onOpenChange={open=>{if(!open)close();}}><SheetContent className="detail-sheet"><SheetHeader><div className="detail-icon"><Fingerprint size={28}/></div><SheetTitle>{tr(title)}</SheetTitle><SheetDescription>{tr(schema?tr("이 도장에 어떤 내용을 넣고 누가 발급할 수 있는지 확인합니다."):tr("EAS의 현재 기록과 발행자 등록 근거를 함께 읽습니다."))}</SheetDescription></SheetHeader><div className="detail-body">{schema?<><div className="detail-status"><Badge variant={schema.current?'success':'neutral'}>{tr(schema.current?tr("현재 Dojang 스키마"):schema.id?tr("이전 Dojang 스키마"):tr("일반 EAS 스키마"))}</Badge></div><p>{tr(schema.description)}</p><h3>{tr("내용의 형식")}</h3><div className="field-list">{schema.definition.split(',').map(v=>{const [type,name]=v.trim().split(/\s+/);return <div key={v}><span>{tr(FIELD_LABELS[name]??name)}<small>{tr(name)}</small></span><code>{tr(type)}</code></div>;})}</div><div className="trust-check"><ShieldCheck size={22}/><div><strong>{tr(schema.resolver===ZeroAddress?tr("별도 resolver 없는 스키마"):tr("resolver가 발급 규칙을 적용합니다"))}</strong><p>{tr(schema.resolver===ZeroAddress?tr("이 스키마에는 별도의 발행자 제한 규칙이 연결되어 있지 않습니다."):tr("Dojang의 알려진 resolver는 발행자 허용 목록 등 발급 규칙을 사용합니다. 같은 형식의 일반 EAS 스키마와 구분하세요."))}</p></div></div><Info label={tr("Resolver · 발급 규칙 계약")} value={schema.resolver}/><Info label={tr("발행 후 취소")} value={schema.revocable?tr("발행자가 취소 가능"):tr("취소 불가")}/><details className="explain-detail"><summary>{tr("기술 식별자와 ABI")}</summary><Info label="EAS Schema UID" value={schema.uid}/>{schema.id&&<Info label="Dojang Schema ID" value={schema.id}/>}<pre className="code-box">{tr(schema.definition)}</pre></details><div className="detail-actions"><button className="secondary-button" onClick={()=>void navigator.clipboard.writeText(shareURL({view:'schemas',schema:schema.uid})).then(()=>toast.success(tr("스키마 링크를 복사했습니다.")))}>{tr("링크 복사")}</button>{schema.resolver!==ZeroAddress&&<a className="secondary-button" href={`${NETWORK.explorer}/address/${schema.resolver}`} target="_blank" rel="noreferrer">{tr("규칙 계약 보기")}<ExternalLink size={14}/></a>}</div></>:a?<><div className="detail-status"><Status value={a.status}/><IssuerStamp kind={a.issuerClass}/>{busy&&<RefreshCw size={14} className="spinning"/>}</div><p className="record-statement">{tr(describeRecord(a))}</p>{error&&<div className="notice danger">{tr("현재 상태 재조회 실패:")}{tr(error)}</div>}<Tabs defaultValue="read"><TabsList variant="line"><TabsTrigger value="read">{tr("도장 내용")}</TabsTrigger><TabsTrigger value="verify">{tr("등록·유효 상태")}</TabsTrigger><TabsTrigger value="raw">{tr("기술 정보")}</TabsTrigger></TabsList><TabsContent value="read"><h3>{tr("발행자")}</h3><span className="sub-label">{tr(a.issuerName)}</span><button className="address-link mono" onClick={()=>goWallet(a.attester)}>{tr(a.attester)}</button><h3>{tr("받은 지갑")}</h3><button className="address-link mono" onClick={()=>goWallet(a.recipient)}>{tr(a.recipient)}</button><h3>{tr("기록한 사실")}</h3>{a.fields.length?<div className="field-list">{a.fields.map(f=><div key={f.name}><span><strong>{tr(FIELD_LABELS[f.name]??f.name)}</strong><small>{tr(f.name)} · {tr(f.type)}</small></span><code>{tr(f.type==='bool'?(f.value==='true'?tr("예 (true)"):tr("아니오 (false)")):f.name==='snapshotAt'?date(Number(f.value)):f.value)}</code></div>)}</div>:<p className="notice">{tr("데이터 형식을 자동 해석하지 못했습니다. 기술 정보에서 원문을 확인하세요.")}</p>}<Info label={tr("발급 시각")} value={date(a.time)}/><Info label={tr("만료 시각")} value={a.expirationTime?date(a.expirationTime):tr("기한 없음")}/>{a.revocationTime>0&&<Info label={tr("취소 시각")} value={date(a.revocationTime)}/>}<Info label={tr("취소 설정")} value={a.revocable?tr("발행자가 취소 가능"):tr("취소 불가")}/>{a.refUID!==ZERO&&<Info label={tr("연결된 다른 도장")} value={a.refUID}/>}</TabsContent><TabsContent value="verify"><div className="trust-check"><ShieldCheck size={22}/><div><strong>{tr("발행자 구분의 의미")}</strong><p>{tr(ISSUER_EXPLANATIONS[a.issuerClass])}</p></div></div><div className="checks"><Check label={tr("EAS에 실제 레코드 존재")} pass/><Check label={tr("현재 취소되지 않음")} pass={a.revocationTime===0}/><Check label={tr("현재 만료되지 않음")} pass={!a.expirationTime||a.expirationTime>Date.now()/1000}/><Check label={tr("Dojang 스키마 목록에서 발견")} pass={a.dojang}/><Check label={tr("현재 Dojang 발행자 주소와 일치")} pass={a.registeredIssuer}/><Check label={tr("Book의 현재 관리자 권한")} pass={a.managementRole}/></div><p className="fine-print">{tr("미충족은 해당 근거가 확인되지 않았다는 뜻입니다. 관리자 권한은 자격증명의 진실성을 보장하지 않습니다.")}</p><button className="secondary-button" onClick={()=>goSchema(a.schema)}>{tr("이 도장의 스키마·규칙")}</button><Info label={tr("확인 블록")} value={String(a.checkedBlock??a.block??'—')}/>{a.checkedAt&&<Info label={tr("확인 시각")} value={new Date(a.checkedAt).toLocaleString(getLocale())}/>}<details className="explain-detail"><summary>{tr("활성이면 신뢰할 수 있나요?")}</summary><p>{tr("활성은 취소·만료되지 않았다는 상태입니다. 기록 내용의 사실성, 기관의 신원, 잔액 Merkle 경로는 발행자와 서비스 정책에 따라 추가 확인해야 합니다. 현재 발행자 목록에서 빠진 과거 발행 이력도 있을 수 있습니다.")}</p></details>{a.tx&&<a className="secondary-button" href={`${NETWORK.explorer}/tx/${a.tx}`} target="_blank" rel="noreferrer">{tr("발급 트랜잭션")}<ExternalLink size={14}/></a>}</TabsContent><TabsContent value="raw"><Info label="Attestation UID" value={a.uid}/><Info label="EAS Schema UID" value={a.schema}/><pre className="code-box">{tr(JSON.stringify(a,null,2))}</pre></TabsContent></Tabs><div className="detail-actions"><button className="secondary-button" onClick={()=>void navigator.clipboard.writeText(shareURL({view:'explore',uid:a.uid})).then(()=>toast.success(tr("도장 링크를 복사했습니다.")))}>{tr("링크 복사")}</button><button className="secondary-button" onClick={()=>downloadJSON(a,`dojang-${short(a.uid)}.json`)}><Download size={14}/>{tr("JSON 저장")}</button></div></>:null}</div></SheetContent></Sheet>;
+import { tr } from "@/lib/i18n";
+import { getLocale } from "@/lib/preferences";
+import { useEffect, useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  ExternalLink,
+  Download,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  Fingerprint,
+  RefreshCw,
+} from "lucide-react";
+import { ChainLoading } from "./chain-loading";
+import { toast } from "sonner";
+import { ZeroAddress } from "ethers";
+import {
+  type Attestation,
+  type SchemaRecord,
+  NETWORK,
+  ZERO,
+  short,
+} from "@/lib/giwa";
+import { ISSUER_EXPLANATIONS } from "@/lib/trust";
+import { shareURL } from "@/lib/navigation";
+import {
+  getData,
+  CopyButton,
+  Badge,
+  Status,
+  IssuerStamp,
+  describeRecord,
+} from "./scan-ui";
+export function downloadJSON(value: unknown, name: string) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function date(time:number){return new Date(time*1000).toLocaleString(getLocale());}
-function Info({label,value}:{label:string;value:string}){return <div className="detail-info"><span>{tr(label)}</span><div><code>{tr(value)}</code>{value.startsWith('0x')&&<CopyButton value={value}/>}</div></div>;}
-function Check({label,pass}:{label:string;pass:boolean}){return <div>{pass?<CheckCircle2 className="check-good" size={17}/>:<AlertCircle className="check-bad" size={17}/>}<span>{tr(label)}</span><Badge variant={pass?'success':'neutral'}>{tr(pass?tr("확인"):tr("미충족"))}</Badge></div>;}
+const FIELD_LABELS: Record<string, string> = {
+  isVerified: "주소 인증 여부",
+  balance: "기록된 잔액",
+  salt: "솔트",
+  proofs: "Merkle 검증 경로",
+  coinType: "자산 종류",
+  snapshotAt: "스냅샷 기준 시각",
+  leafCount: "묶인 잔액 수",
+  totalAmount: "합산 금액",
+  root: "잔액 스냅샷 root",
+  codeHash: "인증 코드 해시",
+  domain: "인증 코드 사용처",
+};
+export default function ScanDetail({
+  record,
+  schema,
+  schemaUid,
+  schemaBusy,
+  schemaError,
+  retrySchema,
+  close,
+  goWallet,
+  goSchema,
+}: {
+  record: Attestation | null;
+  schema: SchemaRecord | null;
+  schemaUid: string;
+  schemaBusy: boolean;
+  schemaError: string;
+  retrySchema: () => void;
+  close: () => void;
+  goWallet: (address: string) => void;
+  goSchema: (uid: string) => void;
+}) {
+  const [live, setLive] = useState<
+    (Attestation & { checkedBlock?: number; checkedAt?: string }) | null
+  >(record);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(!!record);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let ignore = false;
+    setLive(record);
+    setError("");
+    if (record) {
+      setBusy(true);
+      getData("attestation", { uid: record.uid })
+        .then((d) => {
+          if (!ignore) setLive({ ...record, ...d });
+        })
+        .catch((e) => {
+          if (!ignore) setError(e.message);
+        })
+        .finally(() => {
+          if (!ignore) setBusy(false);
+        });
+    }
+    return () => {
+      ignore = true;
+    };
+  }, [record, attempt]);
+  const a = live;
+  const title =
+    schema?.label ?? a?.schemaLabel ?? tr(schemaUid ? "도장 종류" : "도장");
+  return (
+    <Sheet
+      open={!!record || !!schemaUid}
+      onOpenChange={(open) => {
+        if (!open) close();
+      }}
+    >
+      <SheetContent className="detail-sheet">
+        <SheetHeader>
+          <div className="detail-icon">
+            <Fingerprint size={28} />
+          </div>
+          <SheetTitle>{tr(title)}</SheetTitle>
+          <SheetDescription>
+            {tr(
+              schemaUid
+                ? tr(
+                    "이 도장에 어떤 내용을 넣고 누가 발급할 수 있는지 확인합니다.",
+                  )
+                : tr("EAS의 현재 기록과 발행자 등록 근거를 함께 읽습니다."),
+            )}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="detail-body">
+          {(schemaUid ? schemaBusy : busy) ? (
+            <ChainLoading
+              title={
+                schemaUid
+                  ? "스키마의 최신 등록 상태를 확인하고 있습니다."
+                  : "도장의 최신 상태를 확인하고 있습니다."
+              }
+              description={
+                schema || record
+                  ? "불러온 내용을 먼저 표시합니다. 최신 상태는 확인 중입니다."
+                  : undefined
+              }
+            />
+          ) : (schemaUid ? schemaError : error) ? (
+            <div className="notice danger read-feedback" role="alert">
+              <strong>{tr("최신 상태를 확인하지 못했습니다.")}</strong>
+              {(schema || record) && (
+                <p>{tr("마지막으로 불러온 정보를 표시합니다.")}</p>
+              )}
+              <p>{tr(schemaUid ? schemaError : error)}</p>
+              <button
+                className="secondary-button"
+                onClick={
+                  schemaUid
+                    ? retrySchema
+                    : () => {
+                        setBusy(true);
+                        setAttempt((v) => v + 1);
+                      }
+                }
+              >
+                {tr("다시 조회")}
+              </button>
+            </div>
+          ) : schema || a ? (
+            <p className="read-complete" role="status">
+              <CheckCircle2 size={15} aria-hidden="true" />
+              {tr("상태 확인 완료")}
+            </p>
+          ) : null}
+          {schemaUid && !schema && (
+            <Info label="EAS Schema UID" value={schemaUid} />
+          )}
+          {schema ? (
+            <>
+              <div className="detail-status">
+                <Badge variant={schema.current ? "success" : "neutral"}>
+                  {tr(
+                    schema.current
+                      ? tr("현재 Dojang 스키마")
+                      : schema.id
+                        ? tr("이전 Dojang 스키마")
+                        : tr("일반 EAS 스키마"),
+                  )}
+                </Badge>
+              </div>
+              <p>{tr(schema.description)}</p>
+              <h3>{tr("내용의 형식")}</h3>
+              <div className="field-list">
+                {schema.definition.split(",").map((v) => {
+                  const [type, name] = v.trim().split(/\s+/);
+                  return (
+                    <div key={v}>
+                      <span>
+                        {tr(FIELD_LABELS[name] ?? name)}
+                        <small>{tr(name)}</small>
+                      </span>
+                      <code>{tr(type)}</code>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="trust-check">
+                <ShieldCheck size={22} />
+                <div>
+                  <strong>
+                    {tr(
+                      schema.resolver === ZeroAddress
+                        ? tr("별도 resolver 없는 스키마")
+                        : tr("resolver가 발급 규칙을 적용합니다"),
+                    )}
+                  </strong>
+                  <p>
+                    {tr(
+                      schema.resolver === ZeroAddress
+                        ? tr(
+                            "이 스키마에는 별도의 발행자 제한 규칙이 연결되어 있지 않습니다.",
+                          )
+                        : tr(
+                            "Dojang의 알려진 resolver는 발행자 허용 목록 등 발급 규칙을 사용합니다. 같은 형식의 일반 EAS 스키마와 구분하세요.",
+                          ),
+                    )}
+                  </p>
+                </div>
+              </div>
+              <Info
+                label={tr("Resolver · 발급 규칙 계약")}
+                value={schema.resolver}
+              />
+              <Info
+                label={tr("발행 후 취소")}
+                value={
+                  schema.revocable ? tr("발행자가 취소 가능") : tr("취소 불가")
+                }
+              />
+              <details className="explain-detail">
+                <summary>{tr("기술 식별자와 ABI")}</summary>
+                <Info label="EAS Schema UID" value={schema.uid} />
+                {schema.id && (
+                  <Info label="Dojang Schema ID" value={schema.id} />
+                )}
+                <pre className="code-box">{tr(schema.definition)}</pre>
+              </details>
+              <div className="detail-actions">
+                <button
+                  className="secondary-button"
+                  onClick={() =>
+                    void navigator.clipboard
+                      .writeText(
+                        shareURL({ view: "schemas", schema: schema.uid }),
+                      )
+                      .then(() =>
+                        toast.success(tr("스키마 링크를 복사했습니다.")),
+                      )
+                  }
+                >
+                  {tr("링크 복사")}
+                </button>
+                {schema.resolver !== ZeroAddress && (
+                  <a
+                    className="secondary-button"
+                    href={`${NETWORK.explorer}/address/${schema.resolver}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {tr("규칙 계약 보기")}
+                    <ExternalLink size={14} />
+                  </a>
+                )}
+              </div>
+            </>
+          ) : a ? (
+            <>
+              <div className="detail-status">
+                <Status value={a.status} />
+                <IssuerStamp kind={a.issuerClass} />
+                {busy && <RefreshCw size={14} className="spinning" />}
+              </div>
+              <p className="record-statement">{tr(describeRecord(a))}</p>
+
+              <Tabs defaultValue="read">
+                <TabsList variant="line">
+                  <TabsTrigger value="read">{tr("도장 내용")}</TabsTrigger>
+                  <TabsTrigger value="verify">
+                    {tr("등록·유효 상태")}
+                  </TabsTrigger>
+                  <TabsTrigger value="raw">{tr("기술 정보")}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="read">
+                  <h3>{tr("발행자")}</h3>
+                  <span className="sub-label">{tr(a.issuerName)}</span>
+                  <button
+                    className="address-link mono"
+                    onClick={() => goWallet(a.attester)}
+                  >
+                    {tr(a.attester)}
+                  </button>
+                  <h3>{tr("받은 지갑")}</h3>
+                  <button
+                    className="address-link mono"
+                    onClick={() => goWallet(a.recipient)}
+                  >
+                    {tr(a.recipient)}
+                  </button>
+                  <h3>{tr("기록한 사실")}</h3>
+                  {a.fields.length ? (
+                    <div className="field-list">
+                      {a.fields.map((f) => (
+                        <div key={f.name}>
+                          <span>
+                            <strong>
+                              {tr(FIELD_LABELS[f.name] ?? f.name)}
+                            </strong>
+                            <small>
+                              {tr(f.name)} · {tr(f.type)}
+                            </small>
+                          </span>
+                          <code>
+                            {tr(
+                              f.type === "bool"
+                                ? f.value === "true"
+                                  ? tr("예 (true)")
+                                  : tr("아니오 (false)")
+                                : f.name === "snapshotAt"
+                                  ? date(Number(f.value))
+                                  : f.value,
+                            )}
+                          </code>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="notice">
+                      {tr(
+                        "데이터 형식을 자동 해석하지 못했습니다. 기술 정보에서 원문을 확인하세요.",
+                      )}
+                    </p>
+                  )}
+                  <Info label={tr("발급 시각")} value={date(a.time)} />
+                  <Info
+                    label={tr("만료 시각")}
+                    value={
+                      a.expirationTime
+                        ? date(a.expirationTime)
+                        : tr("기한 없음")
+                    }
+                  />
+                  {a.revocationTime > 0 && (
+                    <Info
+                      label={tr("취소 시각")}
+                      value={date(a.revocationTime)}
+                    />
+                  )}
+                  <Info
+                    label={tr("취소 설정")}
+                    value={
+                      a.revocable ? tr("발행자가 취소 가능") : tr("취소 불가")
+                    }
+                  />
+                  {a.refUID !== ZERO && (
+                    <Info label={tr("연결된 다른 도장")} value={a.refUID} />
+                  )}
+                </TabsContent>
+                <TabsContent value="verify">
+                  <div className="trust-check">
+                    <ShieldCheck size={22} />
+                    <div>
+                      <strong>{tr("발행자 구분의 의미")}</strong>
+                      <p>{tr(ISSUER_EXPLANATIONS[a.issuerClass])}</p>
+                    </div>
+                  </div>
+                  <div className="checks">
+                    <Check label={tr("EAS에 실제 레코드 존재")} pass />
+                    <Check
+                      label={tr("현재 취소되지 않음")}
+                      pass={a.revocationTime === 0}
+                    />
+                    <Check
+                      label={tr("현재 만료되지 않음")}
+                      pass={
+                        !a.expirationTime ||
+                        a.expirationTime > Date.now() / 1000
+                      }
+                    />
+                    <Check
+                      label={tr("Dojang 스키마 목록에서 발견")}
+                      pass={a.dojang}
+                    />
+                    <Check
+                      label={tr("현재 Dojang 발행자 주소와 일치")}
+                      pass={a.registeredIssuer}
+                    />
+                    <Check
+                      label={tr("Book의 현재 관리자 권한")}
+                      pass={a.managementRole}
+                    />
+                  </div>
+                  <p className="fine-print">
+                    {tr(
+                      "미충족은 해당 근거가 확인되지 않았다는 뜻입니다. 관리자 권한은 자격증명의 진실성을 보장하지 않습니다.",
+                    )}
+                  </p>
+                  <button
+                    className="secondary-button"
+                    onClick={() => goSchema(a.schema)}
+                  >
+                    {tr("이 도장의 스키마·규칙")}
+                  </button>
+                  <Info
+                    label={tr("확인 블록")}
+                    value={String(a.checkedBlock ?? a.block ?? "—")}
+                  />
+                  {a.checkedAt && (
+                    <Info
+                      label={tr("확인 시각")}
+                      value={new Date(a.checkedAt).toLocaleString(getLocale())}
+                    />
+                  )}
+                  <details className="explain-detail">
+                    <summary>{tr("활성이면 신뢰할 수 있나요?")}</summary>
+                    <p>
+                      {tr(
+                        "활성은 취소·만료되지 않았다는 상태입니다. 기록 내용의 사실성, 기관의 신원, 잔액 Merkle 경로는 발행자와 서비스 정책에 따라 추가 확인해야 합니다. 현재 발행자 목록에서 빠진 과거 발행 이력도 있을 수 있습니다.",
+                      )}
+                    </p>
+                  </details>
+                  {a.tx && (
+                    <a
+                      className="secondary-button"
+                      href={`${NETWORK.explorer}/tx/${a.tx}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {tr("발급 트랜잭션")}
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                </TabsContent>
+                <TabsContent value="raw">
+                  <Info label="Attestation UID" value={a.uid} />
+                  <Info label="EAS Schema UID" value={a.schema} />
+                  <pre className="code-box">
+                    {tr(JSON.stringify(a, null, 2))}
+                  </pre>
+                </TabsContent>
+              </Tabs>
+              <div className="detail-actions">
+                <button
+                  className="secondary-button"
+                  onClick={() =>
+                    void navigator.clipboard
+                      .writeText(shareURL({ view: "explore", uid: a.uid }))
+                      .then(() =>
+                        toast.success(tr("도장 링크를 복사했습니다.")),
+                      )
+                  }
+                >
+                  {tr("링크 복사")}
+                </button>
+                <button
+                  className="secondary-button"
+                  onClick={() => downloadJSON(a, `dojang-${short(a.uid)}.json`)}
+                >
+                  <Download size={14} />
+                  {tr("JSON 저장")}
+                </button>
+              </div>
+            </>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+function date(time: number) {
+  return new Date(time * 1000).toLocaleString(getLocale());
+}
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="detail-info">
+      <span>{tr(label)}</span>
+      <div>
+        <code>{tr(value)}</code>
+        {value.startsWith("0x") && <CopyButton value={value} />}
+      </div>
+    </div>
+  );
+}
+function Check({ label, pass }: { label: string; pass: boolean }) {
+  return (
+    <div>
+      {pass ? (
+        <CheckCircle2 className="check-good" size={17} />
+      ) : (
+        <AlertCircle className="check-bad" size={17} />
+      )}
+      <span>{tr(label)}</span>
+      <Badge variant={pass ? "success" : "neutral"}>
+        {tr(pass ? tr("확인") : tr("미충족"))}
+      </Badge>
+    </div>
+  );
+}

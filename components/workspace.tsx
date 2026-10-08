@@ -1,3 +1,4 @@
+import { ChainLoading } from "./chain-loading";
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import { ParamType, ZeroAddress, ZeroHash, id as hashId } from "ethers";
 import { tr } from "@/lib/i18n";
@@ -229,6 +230,12 @@ export default function Workspace({
   }
   return (
     <section className="view-section workspace">
+      {busy && (
+        <ChainLoading
+          title="요청을 처리하고 있습니다."
+          description="지갑 요청 또는 온체인 조회를 처리 중입니다. 지갑에 요청이 표시되면 확인하세요."
+        />
+      )}
       <div className="workspace-wallet">
         <div>
           <Badge variant={connected ? "success" : "neutral"}>
@@ -664,11 +671,7 @@ export default function Workspace({
           </div>
         </div>
       )}
-      {busy && (
-        <p className="notice" role="status">
-          {tr("처리 중")}
-        </p>
-      )}
+
       {error && (
         <p className="notice danger" role="alert">
           {tr(error)}

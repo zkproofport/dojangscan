@@ -68,6 +68,8 @@ export default function ScanApp() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [connecting, setConnecting] = useState(false);
   const [filter, setFilter] = useState("dojang");
   const [issuerFilter, setIssuerFilter] = useState("all");
   const [schemaFilter, setSchemaFilter] = useState("all");
@@ -75,12 +77,24 @@ export default function ScanApp() {
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<Attestation | null>(null);
   const [schemaDetail, setSchemaDetail] = useState<SchemaRecord | null>(null);
+  const [schemaUid, setSchemaUid] = useState("");
+  const [schemaBusy, setSchemaBusy] = useState(false);
+  const [schemaError, setSchemaError] = useState("");
+  const schemaSequence = useRef(0);
+  function clearSchema() {
+    schemaSequence.current++;
+    setSchemaUid("");
+    setSchemaDetail(null);
+    setSchemaBusy(false);
+    setSchemaError("");
+  }
   const [walletInput, setWalletInput] = useState("");
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [walletBusy, setWalletBusy] = useState(false);
   const [walletError, setWalletError] = useState("");
   const [connected, setConnected] = useState("");
   const [moreBusy, setMoreBusy] = useState(false);
+  const [moreError, setMoreError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const sequence = useRef(0);
   const walletSequence = useRef(0);
@@ -89,14 +103,20 @@ export default function ScanApp() {
     window.history.replaceState(null, "", localURL(params));
   }
   function navigate(v: string) {
+    sequence.current++;
+    walletSequence.current++;
+    setSearching(false);
+    setSearchError("");
+    setWalletBusy(false);
     setView(v);
     setDetail(null);
-    setSchemaDetail(null);
+    clearSchema();
     updateURL({ view: v });
   }
   async function refresh() {
     setLoading(true);
     setError("");
+    setMoreError("");
     try {
       setData(await getData("overview"));
       setPage(1);
@@ -107,9 +127,12 @@ export default function ScanApp() {
     }
   }
   async function openWallet(address: string) {
+    sequence.current++;
+    setSearching(false);
+    setSearchError("");
     const seq = ++walletSequence.current;
     setDetail(null);
-    setSchemaDetail(null);
+    clearSchema();
     setView("wallet");
     setWalletInput(address);
     updateURL({ view: "wallet", address });
@@ -128,24 +151,47 @@ export default function ScanApp() {
     }
   }
   async function openSchema(uid: string) {
-    const s = await getData<SchemaRecord>("schema", { uid });
+    sequence.current++;
+    setSearching(false);
+    setSearchError("");
+    const seq = ++schemaSequence.current;
     setDetail(null);
-    setSchemaDetail(s);
+    setSchemaUid(uid);
+    setSchemaDetail(
+      data?.schemas.find((s) => s.uid.toLowerCase() === uid.toLowerCase()) ??
+        null,
+    );
+    setSchemaBusy(true);
+    setSchemaError("");
     setView("schemas");
     updateURL({ view: "schemas", schema: uid });
-    return s;
+    try {
+      const result = await getData<SchemaRecord>("schema", { uid });
+      if (seq === schemaSequence.current) setSchemaDetail(result);
+      return result;
+    } catch (e) {
+      if (seq === schemaSequence.current) setSchemaError((e as Error).message);
+    } finally {
+      if (seq === schemaSequence.current) setSchemaBusy(false);
+    }
   }
   function openRecord(a: Attestation) {
-    setSchemaDetail(null);
+    sequence.current++;
+    setSearching(false);
+    setSearchError("");
+    clearSchema();
     setDetail(a);
     updateURL({ view, uid: a.uid });
   }
   async function runSearch(value: string) {
     value = value.trim();
-    if (!value)
-      throw new Error(tr("지갑 주소·도장 UID·트랜잭션 해시를 입력하세요."));
+    if (!value) {
+      setSearchError(tr("지갑 주소·도장 UID·트랜잭션 해시를 입력하세요."));
+      return;
+    }
     const seq = ++sequence.current;
     setSearching(true);
+    setSearchError("");
     try {
       if (/^0x[0-9a-fA-F]{40}$/.test(value)) return await openWallet(value);
       if (!/^0x[0-9a-fA-F]{64}$/.test(value)) {
@@ -163,13 +209,15 @@ export default function ScanApp() {
       const found = await getData("search", { value });
       if (seq !== sequence.current) return found;
       if (found.type === "schema") {
+        clearSchema();
+        setSchemaUid(value);
         setSchemaDetail(found.record);
         setDetail(null);
         setView("schemas");
         updateURL({ view: "schemas", schema: value });
       } else if (found.type === "attestation") {
         setDetail(found.record);
-        setSchemaDetail(null);
+        clearSchema();
         updateURL({ view, uid: value });
       } else {
         setView("explore");
@@ -178,6 +226,7 @@ export default function ScanApp() {
         setIssuerFilter("all");
         setPage(1);
         const base = data ?? (await getData<ScanData>("overview"));
+        if (seq !== sequence.current) return found;
         setData({
           ...base,
           attestations: found.record.attestations.filter(Boolean),
@@ -191,24 +240,33 @@ export default function ScanApp() {
           toast.info(tr("이 트랜잭션에는 EAS 발급 기록이 없습니다."));
       }
       return found;
+    } catch (e) {
+      if (seq === sequence.current) setSearchError((e as Error).message);
     } finally {
       if (seq === sequence.current) setSearching(false);
     }
   }
   searchRef.current = runSearch;
   async function connect() {
+    const walletRequest = walletSequence.current;
+    setConnecting(true);
+    setWalletError("");
     try {
       const { signer } = await connectWallet();
       const address = await signer.getAddress();
       setConnected(address);
-      await openWallet(address);
+      setConnecting(false);
+      if (walletRequest === walletSequence.current) await openWallet(address);
     } catch (e) {
-      toast.error(tr((e as Error).message));
+      setWalletError((e as Error).message);
+    } finally {
+      setConnecting(false);
     }
   }
   async function loadMore() {
     if (!data?.next) return;
     setMoreBusy(true);
+    setMoreError("");
     try {
       const d = await getData<ScanData>("attestations", {
         cursor: JSON.stringify(data.next),
@@ -227,7 +285,7 @@ export default function ScanApp() {
           : d,
       );
     } catch (e) {
-      toast.error(tr((e as Error).message));
+      setMoreError((e as Error).message);
     } finally {
       setMoreBusy(false);
     }
@@ -257,7 +315,8 @@ export default function ScanApp() {
       q.get("uid") ?? q.get("schema") ?? q.get("address") ?? q.get("tx");
     if (query) {
       setSearch(query);
-      void searchRef.current(query).catch((e) => toast.error(tr(e.message)));
+      if (q.get("schema")) void openSchema(query);
+      else void searchRef.current(query);
     }
     const keyboard = (e: KeyboardEvent) => {
       if (
@@ -271,6 +330,9 @@ export default function ScanApp() {
     window.addEventListener("keydown", keyboard);
     let provider: ReturnType<typeof injected> | undefined;
     const changed = (accounts: unknown) => {
+      walletSequence.current++;
+      setWalletBusy(false);
+      setWalletError("");
       setConnected((accounts as string[])[0] ?? "");
       setWalletData(null);
     };
@@ -440,10 +502,22 @@ export default function ScanApp() {
             <p>{tr(heading.text)}</p>
           </div>
         </section>
-        {(searching ||
-          walletBusy ||
-          moreBusy ||
-          (loading && view !== "lab" && view !== "guide")) && <ChainLoading />}
+        {loading && view !== "lab" && view !== "guide" && <ChainLoading />}
+        {error && view !== "lab" && view !== "guide" && (
+          <div className="notice danger" role="alert">
+            <p>
+              {tr("온체인 정보를 불러오지 못했습니다.")} {tr(error)}
+            </p>
+            {data && <p>{tr("마지막으로 불러온 정보를 표시합니다.")}</p>}
+            <button
+              className="secondary-button"
+              disabled={loading}
+              onClick={refresh}
+            >
+              {tr("다시 조회")}
+            </button>
+          </div>
+        )}
         {view !== "lab" && view !== "guide" && view !== "issuers" && (
           <form
             className="searchbar"
@@ -467,6 +541,17 @@ export default function ScanApp() {
               {tr(searching ? tr("조회 중") : tr("검색"))}
             </button>
           </form>
+        )}
+        {searching && (
+          <ChainLoading
+            title="검색 중입니다."
+            description="입력한 주소나 식별자를 확인하고 있습니다."
+          />
+        )}
+        {searchError && (
+          <div className="notice danger" role="alert">
+            {tr(searchError)}
+          </div>
         )}
         {view === "explore" && (
           <>
@@ -622,13 +707,7 @@ export default function ScanApp() {
                   <Download size={16} />
                 </button>
               </div>
-              {error ? (
-                <Empty
-                  title={tr("공개 데이터에 연결하지 못했습니다.")}
-                  text={error}
-                  action={refresh}
-                />
-              ) : loading && !data ? (
+              {error && !data ? null : loading && !data ? (
                 <Empty title={tr("실제 도장을 읽고 있습니다.")} loading />
               ) : !items.length ? (
                 <Empty
@@ -663,6 +742,14 @@ export default function ScanApp() {
               )}
               {data?.next && (
                 <div className="load-more">
+                  {moreError && (
+                    <p className="notice danger" role="alert">
+                      {tr(moreError)}
+                    </p>
+                  )}
+                  {moreBusy && (
+                    <ChainLoading title="이전 기록을 불러오고 있습니다." />
+                  )}
                   <button
                     className="secondary-button"
                     disabled={moreBusy}
@@ -730,9 +817,8 @@ export default function ScanApp() {
                     <span>{tr("구조와 규칙 보기 ↗")}</span>
                   </div>
                 </button>
-              )) ?? (
-                <Empty title={error || tr("스키마 조회 중")} loading={!error} />
-              )}
+              )) ??
+                (error ? null : <Empty title={tr("스키마 조회 중")} loading />)}
             </div>
           </section>
         )}
@@ -757,10 +843,26 @@ export default function ScanApp() {
                 <h2>{tr("주소만으로도 볼 수 있어요.")}</h2>
                 <p>{tr("조회에는 서명이나 가스가 필요 없습니다.")}</p>
               </div>
-              <button className="primary" onClick={connect}>
-                {tr(connected ? short(connected) : tr("내 지갑 연결"))}
+              <button
+                className="primary"
+                onClick={connect}
+                disabled={connecting || walletBusy}
+              >
+                {tr(
+                  connecting
+                    ? "지갑에서 연결을 승인해 주세요."
+                    : connected
+                      ? short(connected)
+                      : "내 지갑 연결",
+                )}
               </button>
             </div>
+            {connecting && (
+              <ChainLoading
+                title="지갑 연결을 기다리고 있습니다."
+                description="지갑 앱이나 확장 프로그램에서 연결 요청을 확인하세요."
+              />
+            )}
             <form
               className="wallet-form"
               onSubmit={(e) => {
@@ -788,11 +890,8 @@ export default function ScanApp() {
               </div>
             )}
             {walletBusy ? (
-              <Empty
-                title={tr("도장과 인증 상태를 확인하고 있습니다.")}
-                loading
-              />
-            ) : walletData ? (
+              <ChainLoading title="도장과 인증 상태를 확인하고 있습니다." />
+            ) : walletError ? null : walletData ? (
               <>
                 <div className="wallet-summary">
                   <div>
@@ -861,7 +960,8 @@ export default function ScanApp() {
           <div className="footer-main">
             <div>
               <a className="brand-mini" href={localURL({ view: "explore" })}>
-                <DojangLogo />Dojang Scan
+                <DojangLogo />
+                Dojang Scan
               </a>
               <p>{tr("GIWA Dojang 탐색·관리")}</p>
             </div>
@@ -899,11 +999,16 @@ export default function ScanApp() {
         </footer>
       </main>
       <ScanDetail
+        key={schemaUid || detail?.uid || "closed"}
         record={detail}
         schema={schemaDetail}
+        schemaUid={schemaUid}
+        schemaBusy={schemaBusy}
+        schemaError={schemaError}
+        retrySchema={() => void openSchema(schemaUid)}
         close={() => {
           setDetail(null);
-          setSchemaDetail(null);
+          clearSchema();
           updateURL({ view });
         }}
         goWallet={(a) =>
