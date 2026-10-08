@@ -30,11 +30,11 @@ import {
 } from "@/lib/giwa";
 import { getData, CopyButton, Badge, ScanTable, ScanCards } from "./scan-ui";
 import ScanDetail, { downloadJSON } from "./scan-detail";
-import { Relationship } from "./relationship";
 import { connectWallet, injected } from "@/lib/wallet";
 import { ChainLoading } from "./chain-loading";
 import { trackSection } from "@/lib/analytics";
 import { localURL } from "@/lib/navigation";
+import { DojangLogo } from "./dojang-logo";
 const OperatorHub = lazy(() => import("./operator-hub"));
 const ProofStudio = lazy(() => import("./proof-studio"));
 const LearningGuide = lazy(() => import("./learning-guide"));
@@ -334,21 +334,33 @@ export default function ScanApp() {
   };
   const heading = titles[view] ?? titles.explore;
   return (
-    <div className="app">
+    <div className="app" data-view={view}>
       <Toaster position="bottom-right" theme={theme} />
       <header className="topbar">
-        <button className="brand" onClick={() => navigate("explore")}>
-          <span className="brand-seal">印</span>
-          <span>
-            dojang<span className="brand-light">scan</span>
-            <small>GIWA SEPOLIA EXPLORER</small>
-          </span>
-        </button>
+        <div className="brand-identity">
+          <button className="brand" onClick={() => navigate("explore")}>
+            <span className="brand-seal">
+              <DojangLogo />
+            </span>
+            <span>
+              Dojang<span className="brand-light"> Scan</span>
+            </span>
+          </button>
+          <a
+            className="brand-credit"
+            href="https://masselabs.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Powered by <strong>Masse Labs</strong>
+          </a>
+        </div>
         <nav aria-label={tr("주요 메뉴")}>
           {nav.map((n) => (
             <button
               className={"nav-link " + (view === n.id ? "active" : "")}
               key={n.id}
+              aria-current={view === n.id ? "page" : undefined}
               onClick={() => navigate(n.id)}
             >
               <n.icon size={16} />
@@ -397,6 +409,15 @@ export default function ScanApp() {
             <span>Sepolia</span>
           </a>
         </div>
+        <a
+          className="sidebar-credit"
+          href="https://masselabs.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>Powered by</span>
+          <strong>Masse Labs</strong>
+        </a>
       </header>
       <main>
         <section
@@ -449,7 +470,11 @@ export default function ScanApp() {
         )}
         {view === "explore" && (
           <>
-            <Relationship onGuide={() => navigate("guide")} />
+            <button className="explore-help" onClick={() => navigate("guide")}>
+              <CircleHelp size={16} />
+              <span>{tr("EAS와 Dojang, 어떤 관계일까요?")}</span>
+              <ArrowRight size={15} />
+            </button>
             <div className="overview-line">
               <div>
                 <strong>{tr(data?.attestations.length ?? "—")}</strong>
@@ -489,9 +514,6 @@ export default function ScanApp() {
             <section className="browse-section">
               <div className="section-heading bare">
                 <div>
-                  <span className="section-kicker">
-                    {tr("어떤 도장을 찾고 있나요?")}
-                  </span>
                   <h2>{tr("도장 종류")}</h2>
                 </div>
                 <button
@@ -511,6 +533,7 @@ export default function ScanApp() {
                         : "category-tile"
                     }
                     key={s.uid}
+                    aria-pressed={schemaFilter === s.uid}
                     onClick={() => {
                       setSchemaFilter(schemaFilter === s.uid ? "all" : s.uid);
                       setFilter("dojang");
@@ -528,9 +551,6 @@ export default function ScanApp() {
             <section className="records-workspace">
               <div className="section-heading bare">
                 <div>
-                  <span className="section-kicker">
-                    {tr("도장을 열면 근거까지 확인할 수 있어요")}
-                  </span>
                   <h2>{tr("최근 기록")}</h2>
                 </div>
                 <div className="display-toggle" aria-label={tr("보기 방식")}>
@@ -841,7 +861,7 @@ export default function ScanApp() {
           <div className="footer-main">
             <div>
               <a className="brand-mini" href={localURL({ view: "explore" })}>
-                <span className="mini-stamp">印</span>Dojang Scan
+                <DojangLogo />Dojang Scan
               </a>
               <p>{tr("GIWA Dojang 탐색·관리")}</p>
             </div>
@@ -866,14 +886,15 @@ export default function ScanApp() {
             </nav>
           </div>
           <div className="footer-bottom">
-            <span>GIWA Sepolia · 91342</span>
             <a
+              className="footer-credit"
               href="https://masselabs.com"
               target="_blank"
               rel="noopener noreferrer"
             >
               Powered by <strong>Masse Labs</strong>
             </a>
+            <span>GIWA Sepolia · 91342</span>
           </div>
         </footer>
       </main>

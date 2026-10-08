@@ -23,8 +23,6 @@
 @media(max-width:480px){.header-actions .help-button{display:none}.brand small{letter-spacing:.7px}.preference-button{padding:6px}.topbar{padding-left:16px;padding-right:16px}.nav-link{font-size:11px}.topbar nav{gap:14px}}
 
 :root[data-theme="dark"]{--ink:#e4eaf6;--muted:#a9b5cb;--paper:#111722;--line:#354053;--purple:#ad94f1;--color-primary-foreground:#fff;--color-background:#1c2333;--color-foreground:#e4eaf6;--color-popover:#1c2333;--color-popover-foreground:#e4eaf6}
-:root[data-theme="dark"] .primary,:root[data-theme="dark"] .searchbar button,:root[data-theme="dark"] .studio-panel .primary{background:#7654b6;color:#fff}
-:root[data-theme="dark"] .primary:hover{background:#6743a7}
 :root[data-theme="dark"] .brand-seal,:root[data-theme="dark"] .mini-stamp{background:#bf4944;color:#fff}
 :root[data-theme="dark"] .badge.success{background:#203b32;color:#a3dec2}
 :root[data-theme="dark"] .badge.danger{background:#412933;color:#ffb4bc}

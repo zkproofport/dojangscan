@@ -1,23 +1,225 @@
-import { tr } from '@/lib/i18n';
-import { getLocale } from '@/lib/preferences';
-import { Copy, ArrowUpRight, Fingerprint, ShieldCheck, FlaskConical, Building2, UserRound, Clock3 } from 'lucide-react';
-import { toast } from 'sonner';
-import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow } from '@/components/ui/table';
-import { short,type Attestation,type IssuerClass } from '@/lib/giwa';
-import { queryScan } from '@/lib/scan-data';
-import { ISSUER_LABELS,ISSUER_EXPLANATIONS } from '@/lib/trust';
-export async function getData<T = any>(kind: string, params: Record<string, string> = {}): Promise<T> { return queryScan(kind,params) as Promise<T>; }
-export function CopyButton({ value }: { value: string }) { return <button className="icon-button" aria-label={tr("주소 복사")} onClick={() => navigator.clipboard.writeText(value).then(() => toast.success(tr("복사했습니다."))).catch(() => toast.error(tr("복사하지 못했습니다.")))}><Copy size={14}/></button>; }
-export function Badge({ children, variant = 'neutral' }: { children: React.ReactNode; variant?: string }) { return <span className={'badge ' + variant}>{tr(children)}</span>; }
-export function Status({ value }: { value: string }) { return <span title={tr("활성은 취소·만료되지 않았다는 뜻이며, 내용의 사실성을 보장하지 않습니다.")}><Badge variant={value==='active'?'success':value==='revoked'?'danger':'neutral'}>{tr(value==='active'?tr("활성"):value==='revoked'?tr("취소됨"):tr("만료됨"))}</Badge></span>; }
-export function IssuerStamp({ kind, compact=false }: { kind: IssuerClass; compact?: boolean }) { const Icon=kind==='registered'?ShieldCheck:kind==='test'?FlaskConical:kind==='manager'?Building2:UserRound;return <span className={'issuer-stamp '+kind+(compact?' compact':'')} title={tr(ISSUER_EXPLANATIONS[kind])}><Icon size={compact?13:15}/>{tr(ISSUER_LABELS[kind])}</span>; }
-export function describeRecord(a: Attestation) {
- const verified=a.fields.find(f=>f.name==='isVerified');
- if(verified)return verified.value==='true'?tr("지갑 주소의 인증 여부: 예"):tr("지갑 주소의 인증 여부: 아니오");
- const balance=a.fields.find(f=>f.name==='balance');if(balance)return tr("기록된 잔액 {0} · 단위는 발행자 정책 확인", [balance.value]);
- const count=a.fields.find(f=>f.name==='leafCount');if(count)return tr("{0}개 잔액을 묶은 스냅샷", [Number(count.value).toLocaleString()]);
- const domain=a.fields.find(f=>f.name==='domain');if(domain)return tr("인증 코드의 사용처: {0}", [domain.value]);
- return a.fields.length?`${a.fields[0].name}: ${a.fields[0].value.slice(0,60)}`:tr("발행자가 남긴 공개 기록");
+import { tr } from "@/lib/i18n";
+import { getLocale } from "@/lib/preferences";
+import {
+  Copy,
+  ArrowUpRight,
+  Fingerprint,
+  ShieldCheck,
+  FlaskConical,
+  Building2,
+  UserRound,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { short, type Attestation, type IssuerClass } from "@/lib/giwa";
+import { queryScan } from "@/lib/scan-data";
+import { ISSUER_LABELS, ISSUER_EXPLANATIONS } from "@/lib/trust";
+export async function getData<T = any>(
+  kind: string,
+  params: Record<string, string> = {},
+): Promise<T> {
+  return queryScan(kind, params) as Promise<T>;
 }
-export function ScanCards({items,onSelect}:{items:Attestation[];onSelect:(a:Attestation)=>void}){return <div className="credential-grid">{items.map(a=><article className={'credential-card '+(a.status!=='active'?'inactive':'')} key={a.uid}><div className="credential-top"><span className={'credential-seal '+a.issuerClass}><Fingerprint size={24}/><small>{tr(a.dojang?'DOJANG':'EAS')}</small></span><Status value={a.status}/></div><div className="credential-body"><span className="card-eyebrow">{tr(a.dojang?(a.schemaCurrent?tr("현재 Dojang 스키마"):tr("이전 Dojang 스키마")):tr("일반 EAS 스키마"))}</span><h3>{tr(a.schemaLabel)}</h3><p>{tr(describeRecord(a))}</p></div><IssuerStamp kind={a.issuerClass}/><div className="credential-person"><span>{tr("발행자")}</span><strong>{tr(a.issuerName)}</strong><code>{tr(short(a.attester,4))}</code></div><div className="credential-person"><span>{tr("받은 지갑")}</span><code>{tr(short(a.recipient))}</code></div><div className="credential-bottom"><span><Clock3 size={13}/>{tr(new Date(a.time*1000).toLocaleDateString(getLocale()))}</span><button className="text-button" onClick={()=>onSelect(a)} aria-label={tr("{0} {1} 상세 확인", [a.schemaLabel,short(a.uid)])}>{tr("도장 확인")}<ArrowUpRight size={16}/></button></div><code className="credential-uid">{tr(short(a.uid,9))}</code></article>)}</div>;}
-export function ScanTable({items,onSelect}:{items:Attestation[];onSelect:(a:Attestation)=>void}){return <Table><TableHeader><TableRow><TableHead>{tr("도장")}</TableHead><TableHead>{tr("발행자 구분")}</TableHead><TableHead>{tr("수신 지갑")}</TableHead><TableHead>{tr("발급일")}</TableHead><TableHead>{tr("상태")}</TableHead></TableRow></TableHeader><TableBody>{items.map(a=><TableRow key={a.uid}><TableCell><button className="record-link" onClick={()=>onSelect(a)}>{tr(a.schemaLabel)}<span className="sub-label mono">{tr(short(a.uid))}</span></button></TableCell><TableCell><IssuerStamp kind={a.issuerClass} compact/><span className="sub-label mono">{tr(short(a.attester))}</span></TableCell><TableCell className="mono">{tr(short(a.recipient))}</TableCell><TableCell>{tr(new Date(a.time*1000).toLocaleDateString(getLocale()))}</TableCell><TableCell><Status value={a.status}/></TableCell></TableRow>)}</TableBody></Table>;}
+export function CopyButton({ value }: { value: string }) {
+  return (
+    <button
+      className="icon-button"
+      aria-label={tr("주소 복사")}
+      onClick={() =>
+        navigator.clipboard
+          .writeText(value)
+          .then(() => toast.success(tr("복사했습니다.")))
+          .catch(() => toast.error(tr("복사하지 못했습니다.")))
+      }
+    >
+      <Copy size={14} />
+    </button>
+  );
+}
+export function Badge({
+  children,
+  variant = "neutral",
+}: {
+  children: React.ReactNode;
+  variant?: string;
+}) {
+  return <span className={"badge " + variant}>{tr(children)}</span>;
+}
+export function Status({ value }: { value: string }) {
+  return (
+    <span
+      title={tr(
+        "활성은 취소·만료되지 않았다는 뜻이며, 내용의 사실성을 보장하지 않습니다.",
+      )}
+    >
+      <Badge
+        variant={
+          value === "active"
+            ? "success"
+            : value === "revoked"
+              ? "danger"
+              : "neutral"
+        }
+      >
+        {tr(
+          value === "active"
+            ? tr("활성")
+            : value === "revoked"
+              ? tr("취소됨")
+              : tr("만료됨"),
+        )}
+      </Badge>
+    </span>
+  );
+}
+export function IssuerStamp({
+  kind,
+  compact = false,
+}: {
+  kind: IssuerClass;
+  compact?: boolean;
+}) {
+  const Icon =
+    kind === "registered"
+      ? ShieldCheck
+      : kind === "test"
+        ? FlaskConical
+        : kind === "manager"
+          ? Building2
+          : UserRound;
+  return (
+    <span
+      className={"issuer-stamp " + kind + (compact ? " compact" : "")}
+      title={tr(ISSUER_EXPLANATIONS[kind])}
+    >
+      <Icon size={compact ? 13 : 15} />
+      {tr(ISSUER_LABELS[kind])}
+    </span>
+  );
+}
+export function describeRecord(a: Attestation) {
+  const verified = a.fields.find((f) => f.name === "isVerified");
+  if (verified)
+    return verified.value === "true"
+      ? tr("지갑 주소의 인증 여부: 예")
+      : tr("지갑 주소의 인증 여부: 아니오");
+  const balance = a.fields.find((f) => f.name === "balance");
+  if (balance)
+    return tr("기록된 잔액 {0} · 단위는 발행자 정책 확인", [balance.value]);
+  const count = a.fields.find((f) => f.name === "leafCount");
+  if (count)
+    return tr("{0}개 잔액을 묶은 스냅샷", [
+      Number(count.value).toLocaleString(),
+    ]);
+  const domain = a.fields.find((f) => f.name === "domain");
+  if (domain) return tr("인증 코드의 사용처: {0}", [domain.value]);
+  return a.fields.length
+    ? `${a.fields[0].name}: ${a.fields[0].value.slice(0, 60)}`
+    : tr("발행자가 남긴 공개 기록");
+}
+export function ScanCards({
+  items,
+  onSelect,
+}: {
+  items: Attestation[];
+  onSelect: (a: Attestation) => void;
+}) {
+  return (
+    <div className="credential-grid">
+      {items.map((a) => (
+        <article
+          className={
+            "credential-card " + (a.status !== "active" ? "inactive" : "")
+          }
+          key={a.uid}
+        >
+          <div className="credential-top">
+            <span className="record-origin">
+              <Fingerprint size={18} />
+              {a.dojang ? "DOJANG" : "EAS"}
+            </span>
+            <Status value={a.status} />
+          </div>
+          <div className="credential-body">
+            <h3>{tr(a.schemaLabel)}</h3>
+            <p>{tr(describeRecord(a))}</p>
+          </div>
+          <div className="credential-issuer">
+            <IssuerStamp kind={a.issuerClass} />
+            <code>{short(a.attester, 4)}</code>
+          </div>
+          <div className="credential-recipient">
+            <span>{tr("받은 지갑")}</span>
+            <code>{short(a.recipient)}</code>
+          </div>
+          <div className="credential-bottom">
+            <span>
+              {new Date(a.time * 1000).toLocaleDateString(getLocale())}
+            </span>
+            <button
+              className="record-open"
+              onClick={() => onSelect(a)}
+              aria-label={tr("{0} {1} 상세 확인", [
+                tr(a.schemaLabel),
+                short(a.uid),
+              ])}
+            >
+              <ArrowUpRight size={19} />
+            </button>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+export function ScanTable({
+  items,
+  onSelect,
+}: {
+  items: Attestation[];
+  onSelect: (a: Attestation) => void;
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{tr("도장")}</TableHead>
+          <TableHead>{tr("발행자 구분")}</TableHead>
+          <TableHead>{tr("수신 지갑")}</TableHead>
+          <TableHead>{tr("발급일")}</TableHead>
+          <TableHead>{tr("상태")}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((a) => (
+          <TableRow key={a.uid}>
+            <TableCell>
+              <button className="record-link" onClick={() => onSelect(a)}>
+                {tr(a.schemaLabel)}
+                <span className="sub-label mono">{tr(short(a.uid))}</span>
+              </button>
+            </TableCell>
+            <TableCell>
+              <IssuerStamp kind={a.issuerClass} compact />
+              <span className="sub-label mono">{tr(short(a.attester))}</span>
+            </TableCell>
+            <TableCell className="mono">{tr(short(a.recipient))}</TableCell>
+            <TableCell>
+              {tr(new Date(a.time * 1000).toLocaleDateString(getLocale()))}
+            </TableCell>
+            <TableCell>
+              <Status value={a.status} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}

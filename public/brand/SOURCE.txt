@@ -5,3 +5,9 @@ Original GIWA_Combination_Black_Transparent.svg and GIWA_Combination_White_Trans
 GIWA trademarks belong to Dunamu. Used to identify the connected GIWA network.
 
 ZKProofport logo: existing project asset from proofport-portal-web/public/logo.png, unchanged.
+
+Dojang Scan mark: original vector artwork for this project.
+Files: dojang-scan.svg, dojang-scan-dark.svg, ../favicon.svg.
+A solid stamp silhouette above a curved impression inspired by GIWA roof-tile geometry.
+Original geometry; no GIWA logo paths are used.
+This is the Dojang Scan identity, not an official GIWA network logo.

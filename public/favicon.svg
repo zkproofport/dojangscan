@@ -1,1 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="1" y="1" width="30" height="30" rx="5" fill="#ba432e"/><path d="M8 7v18m0-17h7v7H8m0 5h7m5-12h5v14h-5m0-14v18" fill="none" stroke="white" stroke-width="2"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Dojang Scan</title>
+  <style>path{fill:#B84536}@media(prefers-color-scheme:dark){path{fill:#F29280}}</style>
+  <path d="M22 32V16a10 10 0 0 1 20 0v16l12 12v4H10v-4l12-12ZM10 51q22 10 44 0l-3 6q-19 8-38 0l-3-6Z"/>
+</svg>
