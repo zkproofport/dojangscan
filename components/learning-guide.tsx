@@ -1,12 +1,219 @@
-import { tr } from '@/lib/i18n';
-import { useState } from 'react';
-import { ArrowRight, Layers3, Stamp, ScanEye, ShieldCheck, KeyRound, FlaskConical, ExternalLink, ChevronRight } from 'lucide-react';
-import { CONTRACTS, NETWORK, type ScanData } from '@/lib/giwa';
-import { Badge, CopyButton } from './scan-ui';
-import { Relationship } from './relationship';
-export default function LearningGuide({data,onStudio}:{data:ScanData|null;onStudio:()=>void}){
- const [example,setExample]=useState('address');
- const examples={address:{title:tr("“이 지갑은 고객확인을 받았다.”"),issuer:tr("발행자"),fact:'isVerified = true',shown:tr("주소와 확인 여부"),hidden:tr("이름·생년월일 등 원본 신원 정보")},balance:{title:tr("“이 지갑의 특정 시점 잔액이다.”"),issuer:tr("잔액을 확인한 발행자"),fact:tr("balance + snapshot 기준"),shown:tr("현행 Verified Balance는 잔액과 Merkle 경로"),hidden:tr("원본 계정 정보 · 정확한 금액을 숨기려면 별도 ZK 회로 필요")}};
- const e=examples[example as keyof typeof examples];
- return <div className="guide-page"><Relationship full/><section className="guide-example"><div><span className="section-kicker">{tr("도장 한 장을 읽는 방법")}</span><h2>{tr("누가, 누구에게,")}<br/>{tr("무엇을 확인했는가.")}</h2><div className="pill-buttons"><button className={example==='address'?'selected':''} onClick={()=>setExample('address')}>{tr("주소 인증")}</button><button className={example==='balance'?'selected':''} onClick={()=>setExample('balance')}>{tr("잔액 인증")}</button></div><p>{tr("도장 하나에는 발행자·수신 지갑·내용·만료·취소 정보가 있습니다. 스키마는 그 내용의 형식을 정합니다.")}</p></div><div className="example-credential"><span className="sample-watermark">{tr("설명용 예시")}</span><Stamp size={30}/><h3>{tr(e.title)}</h3><dl><div><dt>{tr("누가")}</dt><dd>{tr(e.issuer)}</dd></div><div><dt>{tr("누구에게")}</dt><dd>{tr("사용자의 지갑")}</dd></div><div><dt>{tr("무엇을")}</dt><dd>{tr(e.fact)}</dd></div><div><dt>{tr("공개되는 것")}</dt><dd>{tr(e.shown)}</dd></div><div><dt>{tr("함께 구분할 것")}</dt><dd>{tr(e.hidden)}</dd></div></dl></div></section><section className="guide-section"><span className="section-kicker">{tr("배지는 서로 다른 질문에 답합니다")}</span><h2>{tr("등록, 권한, 상태를 따로 봅니다.")}</h2><div className="trust-legend"><div><ShieldCheck size={23}/><Badge variant="success">{tr("Dojang 등록")}</Badge><p>{tr("현재 발행자 목록에 있는가?")}<br/><code>getAttester(id)</code>{tr("와 비교합니다.")}</p></div><div><KeyRound size={23}/><Badge variant="blue">{tr("관리 권한")}</Badge><p>{tr("발행자·스키마를 관리할 권한이 있는가?")}<br/><code>hasRole(role, address)</code>{tr("로 확인합니다.")}</p></div><div><Stamp size={23}/><Badge>{tr("활성 / 취소 / 만료")}</Badge><p>{tr("이 기록이 아직 사용 가능한 상태인가?")}<br/>{tr("내용의 진실성까지 보장하지는 않습니다.")}</p></div><div><FlaskConical size={23}/><Badge variant="purple">{tr("테스트용")}</Badge><p>{tr("테스트 발행자나 예제 데이터인가?")}<br/>{tr("실제 기관의 자격증명과 구분합니다.")}</p></div></div><details className="explain-detail"><summary>{tr("‘GIWA 직접 발급’과 ‘Dojang 등록’이 다른 이유")}</summary><p>{tr("관리자는 발행자를 등록합니다. 업비트처럼 등록된 기관이 도장을 발급할 수 있지만, 그 기관이 GIWA 관리자와 같은 주소라는 뜻은 아닙니다. 관리자 주소가 계약상 권한을 가진 사실도 회사의 법적 신원을 증명하지 않습니다. 발행자 컨트랙트와 서명자 EOA도 다를 수 있으므로 EAS의")}<code>attester</code>{tr("주소를 기준으로 봅니다.")}</p><p>{tr("현재 화면의 ‘Dojang 등록’은 공식 배포 주소의 현재 매핑과 일치한다는 뜻입니다. ‘GIWA 직접 발급’ 배지는 공식 기관·주소 관계를 별도로 확인하기 전까지 사용하지 않습니다.")}</p></details><details className="explain-detail"><summary>{tr("관리자 주소는 어떻게 찾나요?")}</summary><p>{tr("SchemaBook과 DojangAttesterBook은 AccessControl 방식입니다.")}<code>owner()</code>{tr("또는 관리자 전체를 한 번에 주는 함수가 없습니다.")}<code>RoleGranted / RoleRevoked</code>{tr("이벤트에서 후보를 찾은 뒤")}<code>hasRole(DEFAULT_ADMIN_ROLE, address)</code>{tr("를 조회합니다. 업그레이드 권한도 별도로 확인합니다. 발견 범위 밖의 역할이 있을 수 있어 조회 범위를 함께 표시합니다.")}</p></details>{data&&<p className="fine-print">{tr("현재 조회 블록")}{tr(data.governance.block.toLocaleString())}{tr("· 관리자")}{tr(new Set(data.governance.roles.filter(r=>r.role==='admin'&&r.active===true).map(r=>r.address.toLowerCase())).size)}{tr("개 주소 발견 ·")}{tr(data.governance.complete?tr("발견한 후보의 현재 권한 확인"):tr("일부 역할 조회 미확인"))}</p>}</section><section className="guide-section"><div className="section-heading bare"><div><span className="section-kicker">{tr("테스트넷에서 직접 실험하려면")}</span><h2>{tr("새 EAS 배포 없이 시작하세요.")}</h2></div></div><div className="test-path"><div><span>01</span><h3>{tr("테스트 스키마 만들기")}</h3><p>{tr("기존 SchemaRegistry에")}<code>bool completedCourse</code>{tr("처럼 자신의 형식을 등록합니다.")}</p></div><ArrowRight size={18}/><div><span>02</span><h3>{tr("기존 EAS에 발급")}</h3><p>{tr("자신의 테스트 지갑에 발급하고 만료·취소·검색을 실험합니다. 테스트 ETH가 필요합니다.")}</p></div><ArrowRight size={18}/><div><span>03</span><h3>{tr("서명 또는 ZK 실험")}</h3><p>{tr("오프체인 서명은 가스 없이 만듭니다. 잔액 예제는 브라우저에서 실제 ZK 증명을 생성하고 검증합니다.")}</p></div></div><div className="inline-callout"><FlaskConical size={20}/><p>{tr("GIWA Dojang 스키마의 resolver에는 발행자 허용 목록이 있습니다. 자신의 EAS 테스트 스키마가 공식 Dojang에 자동 등록되지는 않습니다.")}</p><button className="secondary-button" onClick={onStudio}>{tr("실험 예제 열기")}<ArrowRight size={15}/></button></div><details className="explain-detail"><summary>{tr("언제 별도 컨트랙트가 필요한가요?")}</summary><p>{tr("특정 발행자만 허용하는 resolver, ZK proof로 파생 도장을 발급하는 등록 계약, 별도 프로토콜 실험이 필요할 때입니다. 목록 탐색·자신의 스키마 등록·일반 EAS 발급에는 새 EAS 본체를 배포할 이유가 없습니다.")}</p></details></section><section className="guide-section sources"><h3>{tr("확인한 공식 기준")}</h3><a href="https://docs.giwa.io/giwa-ecosystem/dojang" target="_blank" rel="noreferrer">{tr("Dojang 소개")}<ExternalLink size={14}/></a><a href="https://github.com/giwa-io/dojang" target="_blank" rel="noreferrer">{tr("Dojang 컨트랙트 소스")}<ExternalLink size={14}/></a><div className="source-address"><span>{tr("기존 EAS")}</span><code>{tr(CONTRACTS.EAS)}</code><CopyButton value={CONTRACTS.EAS}/><a href={`${NETWORK.explorer}/address/${CONTRACTS.EAS}`} target="_blank" rel="noreferrer"><ExternalLink size={14}/></a></div></section></div>;
+import { tr } from "@/lib/i18n";
+import { useState } from "react";
+import {
+  Stamp,
+  ShieldCheck,
+  KeyRound,
+  FlaskConical,
+  ExternalLink,
+} from "lucide-react";
+import { CONTRACTS, NETWORK, type ScanData } from "@/lib/giwa";
+import { Badge, CopyButton } from "./scan-ui";
+import { Relationship } from "./relationship";
+export default function LearningGuide({ data }: { data: ScanData | null }) {
+  const [example, setExample] = useState("address");
+  const examples = {
+    address: {
+      title: tr("“이 지갑은 고객확인을 받았다.”"),
+      issuer: tr("발행자"),
+      fact: "isVerified = true",
+      shown: tr("주소와 확인 여부"),
+      hidden: tr("이름·생년월일 등 원본 신원 정보"),
+    },
+    balance: {
+      title: tr("“이 지갑의 특정 시점 잔액이다.”"),
+      issuer: tr("잔액을 확인한 발행자"),
+      fact: tr("balance + snapshot 기준"),
+      shown: tr("현행 Verified Balance는 잔액과 Merkle 경로"),
+      hidden: tr("원본 계정 정보 · 정확한 금액을 숨기려면 별도 ZK 회로 필요"),
+    },
+  };
+  const e = examples[example as keyof typeof examples];
+  return (
+    <div className="guide-page">
+      <Relationship full />
+      <section className="guide-example">
+        <div>
+          <span className="section-kicker">{tr("도장에 담긴 정보")}</span>
+          <h2>
+            {tr("누가, 누구에게,")}
+            <br />
+            {tr("무엇을 확인했는가.")}
+          </h2>
+          <div className="pill-buttons">
+            <button
+              className={example === "address" ? "selected" : ""}
+              onClick={() => setExample("address")}
+            >
+              {tr("주소 인증")}
+            </button>
+            <button
+              className={example === "balance" ? "selected" : ""}
+              onClick={() => setExample("balance")}
+            >
+              {tr("잔액 인증")}
+            </button>
+          </div>
+          <p>
+            {tr(
+              "도장 하나에는 발행자·수신 지갑·내용·만료·취소 정보가 있습니다. 스키마는 그 내용의 형식을 정합니다.",
+            )}
+          </p>
+        </div>
+        <div className="example-credential">
+          <span className="sample-watermark">{tr("설명용 예시")}</span>
+          <Stamp size={30} />
+          <h3>{tr(e.title)}</h3>
+          <dl>
+            <div>
+              <dt>{tr("누가")}</dt>
+              <dd>{tr(e.issuer)}</dd>
+            </div>
+            <div>
+              <dt>{tr("누구에게")}</dt>
+              <dd>{tr("사용자의 지갑")}</dd>
+            </div>
+            <div>
+              <dt>{tr("무엇을")}</dt>
+              <dd>{tr(e.fact)}</dd>
+            </div>
+            <div>
+              <dt>{tr("공개되는 것")}</dt>
+              <dd>{tr(e.shown)}</dd>
+            </div>
+            <div>
+              <dt>{tr("함께 구분할 것")}</dt>
+              <dd>{tr(e.hidden)}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+      <section className="guide-section">
+        <span className="section-kicker">{tr("등록과 권한의 차이")}</span>
+        <h2>{tr("등록, 권한, 상태를 따로 봅니다.")}</h2>
+        <div className="trust-legend">
+          <div>
+            <ShieldCheck size={23} />
+            <Badge variant="success">{tr("Dojang 등록")}</Badge>
+            <p>
+              {tr("현재 발행자 목록에 있는가?")}
+              <br />
+              <code>getAttester(id)</code>
+              {tr("와 비교합니다.")}
+            </p>
+          </div>
+          <div>
+            <KeyRound size={23} />
+            <Badge variant="blue">{tr("관리 권한")}</Badge>
+            <p>
+              {tr("발행자·스키마를 관리할 권한이 있는가?")}
+              <br />
+              <code>hasRole(role, address)</code>
+              {tr("로 확인합니다.")}
+            </p>
+          </div>
+          <div>
+            <Stamp size={23} />
+            <Badge>{tr("활성 / 취소 / 만료")}</Badge>
+            <p>
+              {tr("이 기록이 아직 사용 가능한 상태인가?")}
+              <br />
+              {tr("내용의 진실성까지 보장하지는 않습니다.")}
+            </p>
+          </div>
+          <div>
+            <FlaskConical size={23} />
+            <Badge variant="purple">{tr("테스트용")}</Badge>
+            <p>
+              {tr("테스트 발행자나 예제 데이터인가?")}
+              <br />
+              {tr("실제 기관의 자격증명과 구분합니다.")}
+            </p>
+          </div>
+        </div>
+        <details className="explain-detail">
+          <summary>
+            {tr("‘GIWA 직접 발급’과 ‘Dojang 등록’이 다른 이유")}
+          </summary>
+          <p>
+            {tr(
+              "관리자는 발행자를 등록합니다. 업비트처럼 등록된 기관이 도장을 발급할 수 있지만, 그 기관이 GIWA 관리자와 같은 주소라는 뜻은 아닙니다. 관리자 주소가 계약상 권한을 가진 사실도 회사의 법적 신원을 증명하지 않습니다. 발행자 컨트랙트와 서명자 EOA도 다를 수 있으므로 EAS의",
+            )}
+            <code>attester</code>
+            {tr("주소를 기준으로 봅니다.")}
+          </p>
+          <p>
+            {tr(
+              "현재 화면의 ‘Dojang 등록’은 공식 배포 주소의 현재 매핑과 일치한다는 뜻입니다. ‘GIWA 직접 발급’ 배지는 공식 기관·주소 관계를 별도로 확인하기 전까지 사용하지 않습니다.",
+            )}
+          </p>
+        </details>
+        <details className="explain-detail">
+          <summary>{tr("관리자 주소는 어떻게 찾나요?")}</summary>
+          <p>
+            {tr("SchemaBook과 DojangAttesterBook은 AccessControl 방식입니다.")}
+            <code>owner()</code>
+            {tr("또는 관리자 전체를 한 번에 주는 함수가 없습니다.")}
+            <code>RoleGranted / RoleRevoked</code>
+            {tr("이벤트에서 후보를 찾은 뒤")}
+            <code>hasRole(DEFAULT_ADMIN_ROLE, address)</code>
+            {tr(
+              "를 조회합니다. 업그레이드 권한도 별도로 확인합니다. 발견 범위 밖의 역할이 있을 수 있어 조회 범위를 함께 표시합니다.",
+            )}
+          </p>
+        </details>
+        {data && (
+          <p className="fine-print">
+            {tr("현재 조회 블록")}
+            {tr(data.governance.block.toLocaleString())}
+            {tr("· 관리자")}
+            {tr(
+              new Set(
+                data.governance.roles
+                  .filter((r) => r.role === "admin" && r.active === true)
+                  .map((r) => r.address.toLowerCase()),
+              ).size,
+            )}
+            {tr("개 주소 발견 ·")}
+            {tr(
+              data.governance.complete
+                ? tr("발견한 후보의 현재 권한 확인")
+                : tr("일부 역할 조회 미확인"),
+            )}
+          </p>
+        )}
+      </section>
+      <section className="guide-section sources">
+        <h3>{tr("확인한 공식 기준")}</h3>
+        <a
+          href="https://docs.giwa.io/giwa-ecosystem/dojang"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {tr("Dojang 소개")}
+          <ExternalLink size={14} />
+        </a>
+        <a
+          href="https://github.com/giwa-io/dojang"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {tr("Dojang 컨트랙트 소스")}
+          <ExternalLink size={14} />
+        </a>
+        <div className="source-address">
+          <span>{tr("기존 EAS")}</span>
+          <code>{tr(CONTRACTS.EAS)}</code>
+          <CopyButton value={CONTRACTS.EAS} />
+          <a
+            href={`${NETWORK.explorer}/address/${CONTRACTS.EAS}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink size={14} />
+          </a>
+        </div>
+      </section>
+    </div>
+  );
 }

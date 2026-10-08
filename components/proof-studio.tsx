@@ -1,43 +1,220 @@
-import BalanceStudio from './balance-studio';
-import { tr } from '@/lib/i18n';
-import { useEffect, useRef, useState } from 'react';
-import { Smartphone, ShieldCheck, FileJson, Download, Copy, AlertCircle, CheckCircle2, LockKeyhole, RefreshCw, ArrowRight, FlaskConical, Fingerprint, ChevronRight } from 'lucide-react';
-import { Tabs,TabsList,TabsTrigger,TabsContent } from '@/components/ui/tabs';
-import { Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription } from '@/components/ui/dialog';
-import { toast } from 'sonner';
-import type { ProofportSDK,RelayProofRequest,RelayProofResult } from '@zkproofport-app/sdk';
-import { GIWA_PROOF,CONTRACTS,NETWORK,short } from '@/lib/giwa';
-import { inspectOffchain } from '@/lib/offchain';
-import { ISSUER_LABELS } from '@/lib/trust';
-import type { IssuerClass } from '@/lib/giwa';
-import { inspectTransaction } from '@/lib/eas-calldata';
-import { createOffchainExample,testRecipe } from '@/lib/examples';
-import { verifyProof } from '@/lib/verify-proof';
-import { getData,Badge,CopyButton } from './scan-ui';
-import { downloadJSON } from './scan-detail';
-type CheckResult=Awaited<ReturnType<typeof verifyProof>>;
-export default function ProofStudio({onWorkspace}:{onWorkspace:()=>void}){
- const [tab,setTab]=useState('balance');const [scope,setScope]=useState('dojang-scan:local-demo');const [request,setRequest]=useState<RelayProofRequest|null>(null);const [result,setResult]=useState<RelayProofResult|null>(null);const [qr,setQr]=useState('');const [requestBusy,setRequestBusy]=useState(false);const [requestError,setRequestError]=useState('');const [consent,setConsent]=useState(false);const [requestStatus,setRequestStatus]=useState('');const sdkRef=useRef<ProofportSDK|null>(null);const poll=useRef<ReturnType<typeof setInterval>|null>(null);const runId=useRef(0);
- const [proofText,setProofText]=useState('');const [verifyScope,setVerifyScope]=useState('');const [verifyBusy,setVerifyBusy]=useState(false);const [verification,setVerification]=useState<CheckResult|null>(null);const [verifyError,setVerifyError]=useState('');
- const [offchainText,setOffchainText]=useState('');const [issuer,setIssuer]=useState('');const [offBusy,setOffBusy]=useState(false);const [sampleBusy,setSampleBusy]=useState(false);const [sample,setSample]=useState(false);const [offResult,setOffResult]=useState<Record<string,unknown>|null>(null);const [offError,setOffError]=useState('');
- const [recipient,setRecipient]=useState('0x000000000000000000000000000000000000dEaD');const [recipeError,setRecipeError]=useState('');const [recipe,setRecipe]=useState<ReturnType<typeof testRecipe>|null>(null);const [decoded,setDecoded]=useState<ReturnType<typeof inspectTransaction>|null>(null);
- useEffect(()=>()=>{runId.current++;if(poll.current)clearInterval(poll.current);sdkRef.current?.disconnect?.();},[]);
- function stop(){runId.current++;if(poll.current)clearInterval(poll.current);poll.current=null;setRequestStatus(tr("대기 중지"));}
- async function start(){setConsent(false);stop();const epoch=runId.current;setRequestBusy(true);setRequestError('');setResult(null);setVerification(null);setRequest(null);setQr('');try{
-  const {ProofportSDK}=await import('@zkproofport-app/sdk');const sdk=ProofportSDK.create();sdkRef.current=sdk;const uniqueScope=scope.trim()+':'+crypto.randomUUID();
-  const r=await sdk.createRelayRequest('giwa_attestation',{scope:uniqueScope},{dappName:'Dojang Scan Local',message:tr("MockGiwaAttester 테스트 발급 대상 주소의 소유 증명. 실제 Dojang 자격 증명이 아닙니다."),nonce:crypto.randomUUID()});if(epoch!==runId.current)return;setRequest(r);setVerifyScope(uniqueScope);setQr(await sdk.generateQRCode(r.deepLink));setRequestStatus(tr("모바일 앱에서 증명 대기"));const deadline=Date.now()+10*60*1000;let running=false;
-  poll.current=setInterval(async()=>{if(running||epoch!==runId.current)return;if(Date.now()>deadline){stop();setRequestStatus(tr("10분 대기 시간이 만료되었습니다."));return;}running=true;try{const response=await sdk.pollResult(r.requestId);if(epoch!==runId.current)return;if(response.requestId!==r.requestId)throw new Error(tr("다른 요청의 결과가 반환되었습니다."));setRequestStatus(response.status);if(response.status==='completed'){stop();setResult(response);setProofText(JSON.stringify(response,null,2));setVerifyScope(uniqueScope);setRequestStatus(tr("증명 수신 · 아직 검증하지 않음"));}else if(response.status==='failed'){stop();setRequestError(response.error||tr("모바일 증명에 실패했습니다."));}}catch(e){if(epoch===runId.current){stop();setRequestError((e as Error).message);}}finally{running=false;}},3000);
- }catch(e){setRequestError((e as Error).message);}finally{setRequestBusy(false);}}
- async function verify(){setVerifyBusy(true);setVerifyError('');setVerification(null);try{setVerification(await verifyProof(JSON.parse(proofText),verifyScope));}catch(e){setVerifyError((e as Error).message);}finally{setVerifyBusy(false);}}
- async function example(){setSampleBusy(true);setOffError('');setOffResult(null);try{const a=await createOffchainExample();setOffchainText(JSON.stringify(a,null,2));setIssuer(a.attester);setSample(true);}catch(e){setOffError((e as Error).message);}finally{setSampleBusy(false);}}
- async function verifyOffchain(){setOffBusy(true);setOffError('');setOffResult(null);try{const local=inspectOffchain(JSON.parse(offchainText),issuer.trim());const status=await getData('offchain',{issuer:local.signer,uid:local.uid});if(status.easVersion!==local.domainVersion)throw new Error(tr("현재 GIWA EAS와 서명 도메인 버전이 다릅니다."));setOffResult({...local,...status,acceptable:!local.expired&&!local.futureIssued&&status.revocationTime===0});}catch(e){setOffError((e as Error).message);}finally{setOffBusy(false);}}
- function tamper(){try{const a=JSON.parse(offchainText);a.message.data='0x'+BigInt(1000001).toString(16).padStart(64,'0');setOffchainText(JSON.stringify(a,null,2));setOffResult(null);setOffError('');toast.info(tr("내용만 1원 바꿨습니다. 같은 서명이 통과하는지 확인하세요."));}catch{toast.error(tr("먼저 예제를 불러오세요."));}}
- function makeRecipe(){setRecipeError('');try{const r=testRecipe(recipient);setRecipe(r);setDecoded(inspectTransaction(CONTRACTS.EAS,NETWORK.chainId,r.attest.data,r.definition));}catch{setRecipeError(tr("40자리 지갑 주소를 입력하세요."));}}
- return <section className="view-section studio"><div className="studio-context"><div><FileJson size={21}/><span><strong>{tr("서명 확인")}</strong><small>{tr("누가 서명했고, 문서가 바뀌었는가?")}</small></span></div><div><Fingerprint size={21}/><span><strong>{tr("ZK 검증")}</strong><small>{tr("원문 없이 정해진 조건을 증명했는가?")}</small></span></div><Badge variant="purple">{tr("브라우저 잔액 ZK / 모바일 CIP-4")}</Badge></div><Tabs value={tab} onValueChange={setTab}><TabsList className="studio-tabs"><TabsTrigger value="balance"><Fingerprint size={16}/>{tr("잔액 ZK 증명")}</TabsTrigger><TabsTrigger value="offchain"><FileJson size={16}/>{tr("서명 문서 확인")}</TabsTrigger><TabsTrigger value="request"><Smartphone size={16}/>{tr("앱 ZK 테스트")}</TabsTrigger><TabsTrigger value="verify"><ShieldCheck size={16}/>{tr("받은 proof 검증")}</TabsTrigger><TabsTrigger value="recipe"><FlaskConical size={16}/>{tr("발급 실험 안내")}</TabsTrigger></TabsList><TabsContent value="balance"><BalanceStudio/><button className="text-button" onClick={onWorkspace}>{tr("지갑 발급·온체인 등록 작업으로 이동")}</button></TabsContent>
- <TabsContent value="offchain"><div className="studio-grid"><div className="studio-panel"><div className="panel-step"><span>01</span><Badge variant="success">{tr("지갑 없이 체험")}</Badge></div><h3>{tr("“이 잔액 문서를 누가 서명했을까?”")}</h3><p>{tr("가상 발행자가 ‘잔액 100만원’ 문서에 서명한 예제를 만들어 확인해 보세요.")}</p><div className="example-actions"><button className="secondary-button" onClick={example} disabled={sampleBusy}>{sampleBusy?<RefreshCw size={15} className="spinning"/>:<FlaskConical size={15}/>}{tr("예제 불러오기")}</button>{sample&&<button className="text-button" onClick={tamper}>{tr("내용 1원 바꿔보기")}</button>}</div>{sample&&<div className="sample-summary"><Badge variant="purple">{tr("가상 잔액 · 자체 서명 예제")}</Badge><strong>{tr("서명한 금액: 1,000,000원")}</strong><span>{tr("실제 은행 문서가 아닙니다. 새 임시 키로 서명하며 체인에 발급하지 않습니다.")}</span></div>}<label className="input-label" htmlFor="expected-issuer">{tr("확인하려는 발행자 주소")}</label><input id="expected-issuer" className="form-input" value={issuer} onChange={e=>{setIssuer(e.target.value);setOffResult(null);}} placeholder={tr("0x… / 비우면 서명자만 복원")}/><JsonInput id="offchain-json" label={tr("EAS 오프체인 JSON")} value={offchainText} setValue={v=>{setOffchainText(v);setOffResult(null);setSample(false);}} collapsible={sample}/><button className="primary" onClick={verifyOffchain} disabled={offBusy||!offchainText}>{offBusy?<RefreshCw className="spinning" size={16}/>:<ShieldCheck size={16}/>}{tr("서명과 취소 상태 확인")}</button>{offError&&<div className="notice danger" role="alert"><AlertCircle size={17}/>{tr(offError)}</div>}<p className="local-note"><LockKeyhole size={15}/>{tr("원문·서명은 브라우저에서 처리합니다. 공개 UID·서명자 주소만 GIWA RPC로 조회합니다.")}</p></div><div className="studio-panel result-panel">{offResult?<><div className={'result-icon '+(offResult.acceptable?'good':'bad')}><CheckCircle2 size={30}/></div><h3>{tr(offResult.acceptable?tr("서명 확인 · 취소 기록 없음"):tr("서명은 맞지만 사용 조건을 확인하세요."))}</h3><Badge variant={offResult.registeredIssuer?'success':'purple'}>{tr(ISSUER_LABELS[offResult.issuerClass as IssuerClass]??tr("등록 여부 미확인"))}</Badge><dl className="result-facts"><div><dt>{tr("서명자")}</dt><dd><code>{tr(short(String(offResult.signer),10))}</code><CopyButton value={String(offResult.signer)}/></dd></div><div><dt>{tr("기대한 발행자")}</dt><dd>{tr(offResult.expectedIssuerChecked?tr("일치"):tr("미지정 · 신뢰 정책 필요"))}</dd></div><div><dt>{tr("만료")}</dt><dd>{tr(offResult.expired?tr("만료됨"):offResult.futureIssued?tr("발행 시각 확인 필요"):tr("아직 만료되지 않음"))}</dd></div><div><dt>{tr("온체인 취소")}</dt><dd>{tr(offResult.revocationTime?tr("취소됨"):tr("현재 기록 없음"))}</dd></div><div><dt>{tr("온체인 타임스탬프")}</dt><dd>{tr(offResult.timestamp?tr("기록 있음"):tr("기록 없음"))}</dd></div></dl><p className="result-meaning">{tr("확인한 것은")}<strong>{tr("발행자 서명과 문서의 무결성")}</strong>{tr("입니다. 잔액이 실제로 있다는 사실이나 은행의 보증을 증명한 것은 아닙니다.")}</p><button className="secondary-button" onClick={()=>{const {message,...report}=offResult;downloadJSON(report,'offchain-check.json');}}><Download size={14}/>{tr("확인 결과 저장")}</button></>:<><FileJson size={36}/><h3>{tr("예제 → 확인 → 변조해 보기")}</h3><ol className="simple-steps"><li>{tr("‘예제 불러오기’를 누릅니다.")}</li><li>{tr("‘서명과 취소 상태 확인’을 누릅니다.")}</li><li>{tr("내용을 1원 바꾼 뒤 다시 확인합니다.")}</li></ol><p>{tr("서명한 뒤 문서가 바뀌면 기존 UID·서명으로는 통과하지 않습니다.")}</p><Badge>{tr("서명 검증은 ZK 증명이 아닙니다")}</Badge></>}</div></div></TabsContent>
- <TabsContent value="request"><div className="proof-statement"><span className="section-kicker">{tr("앱이 지금 증명하는 내용")}</span><h3>{tr("“테스트 발급 대상 주소를 내가 소유한다.”")}</h3><p>{tr("허용된 테스트 서명자의")}<code>attestAccount(address)</code>{tr("트랜잭션과 그 대상 지갑의 소유를 증명합니다. 대상 주소와 원본 트랜잭션은 proof 검증 화면에 공개하지 않습니다.")}</p><div className="statement-tags"><Badge variant="purple">MockGiwaAttester</Badge><Badge>{tr("실제 고객확인 아님")}</Badge><Badge>{tr("은행 잔액 증명 아님")}</Badge></div></div><div className="studio-grid"><div className="studio-panel"><div className="panel-step"><span>02</span><Badge variant="purple">{tr("앱·테스트 자격 필요")}</Badge></div><h3>{tr("앱에서 ZK proof 받아보기")}</h3><ol className="simple-steps"><li>{tr("ZKProofport 앱의 Developer Mode를 켭니다.")}</li><li>{tr("MockGiwaAttester 테스트 발급 이력이 있는 지갑을 앱에 연결합니다.")}</li><li>{tr("여기서 요청을 만들고 QR 또는 앱 링크를 엽니다.")}</li><li>{tr("앱에서 지갑 서명·증명 생성을 마치고 결과를 받습니다.")}</li></ol><label className="input-label" htmlFor="scope">{tr("증명을 사용할 곳 (scope)")}</label><input className="form-input" id="scope" value={scope} onChange={e=>setScope(e.target.value)}/><p className="fine-print">{tr("예: dojang-scan:local-demo · 요청마다 고유 값을 덧붙입니다.")}</p><button className="primary" onClick={()=>setConsent(true)} disabled={requestBusy||!scope.trim()}>{requestBusy?<RefreshCw size={16} className="spinning"/>:<Smartphone size={16}/>}{tr("테스트 증명 요청 만들기")}</button>{requestError&&<div className="notice danger" role="alert">{tr(requestError)}</div>}<details className="explain-detail"><summary>{tr("아직 테스트 발급 이력이 없다면?")}</summary><p>{tr("현재 회로는 고정된 MockGiwaAttester와 허용된 테스트 서명자만 인정합니다. 자신이 만든 EAS 스키마나 다른 지갑으로 임의 발급한 기록은 이 회로에 사용할 수 없습니다. 기존 테스트 발행자가 서명한 발급 트랜잭션이 필요하며, 일반 사용자가 스키마만 만들었다고 발급 조건을 대신 충족할 수는 없습니다.")}</p><a href={`${NETWORK.explorer}/address/${GIWA_PROOF.mock}`} target="_blank" rel="noreferrer">{tr("테스트 발행 계약 보기 ↗")}</a></details></div><div className="studio-panel qr-panel">{request?<><Badge variant="blue">{tr(requestStatus)}</Badge>{qr&&<img src={qr} width={220} height={220} alt={tr("ZKProofport 테스트 증명 요청 QR")}/>}<a className="primary" href={request.deepLink}>{tr("ZKProofport 앱 열기")}</a><code>{tr(short(request.requestId,10))}</code><div className="example-actions"><button className="text-button" onClick={()=>void navigator.clipboard.writeText(request.deepLink).then(()=>toast.success(tr("요청 링크를 복사했습니다.")))}><Copy size={14}/>{tr("링크 복사")}</button><button className="text-button" onClick={stop}>{tr("대기 중지")}</button></div>{result&&<button className="secondary-button" onClick={()=>setTab('verify')}>{tr("받은 proof 검증")}<ArrowRight size={15}/></button>}</>:<><div className="mobile-illustration"><Fingerprint size={37}/><span>ZKProofport</span></div><h3>{tr("앱에서 proof 생성")}</h3><p>{tr("비공개: 원본 주소·발급 트랜잭션")}<br/>{tr("공개: scope·signer root·signal·nullifier")}</p><Badge variant="purple">{tr("GIWA SDK 지원 상태: planned")}</Badge><p className="fine-print">{tr("앱 버전·relay가 이 테스트 프로필을 지원해야 합니다. 현재 실기기 성공은 확인하지 않았습니다.")}</p></>}</div></div><details className="explain-detail"><summary>{tr("proof가 통과하면 실제 도장도 유효한가요?")}</summary><p>{tr("현재 회로는 서명된 트랜잭션의 내용과 지갑 소유를 검증합니다. 그 트랜잭션의 체인 포함 여부, EAS 도장의 현재 만료·취소·최신성은 증명하지 않습니다. 주소를 proof에 직접 넣지 않지만 공개 signal·nullifier의 연계 가능성과 relay 메타데이터는 별도로 고려해야 합니다. 실제 자격을 판정하는 서비스로 쓰려면 별도 프로필이 필요합니다.")}</p></details></TabsContent>
- <TabsContent value="verify"><div className="studio-grid"><div className="studio-panel"><div className="panel-step"><span>03</span><Badge variant="blue">{tr("읽기 전용")}</Badge></div><h3>{tr("앱 proof 검증")}</h3><p>{tr("앱 ZK 테스트 결과가 여기에 채워집니다. 이미 받은 JSON이 있다면 직접 가져올 수도 있습니다.")}</p><label className="input-label" htmlFor="verify-scope">{tr("요청에 사용한 scope")}</label><input id="verify-scope" className="form-input" value={verifyScope} onChange={e=>{setVerifyScope(e.target.value);setVerification(null);}}/><JsonInput id="proof-json" label={tr("앱의 ProofResponse JSON")} value={proofText} setValue={v=>{setProofText(v);setVerification(null);}}/><button className="primary" disabled={verifyBusy||!proofText||!verifyScope} onClick={verify}>{verifyBusy?<RefreshCw size={16} className="spinning"/>:<ShieldCheck size={16}/>}{tr("GIWA verifier로 확인")}</button><p className="fine-print">{tr("브라우저에서 eth_call로 조회합니다. 트랜잭션 전송·가스·지갑 서명은 없습니다.")}</p>{verifyError&&<div className="notice danger" role="alert">{tr(verifyError)}</div>}</div><div className="studio-panel result-panel">{verification?<><div className={'result-icon '+(verification.valid?'good':'bad')}>{verification.valid?<CheckCircle2 size={30}/>:<AlertCircle size={30}/>}</div><h3>{tr(verification.valid?tr("테스트 proof 검증 통과"):tr("verifier가 proof를 인정하지 않았어요."))}</h3><p>{tr("조회 블록")}{tr(verification.block.toLocaleString())}</p><dl className="result-facts"><div><dt>Scope</dt><dd><code>{tr(short(verification.scope,10))}</code></dd></div><div><dt>Nullifier</dt><dd><code>{tr(short(verification.nullifier,10))}</code></dd></div></dl><p className="result-meaning">{tr(verification.warning)}</p><button className="secondary-button" onClick={()=>downloadJSON(verification,'giwa-proof-check.json')}><Download size={14}/>{tr("검증 결과 저장")}</button></>:<><ShieldCheck size={38}/><h3>{tr("준비된 proof가 없다면")}</h3><p>{tr("‘앱 ZK 테스트’에서 실제 결과를 받으세요. 이 검증에는 앱에서 생성한 실제 proof가 필요합니다.")}</p><button className="secondary-button" onClick={()=>setTab('request')}>{tr("앱 테스트로 이동")}<ArrowRight size={15}/></button><details className="explain-detail"><summary>{tr("검사하는 항목")}</summary><p>{tr("체인 91342, CIP-4 회로, 고정 verifier, 허용된 signer root, 공개 입력 128개와 요청 scope를 검사한 뒤 verifier 응답을 읽습니다.")}</p><code className="break-code">{tr(GIWA_PROOF.verifier)}</code></details></>}</div></div></TabsContent>
- <TabsContent value="recipe"><div className="studio-grid"><div className="studio-panel"><div className="panel-step"><span>04</span><Badge>{tr("전송하지 않는 예제")}</Badge></div><h3>{tr("내 EAS 도장을 만들어볼 수 있나요?")}</h3><p>{tr("네. 기존 EAS를 쓰고, ‘교육을 수료했다’ 같은 테스트 스키마를 등록하면 됩니다.")}</p><ol className="simple-steps"><li>{tr("SchemaRegistry에")}<code>bool completedCourse</code>{tr("등록")}</li><li>{tr("resolver는 0x0, 취소 가능 설정 사용")}</li><li>{tr("EAS에 자신의 테스트 지갑을 수신자로 발급")}</li><li>{tr("UID 검색 → 내용 확인 → 취소 후 다시 확인")}</li></ol><label className="input-label" htmlFor="test-recipient">{tr("예제의 수신 지갑")}</label><input id="test-recipient" className="form-input" value={recipient} onChange={e=>setRecipient(e.target.value)}/><button className="primary" onClick={makeRecipe}><FlaskConical size={16}/>{tr("발급 호출 예제 보기")}</button>{recipeError&&<div className="notice danger" role="alert">{tr(recipeError)}</div>}<p className="fine-print">{tr("실제 트랜잭션은 전송하지 않습니다. 사용할 지갑 주소로 바꿔보세요.")}</p></div><div className="studio-panel result-panel">{recipe&&decoded?<><Badge variant="purple">{tr("호출 예제 · 미발급")}</Badge><h3>{tr("“이 지갑은 교육을 수료했다.”")}</h3><dl className="result-facts"><div><dt>{tr("형식")}</dt><dd><code>{tr(recipe.definition)}</code></dd></div><div><dt>{tr("내용")}</dt><dd>completedCourse = true</dd></div><div><dt>{tr("수신 지갑")}</dt><dd><code>{tr(short(recipient,10))}</code></dd></div><div><dt>{tr("발급 엔진")}</dt><dd>{tr("기존 GIWA EAS")}</dd></div></dl><p className="result-meaning">{tr("자신의 주장으로 발급하는 일반 EAS 기록입니다. 공식 Dojang 발행자 등록이나 현재 앱의 ZK 증명 대상이 되지는 않습니다.")}</p><details className="explain-detail"><summary>{tr("등록·발급 calldata 보기")}</summary><p>1. SchemaRegistry.register</p><code className="break-code">{tr(recipe.register.to)}</code><pre className="code-box">{tr(recipe.register.data)}</pre><p>2. EAS.attest</p><code className="break-code">{tr(recipe.attest.to)}</code><pre className="code-box">{tr(recipe.attest.data)}</pre></details><button className="secondary-button" onClick={()=>downloadJSON(recipe,'eas-test-recipe.json')}><Download size={14}/>{tr("호출 예제 저장")}</button></>:<><FlaskConical size={37}/><h3>{tr("기존 EAS를 재사용하세요.")}</h3><p>{tr("왼쪽 예제는 실제 ABI로 호출 데이터를 만듭니다. 지갑 서명·가스 없이 구조부터 살펴볼 수 있습니다.")}</p><Badge>{tr("공식 Dojang 스키마는 발급 권한 필요")}</Badge></>}</div></div></TabsContent>
- </Tabs><button className="secondary-button" onClick={onWorkspace}>{tr("지갑으로 실제 발급하기")}</button><Dialog open={consent} onOpenChange={setConsent}><DialogContent><DialogHeader><DialogTitle>{tr("테스트 증명 요청 만들기")}</DialogTitle><DialogDescription>{tr("선택한 scope와 요청 정보가 SDK의 Proofport relay로 전달됩니다. 현재 SDK의 GIWA 요청에는 브라우저 지갑 서명이 필요하지 않습니다. 실제 증명용 지갑 서명은 모바일 앱에서 진행합니다.")}</DialogDescription></DialogHeader><p>{tr("MockGiwaAttester 테스트 이력이 필요합니다. 실제 은행 잔액·고객확인·신분 도장을 증명하는 요청이 아닙니다.")}</p><button className="primary" onClick={start}>{tr("테스트 요청 생성")}</button></DialogContent></Dialog></section>;
+import {
+  ArrowUpRight,
+  Fingerprint,
+  Wallet,
+  MonitorCheck,
+  Download,
+  ShieldCheck,
+  LockKeyhole,
+  ArrowRight,
+  Building2,
+} from "lucide-react";
+import { useState } from "react";
+import { tr } from "@/lib/i18n";
+
+const examples = {
+  kyc: {
+    label: "KYC 인증",
+    attestation: "KYC 완료 도장",
+    privateData: "이름 · 생년월일 · 인증한 계정 정보",
+    result: "KYC를 완료한 사용자입니다.",
+  },
+  balance: {
+    label: "잔액 조건 증명",
+    attestation: "잔액 인증 도장",
+    privateData: "계정 정보 · 정확한 잔액",
+    result: "잔액이 100만 원 이상입니다.",
+  },
+} as const;
+
+export default function ProofStudio() {
+  const [example, setExample] = useState<keyof typeof examples>("kyc");
+  const selected = examples[example];
+
+  return (
+    <section className="proof-coming">
+      <div className="proof-coming-heading">
+        <div className="proof-coming-notice">
+          <Fingerprint size={30} aria-hidden="true" />
+          <strong>Coming soon</strong>
+        </div>
+        <h2>
+          {tr("계정 정보는 공개하지 않고,")}
+          <br />
+          {tr("필요한 사실만 증명하세요.")}
+        </h2>
+        <p>
+          {tr(
+            "도장을 모바일에서 ZK 증명으로 바꿔, Dapp에 KYC 완료 여부나 잔액 조건 충족만 전달합니다.",
+          )}
+        </p>
+      </div>
+      <section
+        className="proof-diagram"
+        aria-label={tr("도장에서 Dapp까지의 증명 과정")}
+      >
+        <div className="proof-diagram-toolbar">
+          <div
+            className="proof-example-switch"
+            role="group"
+            aria-label={tr("증명 예시 선택")}
+          >
+            {(Object.keys(examples) as (keyof typeof examples)[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={example === key}
+                onClick={() => setExample(key)}
+              >
+                {tr(examples[key].label)}
+              </button>
+            ))}
+          </div>
+          <span>{tr("도장 연동 예정 예시")}</span>
+        </div>
+        <div className="proof-pipeline" aria-live="polite">
+          <article className="proof-stage proof-source">
+            <header>
+              <span>01</span>
+              <h3>{tr("도장")}</h3>
+            </header>
+            <div className="proof-attestation-mark">
+              <ShieldCheck size={32} aria-hidden="true" />
+            </div>
+            <strong>{tr(selected.attestation)}</strong>
+            <p>{tr("발행자가 확인한 사실을 증명의 근거로 사용합니다.")}</p>
+          </article>
+          <div className="proof-connector" aria-hidden="true">
+            <ArrowRight size={26} />
+            <span>{tr("도장 선택")}</span>
+          </div>
+          <article className="proof-stage proof-mobile">
+            <header>
+              <span>02</span>
+              <h3>{tr("ZKProofport 앱")}</h3>
+            </header>
+            <div className="proof-sealed">
+              <LockKeyhole size={22} aria-hidden="true" />
+              <div>
+                <strong>{tr("Dapp에 공개하지 않음")}</strong>
+                <p>{tr(selected.privateData)}</p>
+              </div>
+              <span className="proof-masked" aria-hidden="true">
+                •••• •••• ••••
+              </span>
+            </div>
+            <div className="proof-output">
+              <Fingerprint size={20} aria-hidden="true" />
+              <span>{tr("모바일에서 ZK 증명 생성")}</span>
+            </div>
+          </article>
+          <div
+            className="proof-connector proof-connector-output"
+            aria-hidden="true"
+          >
+            <ArrowRight size={26} />
+            <span>{tr("ZK 증명")}</span>
+          </div>
+          <article className="proof-stage proof-dapp">
+            <header>
+              <span>03</span>
+              <h3>Dapp</h3>
+            </header>
+            <MonitorCheck size={30} aria-hidden="true" />
+            <span className="proof-result-label">
+              {tr("증명으로 확인할 사실")}
+            </span>
+            <strong>{tr(selected.result)}</strong>
+            <p>{tr("개인정보 원본 대신 증명을 검증합니다.")}</p>
+          </article>
+        </div>
+        <p className="proof-public-note">
+          {tr("이미 온체인에 공개된 정보는 숨겨지지 않습니다.")}
+        </p>
+      </section>
+      <div className="proof-benefits">
+        <div>
+          <LockKeyhole size={20} aria-hidden="true" />
+          <div>
+            <h3>{tr("사용자는 개인정보 노출을 줄이고")}</h3>
+            <p>
+              {tr(
+                "서비스를 이용할 때마다 계정 정보와 상세 잔액을 공유하지 않아도 됩니다.",
+              )}
+            </p>
+          </div>
+        </div>
+        <div>
+          <Building2 size={20} aria-hidden="true" />
+          <div>
+            <h3>{tr("서비스는 개인정보 보관 부담을 줄입니다")}</h3>
+            <p>
+              {tr(
+                "원본 개인정보 대신 증명을 검증해, 불필요한 수집·보관과 보호 부담을 줄일 수 있습니다.",
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="proof-availability">
+        <div>
+          <strong>{tr("도장 연동 준비 중")}</strong>
+          <p>
+            {tr(
+              "본인 지갑의 유효한 Dojang 도장이 필요합니다. 모든 도장 종류를 연결하는 것을 목표로 준비 중이며, 현재는 증명을 요청할 수 없습니다.",
+            )}
+          </p>
+        </div>
+        <button className="primary" disabled>
+          <Wallet size={16} />
+          {tr("내 도장 불러오기 · 준비 중")}
+        </button>
+      </div>
+      <div className="app-downloads">
+        <div>
+          <img
+            className="proofport-logo"
+            src={`${import.meta.env.BASE_URL}brand/zkproofport.png`}
+            alt="ZKProofport"
+            width="48"
+            height="48"
+          />
+          <div>
+            <h3>ZKProofport</h3>
+            <a
+              className="gasok-participation"
+              href="https://giwa.io/gasok"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {tr("GIWA GASOK 프로그램 참여 팀")}
+              <ArrowUpRight size={13} />
+            </a>
+          </div>
+        </div>
+        <div className="download-links">
+          <a
+            className="secondary-button"
+            href="https://apps.apple.com/kr/app/zkproofport/id6803903114"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Download size={16} />
+            iOS · App Store
+            <ArrowUpRight size={15} />
+          </a>
+          <a
+            className="secondary-button"
+            href="https://play.google.com/store/apps/details?id=com.masselabs.zkproofport"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Download size={16} />
+            Android · Google Play
+            <ArrowUpRight size={15} />
+          </a>
+        </div>
+      </div>
+    </section>
+  );
 }
-function JsonInput({id,label,value,setValue,collapsible=false}:{id:string;label:string;value:string;setValue:(v:string)=>void;collapsible?:boolean}){const body=<><textarea className="json-input" id={id} aria-label={label} value={value} onChange={e=>setValue(e.target.value)} placeholder="{ … }" spellCheck={false}/><label className="file-picker"><FileJson size={14}/>{tr("JSON 파일 가져오기")}<input type="file" accept=".json,application/json" onChange={e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>250000){toast.error(tr("250KB 이하 JSON 파일을 사용하세요."));return;}void f.text().then(setValue);e.target.value='';}}/></label></>;return <div className="json-field">{collapsible?<details className="explain-detail"><summary>{tr(label)}{tr("보기·편집")}</summary>{tr(body)}</details>:<><label className="input-label" htmlFor={id}>{tr(label)}</label>{tr(body)}</>}</div>;}

@@ -2,11 +2,7 @@ import { useMemo, useState } from "react";
 import { FunctionFragment, ZeroHash } from "ethers";
 import { CONTRACTS } from "@/lib/giwa";
 import { tr } from "@/lib/i18n";
-import {
-  BOOK_ABI,
-  EAS_OPERATIONS_ABI,
-  type PreparedCall,
-} from "@/lib/workspace";
+import { BOOK_ABI, type PreparedCall } from "@/lib/workspace";
 import {
   consoleInterface,
   fetchVerifiedABI,
@@ -16,11 +12,7 @@ import {
 import { explainError } from "@/lib/transactions";
 import { TransactionReview } from "./transaction-review";
 import { Field } from "./workspace";
-const defaultABI = JSON.stringify(
-  [...BOOK_ABI, ...EAS_OPERATIONS_ABI],
-  null,
-  2,
-);
+const defaultABI = JSON.stringify(BOOK_ABI, null, 2);
 export default function ContractConsole({
   address,
   chain,
@@ -78,7 +70,7 @@ export default function ContractConsole({
         <h3>{tr("Contract Console")}</h3>
         <p>
           {tr(
-            "검증된 ABI를 불러오거나 직접 넣어 계약 함수를 조회·실행합니다. 발행자 계약과 별도 resolver도 사용할 수 있습니다.",
+            "실제 GIWA Sepolia 컨트랙트를 호출합니다. 발행자·관리자 화면에 없는 함수는 여기서 실행할 수 있습니다.",
           )}
         </p>
         <label className="input-label">
@@ -91,7 +83,12 @@ export default function ContractConsole({
               )?.[0] || ""
             }
             onChange={(e) => {
-              setTarget(CONTRACTS[e.target.value as keyof typeof CONTRACTS]);
+              setTarget(
+                CONTRACTS[e.target.value as keyof typeof CONTRACTS] || "",
+              );
+              setABI("[]");
+              setSelected("");
+              setArgs([]);
               reset();
             }}
           >
@@ -106,6 +103,9 @@ export default function ContractConsole({
           value={target}
           setValue={(v) => {
             setTarget(v);
+            setABI("[]");
+            setSelected("");
+            setArgs([]);
             reset();
           }}
         />

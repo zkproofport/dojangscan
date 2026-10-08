@@ -3,6 +3,8 @@ import { getLanguage } from './preferences';
 const en:Record<string,string>=catalog;
 const ko:Record<string,string>=Object.entries(en).reduce<Record<string,string>>((map,[key,value])=>{map[value]??=key;return map;},{});
 Object.assign(ko,{
+ 'Choose a registered Dojang schema.':'등록된 Dojang 스키마를 선택하세요.',
+ 'This schema is no longer registered in Dojang.':'현재 Dojang에 등록된 스키마가 아닙니다.',
  'Enter a nonzero bytes32 ID.':'0이 아닌 bytes32 ID를 입력하세요.',
  'Enter a nonzero address.':'0이 아닌 주소를 입력하세요.',
  'Enter a uint64 timestamp.':'uint64 범위의 Unix 시각을 입력하세요.',
@@ -11,12 +13,6 @@ Object.assign(ko,{
  'Unsupported operation.':'지원하지 않는 작업입니다.',
  'Enter a bytes32 role.':'bytes32 Role ID를 입력하세요.',
  'This address is a contract. Prepare calldata for its own execution flow; a wallet cannot send from this address.':'계약 주소입니다. 계약의 실행 경로에서 사용할 호출을 준비하세요. 지갑이 이 주소로 직접 전송할 수는 없습니다.',
- 'Expiration must be in the future.':'만료 시각은 현재보다 이후여야 합니다.',
- 'Choose the issuer you intend to trust.':'신뢰할 발행자 주소를 지정하세요.',
- 'Enter a positive threshold.':'0보다 큰 기준 금액을 입력하세요.',
- 'Enter a scope.':'scope를 입력하세요.',
- 'This example requires the uint256 balanceKRW schema.':'이 예제에는 uint256 balanceKRW 스키마가 필요합니다.',
- 'The source is expired or has a future issue time.':'원본 문서가 만료되었거나 발행 시각이 미래입니다.',
 });
 const escape=(v:string)=>v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const patterns=Object.entries(en).filter(([key])=>/\{\d+\}/.test(key)).map(([key,value])=>({key,value,regex:new RegExp('^'+key.split(/(\{\d+\})/).map(part=>/^\{\d+\}$/.test(part)?'(.*?)':escape(part)).join('')+'$')}));

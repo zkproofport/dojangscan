@@ -1,10 +1,10 @@
-import { GIWA_PROOF, type Governance, type Issuer, type IssuerClass } from './giwa';
+import { TEST_ATTESTER, type Governance, type Issuer, type IssuerClass } from './giwa';
 
 export function classifyIssuer(address: string, issuers: Issuer[], governance: Governance, complete: boolean) {
  const same = (value: string) => value.toLowerCase() === address.toLowerCase();
  const registered = issuers.some(i => same(i.address));
  const managementRole = governance.roles.some(r => r.active === true && r.role === 'admin' && same(r.address));
- const issuerClass: IssuerClass = same(GIWA_PROOF.mock) ? 'test' : registered ? 'registered' : managementRole ? 'manager' : complete ? 'external' : 'unknown';
+ const issuerClass: IssuerClass = same(TEST_ATTESTER) ? 'test' : registered ? 'registered' : managementRole ? 'manager' : complete ? 'external' : 'unknown';
  return { issuerClass, registeredIssuer: registered, managementRole };
 }
 

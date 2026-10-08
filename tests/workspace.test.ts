@@ -3,15 +3,10 @@ import assert from "node:assert/strict";
 import {
   AbiCoder,
   Interface,
-  Signature,
-  Wallet,
   ZeroAddress,
   ZeroHash,
-  solidityPackedKeccak256,
-  toUtf8Bytes,
 } from "ethers";
-import { encodeFields, prepareCall } from "../lib/workspace";
-import { buildBalanceInputs, statementInputs } from "../lib/balance-proof";
+import { encodeFields, prepareCall, requireDojangSchema } from "../lib/workspace";
 import { CONTRACTS } from "../lib/giwa";
 import { setLanguage, getLanguage, setTheme } from "../lib/preferences";
 import { tr } from "../lib/i18n";
@@ -68,116 +63,6 @@ test("role grants and registration target the intended Book contract without sen
     /nonzero/,
   );
 });
-async function credential() {
-  const signer = new Wallet("0x" + "33".repeat(32));
-  const schema = solidityPackedKeccak256(
-    ["string", "address", "bool"],
-    ["uint256 balanceKRW", ZeroAddress, true],
-  );
-  const now = Math.floor(Date.now() / 1000);
-  const message = {
-    version: 2,
-    schema,
-    recipient: signer.address,
-    time: now,
-    expirationTime: now + 3600,
-    revocable: true,
-    refUID: ZeroHash,
-    data: encodeFields("uint256 balanceKRW", '["1000000"]'),
-    salt: "0x" + "44".repeat(32),
-  };
-  const types = {
-    Attest: [
-      { name: "version", type: "uint16" },
-      { name: "schema", type: "bytes32" },
-      { name: "recipient", type: "address" },
-      { name: "time", type: "uint64" },
-      { name: "expirationTime", type: "uint64" },
-      { name: "revocable", type: "bool" },
-      { name: "refUID", type: "bytes32" },
-      { name: "data", type: "bytes" },
-      { name: "salt", type: "bytes32" },
-    ],
-  };
-  const domain = {
-    name: "EAS Attestation",
-    version: "1.4.1-beta.3",
-    chainId: 91342,
-    verifyingContract: CONTRACTS.EAS,
-  };
-  const uid = solidityPackedKeccak256(
-    [
-      "uint16",
-      "bytes",
-      "address",
-      "address",
-      "uint64",
-      "uint64",
-      "bool",
-      "bytes32",
-      "bytes",
-      "bytes32",
-      "uint32",
-    ],
-    [
-      2,
-      toUtf8Bytes(schema),
-      signer.address,
-      ZeroAddress,
-      now,
-      now + 3600,
-      true,
-      ZeroHash,
-      message.data,
-      message.salt,
-      0,
-    ],
-  );
-  return {
-    version: 2,
-    uid,
-    domain,
-    primaryType: "Attest",
-    types,
-    message,
-    signature: Signature.from(
-      await signer.signTypedData(domain, types, message),
-    ).toJSON(),
-    attester: signer.address,
-  };
-}
-test("balance circuit inputs bind the canonical signed source and exclude private values from the public statement", async () => {
-  const source = await credential();
-  const result = buildBalanceInputs(source, source.attester, "500000", "demo");
-  assert.equal(result.inputs.balance, "1000000");
-  assert.equal(statementInputs(result.statement).length, 159);
-  const publicStatement = JSON.stringify(result.statement);
-  for (const secret of [
-    source.uid,
-    source.message.data,
-    source.signature.r,
-    "1000000",
-  ])
-    assert(!publicStatement.includes(secret));
-  assert.throws(
-    () => buildBalanceInputs(source, source.attester, "1000001", "demo"),
-    /condition/,
-  );
-  assert.throws(
-    () => buildBalanceInputs(source, recipient, "500000", "demo"),
-    /발행자/,
-  );
-  assert.throws(
-    () =>
-      buildBalanceInputs(
-        { ...source, message: { ...source.message, data: "0x00" } },
-        source.attester,
-        "500000",
-        "demo",
-      ),
-    /UID/,
-  );
-});
 test("language switching translates data labels, dynamic coverage and errors without changing technical values", () => {
   setLanguage("en");
   assert.equal(getLanguage(), "en");
@@ -194,4 +79,27 @@ test("language switching translates data labels, dynamic coverage and errors wit
   setLanguage("ko");
   assert.equal(tr("Issuer"), "발행자");
   assert.equal(tr("Enter a nonzero address."), "0이 아닌 주소를 입력하세요.");
+});
+
+
+test("guided issuance rejects arbitrary and removed schemas and checks the official Book", async () => {
+  await assert.rejects(() => requireDojangSchema(input.schema), /registered Dojang/);
+  const original = globalThis.fetch;
+  const abi = new Interface(["function getSchemaUid(bytes32) view returns(bytes32)"]);
+  let returned = input.schema;
+  try {
+    globalThis.fetch = (async (_url: unknown, options?: RequestInit) => {
+      const request = JSON.parse(String(options?.body));
+      assert.equal(request.method, "eth_call");
+      assert.equal(request.params[0].to, CONTRACTS.SchemaBook);
+      assert.equal(request.params[1], "latest");
+      assert.equal(abi.decodeFunctionData("getSchemaUid", request.params[0].data)[0], input.id);
+      return new Response(JSON.stringify({ result: abi.encodeFunctionResult("getSchemaUid", [returned]) }));
+    }) as typeof fetch;
+    await requireDojangSchema(input.schema, input.id);
+    returned = ZeroHash;
+    await assert.rejects(() => requireDojangSchema(input.schema, input.id), /no longer registered/);
+    returned = "0x" + "55".repeat(32);
+    await assert.rejects(() => requireDojangSchema(input.schema, input.id), /no longer registered/);
+  } finally { globalThis.fetch = original; }
 });

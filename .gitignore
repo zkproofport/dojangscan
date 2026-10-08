@@ -3,6 +3,3 @@ dist/
 .env*
 .DS_Store
 *.tsbuildinfo
-contracts/out/
-contracts/cache/
-zk/**/target/

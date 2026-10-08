@@ -1,7 +1,7 @@
 import { AbiCoder, Interface, id, isAddress, getAddress, ZeroAddress } from 'ethers';
-import { CONTRACTS, GIWA_PROOF, NETWORK, SCHEMAS, UPBIT_ID, ZERO, type Attestation, type SchemaRecord, type Issuer, type GovernanceRole } from './giwa';
+import { CONTRACTS, TEST_ATTESTER, NETWORK, SCHEMAS, UPBIT_ID, ZERO, type Attestation, type SchemaRecord, type Issuer, type GovernanceRole } from './giwa';
 import { classifyIssuer } from './trust';
-const eas = new Interface(['function getAttestation(bytes32 uid) view returns ((bytes32 uid,bytes32 schema,uint64 time,uint64 expirationTime,uint64 revocationTime,bytes32 refUID,address recipient,address attester,bool revocable,bytes data))','function getRevokeOffchain(address revoker,bytes32 uid) view returns (uint64)','function getTimestamp(bytes32 uid) view returns (uint64)','function version() view returns (string)']);
+const eas = new Interface(['function getAttestation(bytes32 uid) view returns ((bytes32 uid,bytes32 schema,uint64 time,uint64 expirationTime,uint64 revocationTime,bytes32 refUID,address recipient,address attester,bool revocable,bytes data))']);
 const registry = new Interface(['function getSchema(bytes32 uid) view returns ((bytes32 uid,address resolver,bool revocable,string schema))']);
 const book = new Interface(['function getSchemaUid(bytes32 id) view returns (bytes32)']);
 const issuersABI = new Interface(['function getAttester(bytes32 id) view returns (address)']);
@@ -98,7 +98,7 @@ export async function catalog(block?: number) {
 // The EAS tuple is decoded by ethers from the fixed contract ABI.
 function normalize(raw: { uid: string; schema: string; recipient: string; attester: string; time: bigint; expirationTime: bigint; revocationTime: bigint; revocable: boolean; refUID: string; data: string }, cat: Awaited<ReturnType<typeof catalog>>): Attestation {
  const schema = cat.schemas.find(s => s.uid === String(raw.schema).toLowerCase()); const issuer = cat.issuers.find(i => i.address.toLowerCase() === raw.attester.toLowerCase()); const expirationTime = Number(raw.expirationTime); const revocationTime = Number(raw.revocationTime);
- return { uid: raw.uid, schema: raw.schema, recipient: raw.recipient, attester: raw.attester, time: Number(raw.time), expirationTime, revocationTime, revocable: raw.revocable, refUID: raw.refUID, data: raw.data, status: revocationTime > 0 ? 'revoked' : expirationTime > 0 && expirationTime <= Date.now() / 1000 ? 'expired' : 'active', fields: schema ? formatFields(schema.definition, raw.data) : [], schemaName: schema?.name ?? 'EAS Schema', schemaLabel: schema?.label ?? '사용자 도장', schemaCurrent:!!schema?.current, dojang: !!schema, ...classifyIssuer(raw.attester,cat.issuers,cat.governance,cat.issuerDiscoveryComplete), issuerName: issuer?.name ?? (raw.attester.toLowerCase()===GIWA_PROOF.mock.toLowerCase()?'ZKProofport 테스트':'개별 발행자') };
+ return { uid: raw.uid, schema: raw.schema, recipient: raw.recipient, attester: raw.attester, time: Number(raw.time), expirationTime, revocationTime, revocable: raw.revocable, refUID: raw.refUID, data: raw.data, status: revocationTime > 0 ? 'revoked' : expirationTime > 0 && expirationTime <= Date.now() / 1000 ? 'expired' : 'active', fields: schema ? formatFields(schema.definition, raw.data) : [], schemaName: schema?.name ?? 'EAS Schema', schemaLabel: schema?.label ?? '사용자 도장', schemaCurrent:!!schema?.current, dojang: !!schema, ...classifyIssuer(raw.attester,cat.issuers,cat.governance,cat.issuerDiscoveryComplete), issuerName: issuer?.name ?? (raw.attester.toLowerCase()===TEST_ATTESTER.toLowerCase()?'ZKProofport 테스트':'개별 발행자') };
 }
 export async function recent(cursor: Record<string, number> | null = null, filter = '') {
  // Read the head after the explorer page so a just-issued record is not queried before its block.
@@ -129,10 +129,6 @@ export async function transaction(hash: string) {
  if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new Error('유효한 트랜잭션 해시가 필요합니다.'); const receipt = await rpc('eth_getTransactionReceipt', [hash]); if (!receipt) return null; const uids = receipt.logs.filter((l: { address: string; topics: string[] }) => l.address.toLowerCase() === CONTRACTS.EAS.toLowerCase() && l.topics[0] === id('Attested(address,address,bytes32,bytes32)')).map((l: { data: string }) => l.data); return { hash, block: parseInt(receipt.blockNumber, 16), success: receipt.status === '0x1', attestations: await Promise.all(uids.slice(0, 50).map(attestation)), truncated: uids.length > 50 };
 }
 export async function contracts() { const height = await headBlock(); const results = await Promise.allSettled(Object.entries(CONTRACTS).map(async ([name, address]) => ({ name, address, deployed: (await rpc('eth_getCode', [address, '0x' + height.toString(16)])) !== '0x' }))); return { block: height, checkedAt: new Date().toISOString(), contracts: results.map((r, i) => r.status === 'fulfilled' ? r.value : { name: Object.keys(CONTRACTS)[i], address: Object.values(CONTRACTS)[i], deployed: null }) }; }
-export async function offchainStatus(issuer: string, uid: string) {
- if (!isAddress(issuer) || !/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('발행자 주소와 UID를 확인해 주세요.'); const cat = await catalog(await headBlock()); const values = await batchCalls([{ target: CONTRACTS.EAS, abi: eas, method: 'getRevokeOffchain', args: [issuer, uid] }, { target: CONTRACTS.EAS, abi: eas, method: 'getTimestamp', args: [uid] }, { target: CONTRACTS.EAS, abi: eas, method: 'version', args: [] }], cat.block); if (values.some(v => !v)) throw new Error('오프체인 취소 상태를 조회하지 못했습니다.'); return { block: cat.block, checkedAt: cat.checkedAt, revocationTime: Number(values[0]![0]), timestamp: Number(values[1]![0]), easVersion: String(values[2]![0]), ...classifyIssuer(issuer,cat.issuers,cat.governance,cat.issuerDiscoveryComplete) };
-}
-
 export async function queryScan(kind: string, params: Record<string,string> = {}): Promise<any> {
  let result: unknown;
  switch(kind){
@@ -144,7 +140,6 @@ export async function queryScan(kind: string, params: Record<string,string> = {}
   case 'wallet':result=await wallet(params.address??'');break;
   case 'transaction':result=await transaction(params.hash??'');break;
   case 'contracts':result=await cached('contracts',60000,contracts);break;
-  case 'offchain':result=await offchainStatus(params.issuer??'',params.uid??'');break;
   case 'search':{const value=params.value??'';const schema=await getSchema(value);if(schema)result={type:'schema',record:schema};else{const a=await attestation(value);if(a)result={type:'attestation',record:a};else{const tx=await transaction(value);result=tx?{type:'transaction',record:tx}:null;}}break;}
   default:throw new Error('지원하지 않는 조회입니다.');
  }

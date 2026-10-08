@@ -7,7 +7,7 @@ export const CONTRACTS = {
  AddressDojangResolver: '0x692009FE206C3F897867F6BF7B5B45506B747F9e', BalanceRootDojangResolver: '0xD90a964aB65bc02397De1E7fcBd230803bC1bEd0',
  BalanceDojangResolver: '0x6FFa7ABc1E380Bb967C78D5E648EF804e1fE6dAd', VerifyCodeDojangResolver: '0x843fF433f7657901118fF3E2Eca915abb9BC12Df',
 } as const;
-export const GIWA_PROOF = { verifier: '0xeb9eb5452790cfe549ff83ceb3dbe1c432231492', mock: '0x6646d970499bbed728636823a5a7e551e811b414', status: 'planned' };
+export const TEST_ATTESTER = "0x6646d970499bbed728636823a5a7e551e811b414";
 export const SCHEMAS = [
  { key: 'address', name: 'Verified Address', label: '주소 인증', category: 'Identity', color: 'blue', id: '0x568eb581cdf80b03d3bdfa414f3203bfdcc4bba4e66355612bd0e879da812f06', uid: '0x072d75e18b2be4f89a13a7147240477481c4b526d5795802acba59046b426e08', definition: 'bool isVerified', description: '발행자가 확인한 지갑 주소. 실제 신원 정보 대신 인증 여부를 기록합니다.' },
  { key: 'root', name: 'Balance Root', label: '잔액 스냅샷', category: 'Finance', color: 'violet', id: '0xf09c1384d860519bb4ea5bb2a45ab64b00a8d900d47fb79203663be6da21e06c', uid: '0x369faa9c2cd261c45be3db5e230b585f5f1abecf8e12be575bb543e917e6db52', definition: 'uint256 coinType,uint64 snapshotAt,uint192 leafCount,uint256 totalAmount,bytes32 root', description: '특정 시점의 잔액들을 묶은 Merkle root. 개별 잔액 도장을 검증하는 기준입니다.' },

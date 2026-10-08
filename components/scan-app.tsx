@@ -1,55 +1,925 @@
-import { tr } from '@/lib/i18n';
-import { getLocale } from '@/lib/preferences';
-import { usePreferences, setLanguage, setTheme } from '@/lib/preferences';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Search, ExternalLink, Wallet, Fingerprint, Layers, ShieldCheck, RefreshCw, ScanLine, BookOpen, LayoutGrid, List, ArrowRight, KeyRound, Copy, ChevronDown, Download, CircleHelp, Sun, Moon, Languages } from 'lucide-react';
-import { Toaster, toast } from 'sonner';
-import { short, NETWORK, type Attestation, type ScanData, type SchemaRecord, type Issuer } from '@/lib/giwa';
-import { getData, CopyButton, Badge, ScanTable, ScanCards } from './scan-ui';
-import ScanDetail, { downloadJSON } from './scan-detail';
-import { Relationship } from './relationship';
-import { addGiwa, connectWallet, injected } from '@/lib/wallet';
-import { localURL } from '@/lib/navigation';
-const Workspace=lazy(()=>import('./workspace'));
-const ProofStudio=lazy(()=>import('./proof-studio'));const LearningGuide=lazy(()=>import('./learning-guide'));
-const nav=[{id:'explore',label:'도장 탐색',icon:ScanLine},{id:'schemas',label:'도장 종류',icon:Layers},{id:'issuers',label:'발행자·관리자',icon:ShieldCheck},{id:'wallet',label:'내 도장',icon:Wallet},{id:'workspace',label:'작업',icon:KeyRound},{id:'lab',label:'Proof Studio',icon:Fingerprint}];
-type WalletData=ScanData&{address:string;verifiedBy:Issuer[]};
-export default function ScanApp(){
- const [language,theme]=usePreferences();
- const [view,setView]=useState('explore');const [data,setData]=useState<ScanData|null>(null);const [loading,setLoading]=useState(true);const [error,setError]=useState('');const [search,setSearch]=useState('');const [searching,setSearching]=useState(false);const [filter,setFilter]=useState('dojang');const [issuerFilter,setIssuerFilter]=useState('all');const [schemaFilter,setSchemaFilter]=useState('all');const [display,setDisplay]=useState('cards');const [page,setPage]=useState(1);const [detail,setDetail]=useState<Attestation|null>(null);const [schemaDetail,setSchemaDetail]=useState<SchemaRecord|null>(null);const [walletInput,setWalletInput]=useState('');const [walletData,setWalletData]=useState<WalletData|null>(null);const [walletBusy,setWalletBusy]=useState(false);const [walletError,setWalletError]=useState('');const [connected,setConnected]=useState('');const [moreBusy,setMoreBusy]=useState(false);const [contractData,setContractData]=useState<{name:string;address:string;deployed:boolean|null}[]|null>(null);const [contractError,setContractError]=useState('');
- const inputRef=useRef<HTMLInputElement>(null);const sequence=useRef(0);const walletSequence=useRef(0);const searchRef=useRef<(v:string)=>Promise<unknown>>(async()=>{});
- function updateURL(params:Record<string,string>){window.history.replaceState(null,'',localURL(params));}
- function navigate(v:string){setView(v);setDetail(null);setSchemaDetail(null);updateURL({view:v});}
- async function refresh(){setLoading(true);setError('');try{setData(await getData('overview'));setPage(1);}catch(e){setError((e as Error).message);}finally{setLoading(false);}}
- async function openWallet(address:string){const seq=++walletSequence.current;setDetail(null);setSchemaDetail(null);setView('wallet');setWalletInput(address);updateURL({view:'wallet',address});setWalletBusy(true);setWalletError('');setWalletData(null);try{const d=await getData<WalletData>('wallet',{address});if(seq===walletSequence.current)setWalletData(d);return d;}catch(e){if(seq===walletSequence.current)setWalletError((e as Error).message);throw e;}finally{if(seq===walletSequence.current)setWalletBusy(false);}}
- async function openSchema(uid:string){const s=await getData<SchemaRecord>('schema',{uid});setDetail(null);setSchemaDetail(s);setView('schemas');updateURL({view:'schemas',schema:uid});return s;}
- function openRecord(a:Attestation){setSchemaDetail(null);setDetail(a);updateURL({view,uid:a.uid});}
- async function runSearch(value:string){value=value.trim();if(!value)throw new Error(tr("지갑 주소·도장 UID·트랜잭션 해시를 입력하세요."));const seq=++sequence.current;setSearching(true);try{
-  if(/^0x[0-9a-fA-F]{40}$/.test(value))return await openWallet(value);
-  if(!/^0x[0-9a-fA-F]{64}$/.test(value)){const found=data?.schemas.find(s=>s.name.toLowerCase().includes(value.toLowerCase())||s.label.includes(value)||tr(s.label).toLowerCase().includes(value.toLowerCase()));if(found)return await openSchema(found.uid);throw new Error(tr("주소, UID, 트랜잭션 해시 또는 도장 종류 이름을 입력하세요."));}
-  const found=await getData('search',{value});if(seq!==sequence.current)return found;
-  if(found.type==='schema'){setSchemaDetail(found.record);setDetail(null);setView('schemas');updateURL({view:'schemas',schema:value});}
-  else if(found.type==='attestation'){setDetail(found.record);setSchemaDetail(null);updateURL({view,uid:value});}
-  else{setView('explore');setFilter('all');setSchemaFilter('all');setIssuerFilter('all');setPage(1);const base=data??await getData<ScanData>('overview');setData({...base,attestations:found.record.attestations.filter(Boolean),next:null,coverage:tr("트랜잭션 {0}에서 발급된 EAS 기록입니다.", [short(value)])});updateURL({view:'explore',tx:value});if(!found.record.attestations.length)toast.info(tr("이 트랜잭션에는 EAS 발급 기록이 없습니다."));}return found;
- }finally{if(seq===sequence.current)setSearching(false);}}
- searchRef.current=runSearch;
- async function connect(){try{const {signer}=await connectWallet();const address=await signer.getAddress();setConnected(address);await openWallet(address);}catch(e){toast.error(tr((e as Error).message));}}
- async function loadMore(){if(!data?.next)return;setMoreBusy(true);try{const d=await getData<ScanData>('attestations',{cursor:JSON.stringify(data.next)});setData(old=>old?{...d,attestations:[...old.attestations,...d.attestations].filter((a,i,arr)=>arr.findIndex(b=>b.uid===a.uid)===i),coverage:tr("추가로 불러온 EAS 로그의 조회 범위입니다. 전체 발급량이 아닙니다.")}:d);}catch(e){toast.error(tr((e as Error).message));}finally{setMoreBusy(false);}}
- useEffect(()=>{let live=true;void getData<ScanData>('overview').then(d=>{if(live){setData(d);setLoading(false);}}).catch(e=>{if(live){setError(e.message);setLoading(false);}});const q=new URLSearchParams(window.location.search);const v=q.get('view');if(v&&(nav.some(n=>n.id===v)||v==='guide'))setView(v);const query=q.get('uid')??q.get('schema')??q.get('address')??q.get('tx');if(query){setSearch(query);void searchRef.current(query).catch(e=>toast.error(tr(e.message)));}const keyboard=(e:KeyboardEvent)=>{if(e.key==='/'&&!['INPUT','TEXTAREA'].includes((e.target as HTMLElement)?.tagName)){e.preventDefault();inputRef.current?.focus();}};window.addEventListener('keydown',keyboard);let provider:ReturnType<typeof injected>|undefined;const changed=(accounts:unknown)=>{setConnected((accounts as string[])[0]??'');setWalletData(null);};try{provider=injected();provider.on?.('accountsChanged',changed);}catch{}return()=>{live=false;window.removeEventListener('keydown',keyboard);provider?.removeListener?.('accountsChanged',changed);};},[]);
- useEffect(()=>{if(view==='issuers'&&!contractData)void getData('contracts').then(d=>setContractData(d.contracts)).catch(e=>setContractError(e.message));},[view,contractData]);
- useEffect(()=>setPage(1),[filter,issuerFilter,schemaFilter]);
- const items=data?.attestations.filter(a=>(filter==='all'||(filter==='dojang'?a.dojang:a.status!=='active'))&&(issuerFilter==='all'||(issuerFilter==='manager'?a.managementRole:a.issuerClass===issuerFilter))&&(schemaFilter==='all'||a.schema.toLowerCase()===schemaFilter.toLowerCase()))??[];
- const pages=Math.max(1,Math.ceil(items.length/6));const currentPage=Math.min(page,pages);const visible=items.slice((currentPage-1)*6,currentPage*6);
- const currentSchemas=data?.schemas.filter(s=>s.current&&s.registered)??[];const managers=data?.governance.roles.filter(r=>r.active===true)??[];
- const titles:Record<string,{title:string;text:string}>={explore:{title:'Dojang Scan',text:tr("GIWA 도장을 검색하고 발행자와 상태를 확인하세요.")},schemas:{title:tr("도장 종류"),text:tr("스키마는 도장 내용의 형식입니다. 발급 권한과 데이터의 공개 범위도 함께 봅니다.")},issuers:{title:tr("발행자와 관리자"),text:tr("실제 발급 주소와 현재 관리 권한을 온체인 조회로 구분합니다.")},wallet:{title:tr("내 도장"),text:tr("주소만 입력해 공개된 기록을 확인하세요. 지갑 연결은 선택입니다.")},workspace:{title:tr("작업"),text:tr("지갑으로 발급·권한 관리, 오프체인 서명, 실제 ZK 증명.")},lab:{title:'Proof Studio',text:tr("실제 잔액 ZK 증명, 오프체인 서명 검증과 모바일 앱 테스트.")},guide:{title:tr("사용 안내"),text:tr("도장의 구조와 배지의 의미를 몇 가지 예로 살펴봅니다.")}};
- const heading=titles[view]??titles.explore;
- return <div className="app"><Toaster position="bottom-right" theme={theme}/><header className="topbar"><button className="brand" onClick={()=>navigate('explore')}><span className="brand-seal">印</span><span>dojang<span className="brand-light">scan</span><small>GIWA SEPOLIA EXPLORER</small></span></button><nav aria-label={tr("주요 메뉴")}>{nav.map(n=><button className={'nav-link '+(view===n.id?'active':'')} key={n.id} onClick={()=>navigate(n.id)}><n.icon size={16}/>{tr(n.label)}</button>)}</nav><div className="header-actions"><button className="preference-button" onClick={()=>setLanguage(language==='ko'?'en':'ko')} aria-label={language==='ko'?'Switch to English':tr("한국어로 변경")}><Languages size={16}/>{tr(language==='ko'?'EN':tr("한국어"))}</button><button className="preference-button" onClick={()=>setTheme(theme==='light'?'dark':'light')} aria-label={theme==='light'?tr("다크 테마"):tr("라이트 테마")}>{theme==='light'?<Moon size={17}/>:<Sun size={17}/>}</button><button className={'help-button '+(view==='guide'?'active':'')} onClick={()=>navigate('guide')}><CircleHelp size={17}/>{tr("처음이라면")}</button><span className="network"><span className="live-dot"/>Sepolia</span></div></header><main><section className={'intro '+(view==='explore'?'':'compact')}><div><span className="section-kicker">{tr(view==='explore'?'GIWA SEPOLIA':'DOJANG SCAN / '+view.toUpperCase())}</span><h1>{tr(heading.title)}</h1><p>{tr(heading.text)}</p></div>{view==='explore'&&<div className="hero-seal"><span>{tr("도장")}</span><small>{tr("공개 기록")}<br/>{tr("발행자 확인")}</small></div>}</section>
- {view!=='lab'&&view!=='guide'&&view!=='workspace'&&<form className="searchbar" onSubmit={e=>{e.preventDefault();void runSearch(search).catch(e=>toast.error(tr(e.message)));}}><Search size={20}/><input aria-label={tr("도장 검색")} ref={inputRef} placeholder={tr("지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시")} value={search} onChange={e=>setSearch(e.target.value)}/><kbd>/</kbd><button disabled={searching}>{tr(searching?tr("조회 중"):tr("검색"))}</button></form>}
- {view==='explore'&&<><Relationship onGuide={()=>navigate('guide')}/><div className="overview-line"><div><strong>{tr(data?.attestations.length??'—')}</strong><span>{tr("조회된 EAS 도장")}</span></div><div><strong>{tr(currentSchemas.length||'—')}</strong><span>{tr("현재 Dojang 스키마")}</span></div><div><strong>{tr(data?.issuers.length??'—')}</strong><span>{tr("등록 발행자")}</span></div><span className="sync-status"><span className="live-dot"/>{tr(data?tr("블록 {0} · {1}", [data.block.toLocaleString(),new Date(data.checkedAt).toLocaleTimeString(getLocale(),{hour:'2-digit',minute:'2-digit'})]):tr("GIWA 조회 중"))}</span><button className="icon-button" aria-label={tr("새로고침")} onClick={refresh} disabled={loading}><RefreshCw size={16} className={loading?'spinning':''}/></button></div><section className="browse-section"><div className="section-heading bare"><div><span className="section-kicker">{tr("어떤 도장을 찾고 있나요?")}</span><h2>{tr("도장 종류")}</h2></div><button className="text-button" onClick={()=>navigate('schemas')}>{tr("모든 종류")}<ArrowRight size={15}/></button></div><div className="category-rail">{currentSchemas.map(s=><button className={schemaFilter===s.uid?'category-tile selected':'category-tile'} key={s.uid} onClick={()=>{setSchemaFilter(schemaFilter===s.uid?'all':s.uid);setFilter('dojang');}}><span className={'schema-icon '+s.color}><Layers size={20}/></span><strong>{tr(s.label)}</strong><small>{tr(s.name)}</small></button>)}</div></section><section className="records-workspace"><div className="section-heading bare"><div><span className="section-kicker">{tr("도장을 열면 근거까지 확인할 수 있어요")}</span><h2>{tr("최근 기록")}</h2></div><div className="display-toggle" aria-label={tr("보기 방식")}><button aria-label={tr("카드 보기")} className={display==='cards'?'selected':''} onClick={()=>setDisplay('cards')}><LayoutGrid size={17}/></button><button aria-label={tr("목록 보기")} className={display==='list'?'selected':''} onClick={()=>setDisplay('list')}><List size={17}/></button></div></div><div className="filters-row"><div className="pill-buttons">{[{id:'dojang',name:tr("Dojang 스키마")},{id:'all',name:tr("전체 EAS")},{id:'inactive',name:tr("취소·만료")}].map(f=><button key={f.id} className={filter===f.id?'selected':''} onClick={()=>setFilter(f.id)}>{tr(f.name)}</button>)}</div><label className="filter-select">{tr("발행자")}<select aria-label={tr("발행자 구분 필터")} value={issuerFilter} onChange={e=>setIssuerFilter(e.target.value)}><option value="all">{tr("전체")}</option><option value="registered">{tr("Dojang 등록")}</option><option value="manager">{tr("관리 권한 주소")}</option><option value="test">{tr("ZKProofport 테스트")}</option><option value="external">{tr("일반 EAS")}</option><option value="unknown">{tr("미확인")}</option></select></label>{schemaFilter!=='all'&&<button className="clear-filter" onClick={()=>setSchemaFilter('all')}>{tr("종류 필터 해제 ×")}</button>}<span className="secondary">{tr(items.length)}{tr("개")}</span><button className="icon-button" aria-label={tr("조회된 도장 JSON 저장")} disabled={!data} onClick={()=>downloadJSON(items,'dojang-records.json')}><Download size={16}/></button></div>{error?<Empty title={tr("공개 데이터에 연결하지 못했습니다.")} text={error} action={refresh}/>:loading&&!data?<Empty title={tr("실제 도장을 읽고 있습니다.")} loading/>:!items.length?<Empty title={tr("이 범위에는 해당 도장이 없습니다.")} text={tr("전체 EAS를 선택하거나 이전 기록을 불러오세요.")}/>:display==='cards'?<ScanCards items={visible} onSelect={openRecord}/>:<div className="records-panel"><ScanTable items={visible} onSelect={openRecord}/></div>}{pages>1&&<div className="record-pagination"><button disabled={currentPage===1} onClick={()=>setPage(p=>p-1)}>{tr("이전")}</button><span>{tr(currentPage)} / {tr(pages)}</span><button disabled={currentPage===pages} onClick={()=>setPage(p=>p+1)}>{tr("다음")}</button></div>}{data?.next&&<div className="load-more"><button className="secondary-button" disabled={moreBusy} onClick={loadMore}>{tr(moreBusy?tr("조회 중"):tr("이전 기록 더 보기"))}<ChevronDown size={15}/></button></div>}<p className="fine-print coverage">{tr(data?.coverage)}{tr("상태와 배지의 근거는 도장 상세에서 확인하세요.")}</p></section><section className="studio-banner"><div className="banner-icon"><Fingerprint size={34}/></div><div><span className="section-kicker">ZKPROOFPORT</span><h3>{tr("서명과 ZK 검증")}</h3><p>{tr("서명된 잔액으로 실제 ZK proof를 만들고 변조 검증을 테스트하세요.")}</p></div><button className="primary" onClick={()=>navigate('lab')}>Proof Studio<ArrowRight size={16}/></button></section></>}
- {view==='schemas'&&<section className="view-section"><div className="schema-grid">{data?.schemas.map(s=><button className="schema-card" key={s.uid} onClick={()=>void openSchema(s.uid).catch(e=>toast.error(tr(e.message)))}><div className="schema-card-top"><span className={'schema-icon '+s.color}><Layers size={24}/></span><Badge variant={s.current?'success':'neutral'}>{tr(s.current?tr("현재 Dojang"):tr("이전 버전"))}</Badge></div><h3>{tr(s.label)}</h3><span className="sub-label">{tr(s.name)}</span><p>{tr(s.description)}</p><code className="schema-definition">{tr(s.definition)}</code><div className="card-bottom"><span>{tr(s.revocable?tr("발행자가 취소 가능"):tr("취소 불가"))}</span><span>{tr("구조와 규칙 보기 ↗")}</span></div></button>)??<Empty title={error||tr("스키마 조회 중")} loading={!error}/>}</div><section className="future-section"><div className="section-heading bare"><div><span className="section-kicker">{tr("앞으로 담을 수 있는 사실")}</span><h2>{tr("금융·자격 증명")}</h2></div><Badge>{tr("아직 확인되지 않은 설계 대상")}</Badge></div><div className="future-grid">{[{name:tr("은행 잔액"),visible:tr("“기준 금액 이상인가?”"),private:tr("계좌·정확한 잔액")}, {name:tr("증권 자산"),visible:tr("“필요한 자산 조건을 만족하는가?”"),private:tr("계좌·보유 내역")},{name:tr("외국인 등록"),visible:tr("“유효한 등록 자격이 있는가?”"),private:tr("등록번호·원본 신분증")},{name:tr("전문 자격"),visible:tr("“현재 유효한 자격이 있는가?”"),private:tr("개인정보·원본 증서")}].map(f=><div key={f.name}><h3>{tr(f.name)}</h3><p>{tr(f.visible)}</p><small>{tr("ZK 확장 시 숨길 정보:")}{tr(f.private)}</small></div>)}</div><p className="fine-print">{tr("현재 GIWA 등록·발급을 확인한 항목이 아닙니다. 이러한 조건을 증명하려면 발행자 정책과 전용 회로가 필요합니다.")}</p></section></section>}
- {view==='issuers'&&<section className="view-section"><div className="role-intro"><div><ShieldCheck size={24}/><h3>{tr("발행자")}</h3><p>{tr("AttesterBook에 등록된 현재 주소를 읽습니다.")}</p></div><div><KeyRound size={24}/><h3>{tr("관리자")}</h3><p>{tr("스키마·발행자 등록 권한과 업그레이드 권한을 따로 읽습니다.")}</p></div></div><div className="section-heading bare"><h2>{tr("현재 등록 발행자")}</h2><Badge variant="success">{tr("getAttester() 확인")}</Badge></div><div className="issuer-grid">{data?.issuers.map((i,n)=><article className="issuer-card" key={i.id}><div className="issuer-card-top"><span className="issuer-avatar">{tr(i.name==='UPbit Korea'?'UP':String(n+1).padStart(2,'0'))}</span><Badge variant="success">{tr("Dojang 등록")}</Badge></div><h3>{tr(i.name)}</h3><div className="address-line"><code>{tr(short(i.address))}</code><CopyButton value={i.address}/></div><small>{tr("기관명은 공식 확인된 경우에만 표시합니다.")}</small><details><summary>{tr("등록 근거")}</summary><p>Attester ID</p><code className="break-code">{tr(i.id)}</code><p>{tr("조회 블록")}{tr(data.block.toLocaleString())}</p>{i.tx&&<a href={`${NETWORK.explorer}/tx/${i.tx}`} target="_blank" rel="noreferrer">{tr("등록 이벤트")}<ExternalLink size={12}/></a>}</details><div className="card-links"><button onClick={()=>void openWallet(i.address).catch(()=>{})} className="text-button">{tr("주소 기록")}</button><a href={`${NETWORK.explorer}/address/${i.address}`} target="_blank" rel="noreferrer">{tr("탐색기")}<ExternalLink size={13}/></a></div></article>)}</div><div className="section-heading bare"><h2>{tr("현재 관리 권한")}</h2><Badge variant="blue">{tr("hasRole() 확인")}</Badge></div><p className="section-description">{tr("공식 배포 주소의 권한입니다. 관리 권한이 있다고 실제 도장의 발행자로 자동 등록되지는 않습니다.")}</p><div className="governance-grid">{managers.map(r=><article className="governance-card" key={r.contract+r.roleId+r.address}><div><KeyRound size={19}/><Badge variant={r.role==='admin'?'blue':'purple'}>{tr(r.role==='admin'?tr("등록 관리"):tr("업그레이드"))}</Badge></div><h3>{tr(r.contract)}</h3><div className="address-line"><code>{tr(short(r.address,8))}</code><CopyButton value={r.address}/></div><p>{tr(r.role==='admin'?tr("스키마 / 발행자 목록을 바꿀 수 있는 권한"):tr("컨트랙트 구현을 교체할 수 있는 권한"))}</p><a href={`${NETWORK.explorer}/address/${r.address}`} target="_blank" rel="noreferrer">{tr("권한 주소 보기")}<ExternalLink size={13}/></a></article>)}</div><details className="explain-detail"><summary>{tr("권한을 찾은 방법과 한계")}</summary><p>{tr("RoleGranted·RoleRevoked 로그에서 후보를 발견하고 동일 블록의 hasRole()로 재확인합니다. 두 Book 컨트랙트의 권한을 표시하며, resolver·발행자 컨트랙트의 모든 하위 운영 권한을 포함하지 않습니다. 로그는 컨트랙트별 최대 최근 300개이므로 목록이 불완전할 수 있습니다.")}</p><p>{tr(data?.governance.complete?tr("현재 발견 범위의 후보 확인 완료"):tr("발견 또는 현재 역할 조회가 불완전합니다."))}{tr("· 블록")}{tr(data?.governance.block.toLocaleString())}</p></details><div className="section-heading bare"><h2>{tr("기록을 읽는 컨트랙트")}</h2><a href="https://github.com/giwa-io/dojang" target="_blank" rel="noreferrer" className="text-button">{tr("공식 소스")}<ExternalLink size={14}/></a></div>{contractError&&<div className="notice danger">{tr(contractError)}</div>}<div className="contract-list">{contractData?.map(c=><div key={c.name}><strong>{tr(c.name)}</strong><a href={`${NETWORK.explorer}/address/${c.address}`} target="_blank" rel="noreferrer" className="mono">{tr(short(c.address,10))}<ExternalLink size={13}/></a><Badge variant={c.deployed?'success':'neutral'}>{tr(c.deployed===null?tr("미확인"):c.deployed?tr("코드 있음"):tr("코드 없음"))}</Badge></div>)??<Empty title={tr("컨트랙트 확인 중")} loading/>}</div></section>}
- {view==='wallet'&&<section className="view-section"><div className="wallet-connect-card"><div><Wallet size={24}/><h2>{tr("주소만으로도 볼 수 있어요.")}</h2><p>{tr("조회에는 서명이나 가스가 필요 없습니다.")}</p></div><button className="primary" onClick={connect}>{tr(connected?short(connected):tr("내 지갑 연결"))}</button></div><form className="wallet-form" onSubmit={e=>{e.preventDefault();void openWallet(walletInput).catch(()=>{});}}><label htmlFor="wallet-address">{tr("조회할 지갑 주소")}</label><div><input id="wallet-address" value={walletInput} onChange={e=>setWalletInput(e.target.value)} placeholder="0x…" required/><button className="primary" disabled={walletBusy}>{tr(walletBusy?tr("조회 중"):tr("도장 조회"))}</button></div></form>{walletError&&<div className="notice danger" role="alert">{tr(walletError)}</div>}{walletBusy?<Empty title={tr("도장과 인증 상태를 확인하고 있습니다.")} loading/>:walletData?<><div className="wallet-summary"><div><Badge variant="blue">{tr("공개 지갑 기록")}</Badge><h2 className="mono">{tr(short(walletData.address,10))}</h2><p>{tr(walletData.verifiedBy.length?tr("DojangScroll 주소 인증 확인 · {0}", [walletData.verifiedBy.map(i=>i.name).join(', ')]):tr("조회한 등록 발행자 기준 주소 인증이 확인되지 않았습니다."))}</p></div><CopyButton value={walletData.address}/></div>{walletData.attestations.length?<ScanCards items={walletData.attestations} onSelect={openRecord}/>:<Empty title={tr("조회한 기본 인덱스에는 도장이 없습니다.")} text={tr("발급받은 도장의 UID 또는 트랜잭션 해시로 직접 검색할 수도 있습니다.")}/>}<p className="fine-print">{tr(walletData.coverage)}</p></>:<Empty title={tr("누구의 도장이 궁금한가요?")} text={tr("지갑 주소를 입력하거나 내 지갑을 연결하세요.")}/>}</section>}
- <Suspense fallback={<Empty title={tr("화면을 준비하고 있습니다.")} loading/>}>{view==='workspace'&&<Suspense fallback={<Empty title={tr("작업 화면 준비 중")} loading/>}><Workspace data={data} onNavigate={navigate}/></Suspense>}{view==='lab'&&<ProofStudio onWorkspace={()=>navigate('workspace')}/>}{view==='guide'&&<LearningGuide data={data} onStudio={()=>navigate('workspace')}/>}</Suspense>
- {!!data?.warnings.length&&<details className="data-notes"><summary>{tr("데이터 조회 안내 ·")}{tr(data.warnings.length)}{tr("건")}</summary>{data.warnings.map(w=><p key={w}>{tr(w)}</p>)}</details>}<footer><span className="brand-mini"><span className="mini-stamp">印</span>Dojang Scan</span><span>{tr("로컬 개발 · GIWA Sepolia 91342")}</span><button className="text-button" onClick={()=>navigate('guide')}><BookOpen size={14}/>{tr("배지와 검증 기준")}</button><button className="text-button" onClick={()=>void addGiwa().then(()=>toast.success(tr("GIWA Sepolia에 연결했습니다."))).catch(e=>toast.error(tr(e.message)))}>{tr("지갑 네트워크 변경")}<ArrowRight size={13}/></button></footer></main><ScanDetail record={detail} schema={schemaDetail} close={()=>{setDetail(null);setSchemaDetail(null);updateURL({view});}} goWallet={a=>void openWallet(a).catch(e=>toast.error(tr(e.message)))} goSchema={u=>void openSchema(u).catch(e=>toast.error(tr(e.message)))}/></div>;
+import { tr } from "@/lib/i18n";
+import { getLocale } from "@/lib/preferences";
+import { usePreferences, setLanguage, setTheme } from "@/lib/preferences";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  Search,
+  Wallet,
+  Fingerprint,
+  Layers,
+  ShieldCheck,
+  RefreshCw,
+  ScanLine,
+  LayoutGrid,
+  List,
+  ArrowRight,
+  ChevronDown,
+  Download,
+  CircleHelp,
+  Sun,
+  Moon,
+  Languages,
+} from "lucide-react";
+import { Toaster, toast } from "sonner";
+import {
+  short,
+  type Attestation,
+  type ScanData,
+  type SchemaRecord,
+  type Issuer,
+} from "@/lib/giwa";
+import { getData, CopyButton, Badge, ScanTable, ScanCards } from "./scan-ui";
+import ScanDetail, { downloadJSON } from "./scan-detail";
+import { Relationship } from "./relationship";
+import { connectWallet, injected } from "@/lib/wallet";
+import { ChainLoading } from "./chain-loading";
+import { trackSection } from "@/lib/analytics";
+import { localURL } from "@/lib/navigation";
+const OperatorHub = lazy(() => import("./operator-hub"));
+const ProofStudio = lazy(() => import("./proof-studio"));
+const LearningGuide = lazy(() => import("./learning-guide"));
+const nav = [
+  { id: "explore", label: "도장 탐색", icon: ScanLine },
+  { id: "schemas", label: "도장 종류", icon: Layers },
+  { id: "issuers", label: "발행자·관리자", icon: ShieldCheck },
+  { id: "wallet", label: "내 도장", icon: Wallet },
+  { id: "lab", label: "Proof Studio", icon: Fingerprint },
+];
+type WalletData = ScanData & { address: string; verifiedBy: Issuer[] };
+export default function ScanApp() {
+  const [language, theme] = usePreferences();
+  const [view, setView] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get("view");
+    return requested === "workspace"
+      ? "issuers"
+      : requested &&
+          (nav.some((item) => item.id === requested) || requested === "guide")
+        ? requested
+        : "explore";
+  });
+  const trackedSection = useRef("");
+  useEffect(() => {
+    if (trackedSection.current === view) return;
+    trackSection(view);
+    trackedSection.current = view;
+  }, [view]);
+  const [data, setData] = useState<ScanData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [filter, setFilter] = useState("dojang");
+  const [issuerFilter, setIssuerFilter] = useState("all");
+  const [schemaFilter, setSchemaFilter] = useState("all");
+  const [display, setDisplay] = useState("cards");
+  const [page, setPage] = useState(1);
+  const [detail, setDetail] = useState<Attestation | null>(null);
+  const [schemaDetail, setSchemaDetail] = useState<SchemaRecord | null>(null);
+  const [walletInput, setWalletInput] = useState("");
+  const [walletData, setWalletData] = useState<WalletData | null>(null);
+  const [walletBusy, setWalletBusy] = useState(false);
+  const [walletError, setWalletError] = useState("");
+  const [connected, setConnected] = useState("");
+  const [moreBusy, setMoreBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const sequence = useRef(0);
+  const walletSequence = useRef(0);
+  const searchRef = useRef<(v: string) => Promise<unknown>>(async () => {});
+  function updateURL(params: Record<string, string>) {
+    window.history.replaceState(null, "", localURL(params));
+  }
+  function navigate(v: string) {
+    setView(v);
+    setDetail(null);
+    setSchemaDetail(null);
+    updateURL({ view: v });
+  }
+  async function refresh() {
+    setLoading(true);
+    setError("");
+    try {
+      setData(await getData("overview"));
+      setPage(1);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function openWallet(address: string) {
+    const seq = ++walletSequence.current;
+    setDetail(null);
+    setSchemaDetail(null);
+    setView("wallet");
+    setWalletInput(address);
+    updateURL({ view: "wallet", address });
+    setWalletBusy(true);
+    setWalletError("");
+    setWalletData(null);
+    try {
+      const d = await getData<WalletData>("wallet", { address });
+      if (seq === walletSequence.current) setWalletData(d);
+      return d;
+    } catch (e) {
+      if (seq === walletSequence.current) setWalletError((e as Error).message);
+      throw e;
+    } finally {
+      if (seq === walletSequence.current) setWalletBusy(false);
+    }
+  }
+  async function openSchema(uid: string) {
+    const s = await getData<SchemaRecord>("schema", { uid });
+    setDetail(null);
+    setSchemaDetail(s);
+    setView("schemas");
+    updateURL({ view: "schemas", schema: uid });
+    return s;
+  }
+  function openRecord(a: Attestation) {
+    setSchemaDetail(null);
+    setDetail(a);
+    updateURL({ view, uid: a.uid });
+  }
+  async function runSearch(value: string) {
+    value = value.trim();
+    if (!value)
+      throw new Error(tr("지갑 주소·도장 UID·트랜잭션 해시를 입력하세요."));
+    const seq = ++sequence.current;
+    setSearching(true);
+    try {
+      if (/^0x[0-9a-fA-F]{40}$/.test(value)) return await openWallet(value);
+      if (!/^0x[0-9a-fA-F]{64}$/.test(value)) {
+        const found = data?.schemas.find(
+          (s) =>
+            s.name.toLowerCase().includes(value.toLowerCase()) ||
+            s.label.includes(value) ||
+            tr(s.label).toLowerCase().includes(value.toLowerCase()),
+        );
+        if (found) return await openSchema(found.uid);
+        throw new Error(
+          tr("주소, UID, 트랜잭션 해시 또는 도장 종류 이름을 입력하세요."),
+        );
+      }
+      const found = await getData("search", { value });
+      if (seq !== sequence.current) return found;
+      if (found.type === "schema") {
+        setSchemaDetail(found.record);
+        setDetail(null);
+        setView("schemas");
+        updateURL({ view: "schemas", schema: value });
+      } else if (found.type === "attestation") {
+        setDetail(found.record);
+        setSchemaDetail(null);
+        updateURL({ view, uid: value });
+      } else {
+        setView("explore");
+        setFilter("all");
+        setSchemaFilter("all");
+        setIssuerFilter("all");
+        setPage(1);
+        const base = data ?? (await getData<ScanData>("overview"));
+        setData({
+          ...base,
+          attestations: found.record.attestations.filter(Boolean),
+          next: null,
+          coverage: tr("트랜잭션 {0}에서 발급된 EAS 기록입니다.", [
+            short(value),
+          ]),
+        });
+        updateURL({ view: "explore", tx: value });
+        if (!found.record.attestations.length)
+          toast.info(tr("이 트랜잭션에는 EAS 발급 기록이 없습니다."));
+      }
+      return found;
+    } finally {
+      if (seq === sequence.current) setSearching(false);
+    }
+  }
+  searchRef.current = runSearch;
+  async function connect() {
+    try {
+      const { signer } = await connectWallet();
+      const address = await signer.getAddress();
+      setConnected(address);
+      await openWallet(address);
+    } catch (e) {
+      toast.error(tr((e as Error).message));
+    }
+  }
+  async function loadMore() {
+    if (!data?.next) return;
+    setMoreBusy(true);
+    try {
+      const d = await getData<ScanData>("attestations", {
+        cursor: JSON.stringify(data.next),
+      });
+      setData((old) =>
+        old
+          ? {
+              ...d,
+              attestations: [...old.attestations, ...d.attestations].filter(
+                (a, i, arr) => arr.findIndex((b) => b.uid === a.uid) === i,
+              ),
+              coverage: tr(
+                "추가로 불러온 EAS 로그의 조회 범위입니다. 전체 발급량이 아닙니다.",
+              ),
+            }
+          : d,
+      );
+    } catch (e) {
+      toast.error(tr((e as Error).message));
+    } finally {
+      setMoreBusy(false);
+    }
+  }
+  useEffect(() => {
+    let live = true;
+    void getData<ScanData>("overview")
+      .then((d) => {
+        if (live) {
+          setData(d);
+          setLoading(false);
+        }
+      })
+      .catch((e) => {
+        if (live) {
+          setError(e.message);
+          setLoading(false);
+        }
+      });
+    const q = new URLSearchParams(window.location.search);
+    const v = q.get("view");
+    if (v === "workspace") {
+      setView("issuers");
+      updateURL({ view: "issuers", mode: "manage" });
+    } else if (v && (nav.some((n) => n.id === v) || v === "guide")) setView(v);
+    const query =
+      q.get("uid") ?? q.get("schema") ?? q.get("address") ?? q.get("tx");
+    if (query) {
+      setSearch(query);
+      void searchRef.current(query).catch((e) => toast.error(tr(e.message)));
+    }
+    const keyboard = (e: KeyboardEvent) => {
+      if (
+        e.key === "/" &&
+        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)
+      ) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", keyboard);
+    let provider: ReturnType<typeof injected> | undefined;
+    const changed = (accounts: unknown) => {
+      setConnected((accounts as string[])[0] ?? "");
+      setWalletData(null);
+    };
+    try {
+      provider = injected();
+      provider.on?.("accountsChanged", changed);
+    } catch {}
+    return () => {
+      live = false;
+      window.removeEventListener("keydown", keyboard);
+      provider?.removeListener?.("accountsChanged", changed);
+    };
+  }, []);
+  useEffect(() => setPage(1), [filter, issuerFilter, schemaFilter]);
+  const items =
+    data?.attestations.filter(
+      (a) =>
+        (filter === "all" ||
+          (filter === "dojang" ? a.dojang : a.status !== "active")) &&
+        (issuerFilter === "all" ||
+          (issuerFilter === "manager"
+            ? a.managementRole
+            : a.issuerClass === issuerFilter)) &&
+        (schemaFilter === "all" ||
+          a.schema.toLowerCase() === schemaFilter.toLowerCase()),
+    ) ?? [];
+  const pages = Math.max(1, Math.ceil(items.length / 6));
+  const currentPage = Math.min(page, pages);
+  const visible = items.slice((currentPage - 1) * 6, currentPage * 6);
+  const currentSchemas =
+    data?.schemas.filter((s) => s.current && s.registered) ?? [];
+  const titles: Record<string, { title: string; text: string }> = {
+    explore: {
+      title: "Dojang Scan",
+      text: tr("GIWA 도장을 검색하고 발행자와 상태를 확인하세요."),
+    },
+    schemas: {
+      title: tr("도장 종류"),
+      text: tr(
+        "스키마는 도장 내용의 형식입니다. 발급 권한과 데이터의 공개 범위도 함께 봅니다.",
+      ),
+    },
+    issuers: {
+      title: tr("발행자와 관리자"),
+      text: tr("등록 현황 확인부터 도장 발급과 권한 관리까지."),
+    },
+    wallet: {
+      title: tr("내 도장"),
+      text: tr(
+        "주소만 입력해 공개된 기록을 확인하세요. 지갑 연결은 선택입니다.",
+      ),
+    },
+    lab: {
+      title: "Proof Studio",
+      text: tr("개인정보 공개를 줄이는 ZKProofport 증명."),
+    },
+    guide: {
+      title: tr("사용 안내"),
+      text: tr("도장의 구조와 배지의 의미를 몇 가지 예로 살펴봅니다."),
+    },
+  };
+  const heading = titles[view] ?? titles.explore;
+  return (
+    <div className="app">
+      <Toaster position="bottom-right" theme={theme} />
+      <header className="topbar">
+        <button className="brand" onClick={() => navigate("explore")}>
+          <span className="brand-seal">印</span>
+          <span>
+            dojang<span className="brand-light">scan</span>
+            <small>GIWA SEPOLIA EXPLORER</small>
+          </span>
+        </button>
+        <nav aria-label={tr("주요 메뉴")}>
+          {nav.map((n) => (
+            <button
+              className={"nav-link " + (view === n.id ? "active" : "")}
+              key={n.id}
+              onClick={() => navigate(n.id)}
+            >
+              <n.icon size={16} />
+              {tr(n.label)}
+            </button>
+          ))}
+        </nav>
+        <div className="header-actions">
+          <button
+            className="preference-button"
+            onClick={() => setLanguage(language === "ko" ? "en" : "ko")}
+            aria-label={
+              language === "ko" ? "Switch to English" : tr("한국어로 변경")
+            }
+          >
+            <Languages size={16} />
+            {tr(language === "ko" ? "EN" : tr("한국어"))}
+          </button>
+          <button
+            className="preference-button"
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            aria-label={theme === "light" ? tr("다크 테마") : tr("라이트 테마")}
+          >
+            {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
+          </button>
+          <button
+            className={"help-button " + (view === "guide" ? "active" : "")}
+            onClick={() => navigate("guide")}
+          >
+            <CircleHelp size={17} />
+            {tr("처음이라면")}
+          </button>
+          <a
+            className="giwa-network"
+            href="https://giwa.io"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="GIWA · Sepolia"
+          >
+            <img
+              src={`${import.meta.env.BASE_URL}brand/giwa-${theme}.svg`}
+              alt="GIWA"
+              width="73"
+              height="24"
+            />
+            <span>Sepolia</span>
+          </a>
+        </div>
+      </header>
+      <main>
+        <section
+          className={
+            "intro " + (view === "explore" ? "explore-intro" : "compact")
+          }
+        >
+          <div>
+            <span className="section-kicker">
+              {tr(
+                view === "explore"
+                  ? "GIWA SEPOLIA"
+                  : "DOJANG SCAN / " + view.toUpperCase(),
+              )}
+            </span>
+            <h1>
+              {tr(heading.title)}
+              {view === "explore" && <span className="title-period">.</span>}
+            </h1>
+            <p>{tr(heading.text)}</p>
+          </div>
+        </section>
+        {(searching ||
+          walletBusy ||
+          moreBusy ||
+          (loading && view !== "lab" && view !== "guide")) && <ChainLoading />}
+        {view !== "lab" && view !== "guide" && view !== "issuers" && (
+          <form
+            className="searchbar"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void runSearch(search).catch((e) => toast.error(tr(e.message)));
+            }}
+          >
+            <Search size={20} />
+            <input
+              aria-label={tr("도장 검색")}
+              ref={inputRef}
+              placeholder={tr(
+                "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시",
+              )}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <kbd>/</kbd>
+            <button disabled={searching}>
+              {tr(searching ? tr("조회 중") : tr("검색"))}
+            </button>
+          </form>
+        )}
+        {view === "explore" && (
+          <>
+            <Relationship onGuide={() => navigate("guide")} />
+            <div className="overview-line">
+              <div>
+                <strong>{tr(data?.attestations.length ?? "—")}</strong>
+                <span>{tr("조회된 EAS 도장")}</span>
+              </div>
+              <div>
+                <strong>{tr(currentSchemas.length || "—")}</strong>
+                <span>{tr("현재 Dojang 스키마")}</span>
+              </div>
+              <div>
+                <strong>{tr(data?.issuers.length ?? "—")}</strong>
+                <span>{tr("등록 발행자")}</span>
+              </div>
+              <span className="sync-status">
+                <span className="live-dot" />
+                {tr(
+                  data
+                    ? tr("블록 {0} · {1}", [
+                        data.block.toLocaleString(),
+                        new Date(data.checkedAt).toLocaleTimeString(
+                          getLocale(),
+                          { hour: "2-digit", minute: "2-digit" },
+                        ),
+                      ])
+                    : tr("GIWA 조회 중"),
+                )}
+              </span>
+              <button
+                className="icon-button"
+                aria-label={tr("새로고침")}
+                onClick={refresh}
+                disabled={loading}
+              >
+                <RefreshCw size={16} className={loading ? "spinning" : ""} />
+              </button>
+            </div>
+            <section className="browse-section">
+              <div className="section-heading bare">
+                <div>
+                  <span className="section-kicker">
+                    {tr("어떤 도장을 찾고 있나요?")}
+                  </span>
+                  <h2>{tr("도장 종류")}</h2>
+                </div>
+                <button
+                  className="text-button"
+                  onClick={() => navigate("schemas")}
+                >
+                  {tr("모든 종류")}
+                  <ArrowRight size={15} />
+                </button>
+              </div>
+              <div className="category-rail">
+                {currentSchemas.map((s) => (
+                  <button
+                    className={
+                      schemaFilter === s.uid
+                        ? "category-tile selected"
+                        : "category-tile"
+                    }
+                    key={s.uid}
+                    onClick={() => {
+                      setSchemaFilter(schemaFilter === s.uid ? "all" : s.uid);
+                      setFilter("dojang");
+                    }}
+                  >
+                    <span className={"schema-icon " + s.color}>
+                      <Layers size={20} />
+                    </span>
+                    <strong>{tr(s.label)}</strong>
+                    <small>{tr(s.name)}</small>
+                  </button>
+                ))}
+              </div>
+            </section>
+            <section className="records-workspace">
+              <div className="section-heading bare">
+                <div>
+                  <span className="section-kicker">
+                    {tr("도장을 열면 근거까지 확인할 수 있어요")}
+                  </span>
+                  <h2>{tr("최근 기록")}</h2>
+                </div>
+                <div className="display-toggle" aria-label={tr("보기 방식")}>
+                  <button
+                    aria-label={tr("카드 보기")}
+                    className={display === "cards" ? "selected" : ""}
+                    onClick={() => setDisplay("cards")}
+                  >
+                    <LayoutGrid size={17} />
+                  </button>
+                  <button
+                    aria-label={tr("목록 보기")}
+                    className={display === "list" ? "selected" : ""}
+                    onClick={() => setDisplay("list")}
+                  >
+                    <List size={17} />
+                  </button>
+                </div>
+              </div>
+              <div className="filters-row">
+                <div className="pill-buttons">
+                  {[
+                    { id: "dojang", name: tr("Dojang 스키마") },
+                    { id: "all", name: tr("전체 EAS") },
+                    { id: "inactive", name: tr("취소·만료") },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      className={filter === f.id ? "selected" : ""}
+                      onClick={() => setFilter(f.id)}
+                    >
+                      {tr(f.name)}
+                    </button>
+                  ))}
+                </div>
+                <label className="filter-select">
+                  {tr("발행자")}
+                  <select
+                    aria-label={tr("발행자 구분 필터")}
+                    value={issuerFilter}
+                    onChange={(e) => setIssuerFilter(e.target.value)}
+                  >
+                    <option value="all">{tr("전체")}</option>
+                    <option value="registered">{tr("Dojang 등록")}</option>
+                    <option value="manager">{tr("관리 권한 주소")}</option>
+                    <option value="test">{tr("ZKProofport 테스트")}</option>
+                    <option value="external">{tr("일반 EAS")}</option>
+                    <option value="unknown">{tr("미확인")}</option>
+                  </select>
+                </label>
+                {schemaFilter !== "all" && (
+                  <button
+                    className="clear-filter"
+                    onClick={() => setSchemaFilter("all")}
+                  >
+                    {tr("종류 필터 해제 ×")}
+                  </button>
+                )}
+                <span className="secondary">
+                  {tr(items.length)}
+                  {tr("개")}
+                </span>
+                <button
+                  className="icon-button"
+                  aria-label={tr("조회된 도장 JSON 저장")}
+                  disabled={!data}
+                  onClick={() => downloadJSON(items, "dojang-records.json")}
+                >
+                  <Download size={16} />
+                </button>
+              </div>
+              {error ? (
+                <Empty
+                  title={tr("공개 데이터에 연결하지 못했습니다.")}
+                  text={error}
+                  action={refresh}
+                />
+              ) : loading && !data ? (
+                <Empty title={tr("실제 도장을 읽고 있습니다.")} loading />
+              ) : !items.length ? (
+                <Empty
+                  title={tr("이 범위에는 해당 도장이 없습니다.")}
+                  text={tr("전체 EAS를 선택하거나 이전 기록을 불러오세요.")}
+                />
+              ) : display === "cards" ? (
+                <ScanCards items={visible} onSelect={openRecord} />
+              ) : (
+                <div className="records-panel">
+                  <ScanTable items={visible} onSelect={openRecord} />
+                </div>
+              )}
+              {pages > 1 && (
+                <div className="record-pagination">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    {tr("이전")}
+                  </button>
+                  <span>
+                    {tr(currentPage)} / {tr(pages)}
+                  </span>
+                  <button
+                    disabled={currentPage === pages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    {tr("다음")}
+                  </button>
+                </div>
+              )}
+              {data?.next && (
+                <div className="load-more">
+                  <button
+                    className="secondary-button"
+                    disabled={moreBusy}
+                    onClick={loadMore}
+                  >
+                    {tr(moreBusy ? tr("조회 중") : tr("이전 기록 더 보기"))}
+                    <ChevronDown size={15} />
+                  </button>
+                </div>
+              )}
+              <p className="fine-print coverage">
+                {tr(data?.coverage)}
+                {tr("등록 여부와 유효 상태는 도장 상세에서 확인하세요.")}
+              </p>
+            </section>
+            <section className="studio-banner">
+              <div className="banner-icon">
+                <Fingerprint size={34} />
+              </div>
+              <div>
+                <span className="section-kicker">ZKPROOFPORT</span>
+                <h3>{tr("내 도장으로 ZK 증명")}</h3>
+                <p>{tr("ZKProofport 모바일 앱 연동을 준비하고 있습니다.")}</p>
+              </div>
+              <button className="primary" onClick={() => navigate("lab")}>
+                Proof Studio
+                <ArrowRight size={16} />
+              </button>
+            </section>
+          </>
+        )}
+        {view === "schemas" && (
+          <section className="view-section">
+            <div className="schema-grid">
+              {data?.schemas.map((s) => (
+                <button
+                  className="schema-card"
+                  key={s.uid}
+                  onClick={() =>
+                    void openSchema(s.uid).catch((e) =>
+                      toast.error(tr(e.message)),
+                    )
+                  }
+                >
+                  <div className="schema-card-top">
+                    <span className={"schema-icon " + s.color}>
+                      <Layers size={24} />
+                    </span>
+                    <Badge variant={s.current ? "success" : "neutral"}>
+                      {tr(s.current ? tr("현재 Dojang") : tr("이전 버전"))}
+                    </Badge>
+                  </div>
+                  <h3>{tr(s.label)}</h3>
+                  <span className="sub-label">{tr(s.name)}</span>
+                  <p>{tr(s.description)}</p>
+                  <code className="schema-definition">{tr(s.definition)}</code>
+                  <div className="card-bottom">
+                    <span>
+                      {tr(
+                        s.revocable
+                          ? tr("발행자가 취소 가능")
+                          : tr("취소 불가"),
+                      )}
+                    </span>
+                    <span>{tr("구조와 규칙 보기 ↗")}</span>
+                  </div>
+                </button>
+              )) ?? (
+                <Empty title={error || tr("스키마 조회 중")} loading={!error} />
+              )}
+            </div>
+          </section>
+        )}
+        {view === "issuers" && (
+          <Suspense fallback={<Empty title={tr("화면 준비 중")} loading />}>
+            <OperatorHub
+              data={data}
+              error={error}
+              onWallet={(address) => void openWallet(address).catch(() => {})}
+              initialManage={
+                new URLSearchParams(window.location.search).get("mode") ===
+                "manage"
+              }
+            />
+          </Suspense>
+        )}
+        {view === "wallet" && (
+          <section className="view-section">
+            <div className="wallet-connect-card">
+              <div>
+                <Wallet size={24} />
+                <h2>{tr("주소만으로도 볼 수 있어요.")}</h2>
+                <p>{tr("조회에는 서명이나 가스가 필요 없습니다.")}</p>
+              </div>
+              <button className="primary" onClick={connect}>
+                {tr(connected ? short(connected) : tr("내 지갑 연결"))}
+              </button>
+            </div>
+            <form
+              className="wallet-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void openWallet(walletInput).catch(() => {});
+              }}
+            >
+              <label htmlFor="wallet-address">{tr("조회할 지갑 주소")}</label>
+              <div>
+                <input
+                  id="wallet-address"
+                  value={walletInput}
+                  onChange={(e) => setWalletInput(e.target.value)}
+                  placeholder="0x…"
+                  required
+                />
+                <button className="primary" disabled={walletBusy}>
+                  {tr(walletBusy ? tr("조회 중") : tr("도장 조회"))}
+                </button>
+              </div>
+            </form>
+            {walletError && (
+              <div className="notice danger" role="alert">
+                {tr(walletError)}
+              </div>
+            )}
+            {walletBusy ? (
+              <Empty
+                title={tr("도장과 인증 상태를 확인하고 있습니다.")}
+                loading
+              />
+            ) : walletData ? (
+              <>
+                <div className="wallet-summary">
+                  <div>
+                    <Badge variant="blue">{tr("공개 지갑 기록")}</Badge>
+                    <h2 className="mono">
+                      {tr(short(walletData.address, 10))}
+                    </h2>
+                    <p>
+                      {tr(
+                        walletData.verifiedBy.length
+                          ? tr("DojangScroll 주소 인증 확인 · {0}", [
+                              walletData.verifiedBy
+                                .map((i) => i.name)
+                                .join(", "),
+                            ])
+                          : tr(
+                              "조회한 등록 발행자 기준 주소 인증이 확인되지 않았습니다.",
+                            ),
+                      )}
+                    </p>
+                  </div>
+                  <CopyButton value={walletData.address} />
+                </div>
+                {walletData.attestations.length ? (
+                  <ScanCards
+                    items={walletData.attestations}
+                    onSelect={openRecord}
+                  />
+                ) : (
+                  <Empty
+                    title={tr("조회한 기본 인덱스에는 도장이 없습니다.")}
+                    text={tr(
+                      "발급받은 도장의 UID 또는 트랜잭션 해시로 직접 검색할 수도 있습니다.",
+                    )}
+                  />
+                )}
+                <p className="fine-print">{tr(walletData.coverage)}</p>
+              </>
+            ) : (
+              <Empty
+                title={tr("누구의 도장이 궁금한가요?")}
+                text={tr("지갑 주소를 입력하거나 내 지갑을 연결하세요.")}
+              />
+            )}
+          </section>
+        )}
+        <Suspense
+          fallback={<Empty title={tr("화면을 준비하고 있습니다.")} loading />}
+        >
+          {view === "lab" && <ProofStudio />}
+          {view === "guide" && <LearningGuide data={data} />}
+        </Suspense>
+        {!!data?.warnings.length && (
+          <details className="data-notes">
+            <summary>
+              {tr("데이터 조회 안내 ·")}
+              {tr(data.warnings.length)}
+              {tr("건")}
+            </summary>
+            {data.warnings.map((w) => (
+              <p key={w}>{tr(w)}</p>
+            ))}
+          </details>
+        )}
+        <footer className="site-footer">
+          <div className="footer-main">
+            <div>
+              <a className="brand-mini" href={localURL({ view: "explore" })}>
+                <span className="mini-stamp">印</span>Dojang Scan
+              </a>
+              <p>{tr("GIWA Dojang 탐색·관리")}</p>
+            </div>
+            <nav aria-label={tr("푸터 링크")}>
+              <button className="text-button" onClick={() => navigate("guide")}>
+                {tr("사용 안내")}
+              </button>
+              <a
+                href="https://docs.giwa.io/giwa-ecosystem/dojang"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Dojang Docs ↗
+              </a>
+              <a
+                href="https://github.com/zkproofport/dojangscan"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub ↗
+              </a>
+            </nav>
+          </div>
+          <div className="footer-bottom">
+            <span>GIWA Sepolia · 91342</span>
+            <a
+              href="https://masselabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Powered by <strong>Masse Labs</strong>
+            </a>
+          </div>
+        </footer>
+      </main>
+      <ScanDetail
+        record={detail}
+        schema={schemaDetail}
+        close={() => {
+          setDetail(null);
+          setSchemaDetail(null);
+          updateURL({ view });
+        }}
+        goWallet={(a) =>
+          void openWallet(a).catch((e) => toast.error(tr(e.message)))
+        }
+        goSchema={(u) =>
+          void openSchema(u).catch((e) => toast.error(tr(e.message)))
+        }
+      />
+    </div>
+  );
 }
-export function Empty({title,text,loading=false,action}:{title:string;text?:string;loading?:boolean;action?:()=>void}){return <div className="empty-state" role="status">{loading?<RefreshCw className="spinning" size={24}/>:<ScanLine size={24}/>}<h3>{tr(title)}</h3>{text&&<p>{tr(text)}</p>}{action&&<button className="secondary-button" onClick={action}>{tr("다시 조회")}</button>}</div>;}
+export function Empty({
+  title,
+  text,
+  loading = false,
+  action,
+}: {
+  title: string;
+  text?: string;
+  loading?: boolean;
+  action?: () => void;
+}) {
+  return (
+    <div className="empty-state" role="status">
+      {loading ? (
+        <RefreshCw className="spinning" size={24} />
+      ) : (
+        <ScanLine size={24} />
+      )}
+      <h3>{tr(title)}</h3>
+      {text && <p>{tr(text)}</p>}
+      {action && (
+        <button className="secondary-button" onClick={action}>
+          {tr("다시 조회")}
+        </button>
+      )}
+    </div>
+  );
+}

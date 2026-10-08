@@ -1,0 +1,7 @@
+GIWA official brand assets
+Source: https://giwa.io/brand
+Kit: https://giwa.io/files/giwa_brand_kit_1007.zip
+Original GIWA_Combination_Black_Transparent.svg and GIWA_Combination_White_Transparent.svg, unchanged.
+GIWA trademarks belong to Dunamu. Used to identify the connected GIWA network.
+
+ZKProofport logo: existing project asset from proofport-portal-web/public/logo.png, unchanged.

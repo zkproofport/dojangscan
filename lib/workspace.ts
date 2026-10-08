@@ -6,14 +6,9 @@ import {
   ZeroHash,
   getAddress,
   isHexString,
-  solidityPackedKeccak256,
-  type Signer,
-  Signature,
-  toUtf8Bytes,
 } from "ethers";
 import { CONTRACTS, NETWORK } from "./giwa";
 import { rpc } from "./scan-data";
-import { inspectOffchain } from "./offchain";
 
 export const BOOK_ABI = [
   "function register(bytes32,address)",
@@ -29,16 +24,9 @@ const schemaBook = new Interface([
   "function unregister(bytes32)",
 ]);
 const book = new Interface(BOOK_ABI);
-const registry = new Interface([
-  "function register(string,address,bool) returns(bytes32)",
-]);
 export const EAS_OPERATIONS_ABI = [
   "function attest((bytes32 schema,(address recipient,uint64 expirationTime,bool revocable,bytes32 refUID,bytes data,uint256 value) data)) payable returns(bytes32)",
   "function revoke((bytes32 schema,(bytes32 uid,uint256 value) data)) payable",
-  "function timestamp(bytes32) returns(uint64)",
-  "function revokeOffchain(bytes32)",
-  "function getTimestamp(bytes32) view returns(uint64)",
-  "function getRevokeOffchain(address,bytes32) view returns(uint64)",
 ];
 const eas = new Interface(EAS_OPERATIONS_ABI);
 const resolver = new Interface([
@@ -98,15 +86,6 @@ export function prepareCall(
   let to: string = CONTRACTS.EAS,
     data: string;
   switch (operation) {
-    case "schema":
-      to = CONTRACTS.SchemaRegistry;
-      encodeFields(input.definition, input.values);
-      data = registry.encodeFunctionData("register", [
-        input.definition,
-        getAddress(input.resolver || ZeroAddress),
-        input.revocable ?? true,
-      ]);
-      break;
     case "attest":
       data = eas.encodeFunctionData("attest", [
         {
@@ -184,18 +163,10 @@ export function prepareCall(
         ],
       );
       break;
-    case "timestamp":
-    case "offchain-revoke":
-      data = eas.encodeFunctionData(
-        operation === "timestamp" ? "timestamp" : "revokeOffchain",
-        [uid(input.id)],
-      );
-      break;
     default:
       throw new Error("Unsupported operation.");
   }
   const functionName: Record<string, string> = {
-    schema: "SchemaRegistry.register",
     attest: "EAS.attest",
     revoke: "EAS.revoke",
     issuer: "DojangAttesterBook.register",
@@ -208,8 +179,6 @@ export function prepareCall(
     disallow: "removeAttester",
     indexer: "setIndexer",
     "balance-root": "setBalanceRootSchemaUID",
-    timestamp: "EAS.timestamp",
-    "offchain-revoke": "EAS.revokeOffchain",
   };
   return {
     chainId: NETWORK.chainId,
@@ -294,107 +263,6 @@ export async function simulateCall(call: PreparedCall, caller: string) {
     sent: false,
   };
 }
-export async function signOffchain(
-  signer: Signer,
-  definition: string,
-  values: string,
-  recipient: string,
-  expiration: string,
-) {
-  const version = 2;
-  const time = Math.floor(Date.now() / 1000);
-  const expirationTime = uint64(expiration);
-  if (expirationTime !== 0n && expirationTime <= BigInt(time))
-    throw new Error("Expiration must be in the future.");
-  const schema = solidityPackedKeccak256(
-    ["string", "address", "bool"],
-    [definition, ZeroAddress, true],
-  );
-  const data = encodeFields(definition, values);
-  const schemaVersion = new Interface([
-    "function version() view returns(string)",
-  ]);
-  const raw = await rpc("eth_call", [
-    { to: CONTRACTS.EAS, data: schemaVersion.encodeFunctionData("version") },
-    "latest",
-  ]);
-  const domain = {
-    name: "EAS Attestation",
-    version: String(schemaVersion.decodeFunctionResult("version", raw)[0]),
-    chainId: NETWORK.chainId,
-    verifyingContract: CONTRACTS.EAS,
-  };
-  const types = {
-    Attest: [
-      { name: "version", type: "uint16" },
-      { name: "schema", type: "bytes32" },
-      { name: "recipient", type: "address" },
-      { name: "time", type: "uint64" },
-      { name: "expirationTime", type: "uint64" },
-      { name: "revocable", type: "bool" },
-      { name: "refUID", type: "bytes32" },
-      { name: "data", type: "bytes" },
-      { name: "salt", type: "bytes32" },
-    ],
-  };
-  const message = {
-    version,
-    schema,
-    recipient: address(recipient),
-    time,
-    expirationTime: expirationTime.toString(),
-    revocable: true,
-    refUID: ZeroHash,
-    data,
-    salt:
-      "0x" +
-      Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
-        b.toString(16).padStart(2, "0"),
-      ).join(""),
-  };
-  const attester = await signer.getAddress();
-  const signature = Signature.from(
-    await signer.signTypedData(domain, types, message),
-  ).toJSON();
-  const signedUid = solidityPackedKeccak256(
-    [
-      "uint16",
-      "bytes",
-      "address",
-      "address",
-      "uint64",
-      "uint64",
-      "bool",
-      "bytes32",
-      "bytes",
-      "bytes32",
-      "uint32",
-    ],
-    [
-      version,
-      toUtf8Bytes(schema),
-      message.recipient,
-      ZeroAddress,
-      time,
-      expirationTime,
-      true,
-      ZeroHash,
-      data,
-      message.salt,
-      0,
-    ],
-  );
-  return {
-    version,
-    uid: signedUid,
-    domain,
-    primaryType: "Attest",
-    types,
-    message,
-    signature,
-    attester,
-  };
-}
 export async function inspectContractRole(
   contract: string,
   caller: string,
@@ -425,22 +293,6 @@ export async function inspectContractRole(
     canManage: Boolean(await read("hasRole", [roleAdmin, caller])),
   };
 }
-export async function readOffchainStatus(issuer: string, id: string) {
-  const read = async (fn: string, args: unknown[]) =>
-    String(
-      eas.decodeFunctionResult(
-        fn,
-        await rpc("eth_call", [
-          { to: CONTRACTS.EAS, data: eas.encodeFunctionData(fn, args) },
-          "latest",
-        ]),
-      )[0],
-    );
-  return {
-    timestamp: await read("getTimestamp", [uid(id)]),
-    revokedAt: await read("getRevokeOffchain", [address(issuer), uid(id)]),
-  };
-}
 export async function readSchema(schema: string) {
   const abi = new Interface([
     "function getSchema(bytes32) view returns((bytes32 uid,address resolver,bool revocable,string schema))",
@@ -462,4 +314,27 @@ export async function readSchema(schema: string) {
     resolver: String(record.resolver),
     revocable: Boolean(record.revocable),
   };
+}
+
+// Re-read the official Book instead of trusting a cached label or arbitrary EAS UID.
+export async function requireDojangSchema(schema: string, schemaId?: string) {
+  if (!schemaId) throw new Error("Choose a registered Dojang schema.");
+  const abi = new Interface([
+    "function getSchemaUid(bytes32) view returns(bytes32)",
+  ]);
+  const [current] = abi.decodeFunctionResult(
+    "getSchemaUid",
+    await rpc("eth_call", [
+      {
+        to: CONTRACTS.SchemaBook,
+        data: abi.encodeFunctionData("getSchemaUid", [uid(schemaId)]),
+      },
+      "latest",
+    ]),
+  );
+  if (
+    current === ZeroHash ||
+    current.toLowerCase() !== uid(schema).toLowerCase()
+  )
+    throw new Error("This schema is no longer registered in Dojang.");
 }

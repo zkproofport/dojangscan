@@ -11,17 +11,9 @@
     "preview": "vite preview --host 127.0.0.1 --port 4317",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "test:live": "node --import tsx scripts/check-live.mjs",
-    "test:zk": "node --import tsx scripts/prove-balance.mjs",
-    "test:zk:onchain": "node --import tsx scripts/test-zk-onchain.mjs",
-    "zk:compile": "node scripts/compile-balance.mjs",
-    "format:workspace": "prettier --write components/workspace.tsx components/balance-studio.tsx components/contract-console.tsx components/transaction-review.tsx lib/workspace.ts lib/transactions.ts lib/balance-*.ts lib/contract-console.ts src/workers/*.ts scripts/*balance*.mjs scripts/test-zk-onchain.mjs tests/transactions.test.ts"
+    "test:live": "node --import tsx scripts/check-live.mjs"
   },
   "dependencies": {
-    "@aztec/bb.js": "1.0.0-nightly.20250723",
-    "@noir-lang/noir_js": "1.0.0-beta.8",
-    "@zkproofport-app/sdk": "^0.3.1",
-    "buffer": "6.0.3",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "ethers": "^6.16.0",
