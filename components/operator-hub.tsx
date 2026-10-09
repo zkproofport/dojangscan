@@ -1,3 +1,4 @@
+import { issuerMetadata } from "@/lib/issuer-metadata";
 import { lazy, Suspense, useState } from "react";
 import {
   ArrowLeft,
@@ -201,6 +202,17 @@ export default function OperatorHub({
                     <details className="operator-row-detail">
                       <summary>{tr("등록 정보")}</summary>
                       <code>{issuer.id}</code>
+                      {issuerMetadata(issuer.id) && (
+                        <p>
+                          <a
+                            href={issuerMetadata(issuer.id)!.source}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {tr("발행자 이름 출처: GIWA 공식 문서")} ↗
+                          </a>
+                        </p>
+                      )}
                       {issuer.tx && (
                         <a
                           href={`${NETWORK.explorer}/tx/${issuer.tx}`}

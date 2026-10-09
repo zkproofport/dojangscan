@@ -1,3 +1,4 @@
+import { issuerMetadata } from "@/lib/issuer-metadata";
 import { tr } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { useEffect, useState } from "react";
@@ -298,6 +299,17 @@ export default function ScanDetail({
                 <TabsContent value="read">
                   <h3>{tr("발행자")}</h3>
                   <span className="sub-label">{tr(a.issuerName)}</span>
+                  {issuerMetadata(a.issuerId ?? "") && (
+                    <a
+                      className="text-button"
+                      href={issuerMetadata(a.issuerId!)!.source}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {tr("발행자 이름 출처: GIWA 공식 문서")}
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
                   <button
                     className="address-link mono"
                     onClick={() => goWallet(a.attester)}

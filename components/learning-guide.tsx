@@ -1,3 +1,4 @@
+import PlaygroundGuide from "./playground-guide";
 import { tr } from "@/lib/i18n";
 import { useState } from "react";
 import {
@@ -10,7 +11,13 @@ import {
 import { CONTRACTS, NETWORK, type ScanData } from "@/lib/giwa";
 import { Badge, CopyButton } from "./scan-ui";
 import { Relationship } from "./relationship";
-export default function LearningGuide({ data }: { data: ScanData | null }) {
+export default function LearningGuide({
+  data,
+  onWallet,
+}: {
+  data: ScanData | null;
+  onWallet: (address: string) => void;
+}) {
   const [example, setExample] = useState("address");
   const examples = {
     address: {
@@ -31,6 +38,7 @@ export default function LearningGuide({ data }: { data: ScanData | null }) {
   const e = examples[example as keyof typeof examples];
   return (
     <div className="guide-page">
+      <PlaygroundGuide onWallet={onWallet} />
       <Relationship full />
       <section className="guide-example">
         <div className="guide-example-copy">

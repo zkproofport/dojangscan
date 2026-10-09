@@ -1,3 +1,5 @@
+import { invalidateScanCache } from "@/lib/scan-data";
+import { PlaygroundInvite } from "./playground-guide";
 import { tr } from "@/lib/i18n";
 import { getLocale } from "@/lib/preferences";
 import { usePreferences, setLanguage, setTheme } from "@/lib/preferences";
@@ -355,7 +357,9 @@ export default function ScanApp() {
         (issuerFilter === "all" ||
           (issuerFilter === "manager"
             ? a.managementRole
-            : a.issuerClass === issuerFilter)) &&
+            : issuerFilter === "registered"
+              ? a.registeredIssuer
+              : a.issuerClass === issuerFilter)) &&
         (schemaFilter === "all" ||
           a.schema.toLowerCase() === schemaFilter.toLowerCase()),
     ) ?? [];
@@ -555,6 +559,12 @@ export default function ScanApp() {
         )}
         {view === "explore" && (
           <>
+            <PlaygroundInvite
+              onStart={() => {
+                navigate("guide");
+                window.scrollTo({ top: 0 });
+              }}
+            />
             <button className="explore-help" onClick={() => navigate("guide")}>
               <CircleHelp size={16} />
               <span>{tr("EAS와 Dojang, 어떤 관계일까요?")}</span>
@@ -681,6 +691,7 @@ export default function ScanApp() {
                     <option value="all">{tr("전체")}</option>
                     <option value="registered">{tr("Dojang 등록")}</option>
                     <option value="manager">{tr("관리 권한 주소")}</option>
+                    <option value="playground">{tr("테스트넷 도장")}</option>
                     <option value="test">{tr("ZKProofport 테스트")}</option>
                     <option value="external">{tr("일반 EAS")}</option>
                     <option value="unknown">{tr("미확인")}</option>
@@ -940,7 +951,15 @@ export default function ScanApp() {
           fallback={<Empty title={tr("화면을 준비하고 있습니다.")} loading />}
         >
           {view === "lab" && <ProofStudio />}
-          {view === "guide" && <LearningGuide data={data} />}
+          {view === "guide" && (
+            <LearningGuide
+              data={data}
+              onWallet={(address) => {
+                invalidateScanCache();
+                void openWallet(address).catch(() => {});
+              }}
+            />
+          )}
         </Suspense>
         {!!data?.warnings.length && (
           <details className="data-notes">

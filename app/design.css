@@ -1644,3 +1644,204 @@ a {
   width: 24px;
   height: 24px;
 }
+
+/* Playground onboarding shares the existing wallet lookup and guide surfaces. */
+.app .playground-invite {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.app .playground-invite > svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.app .playground-invite > div {
+  flex: 1;
+  min-width: 0;
+}
+.app .playground-invite strong {
+  font-size: 15px;
+  color: var(--ink);
+}
+.app .playground-invite p {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.app .playground-invite > button {
+  flex-shrink: 0;
+}
+.app .playground-guide {
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  min-width: 0;
+}
+.app .playground-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+.app .playground-heading h2 {
+  margin: 8px 0;
+  font-size: 26px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.app .playground-heading p,
+.app .playground-steps p,
+.app .playground-result p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.app .playground-heading > a {
+  flex-shrink: 0;
+}
+.app .playground-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  padding: 24px 0;
+  margin: 24px 0 0;
+  list-style: none;
+  border-block: 1px solid var(--line);
+}
+.app .playground-steps li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.app .playground-step-number {
+  color: var(--accent);
+  font:
+    12px ui-monospace,
+    monospace;
+}
+.app .playground-steps h3 {
+  color: var(--ink);
+  font-size: 17px;
+  margin: 10px 0 8px;
+  letter-spacing: -0.02em;
+}
+.app .playground-steps p {
+  flex: 1;
+  margin-bottom: 18px;
+}
+.app .playground-steps a {
+  min-height: 42px;
+}
+.app .playground-note {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-top: 16px;
+}
+.app .playground-form {
+  margin: 20px 0 0;
+}
+.app .playground-form label {
+  color: var(--ink);
+}
+.app .playground-form input {
+  background: var(--paper);
+}
+.app .playground-guide > .chain-loading {
+  margin-top: 18px;
+}
+.app .playground-result {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+.app .playground-result > strong {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 15px;
+  color: var(--ink);
+}
+.app .playground-result > strong svg {
+  flex-shrink: 0;
+}
+.app .playground-result p {
+  margin-top: 10px;
+}
+.app .playground-evidence,
+.app .playground-result-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 16px;
+}
+.app .playground-evidence {
+  color: var(--muted);
+  font-size: 12px;
+}
+.app .playground-evidence a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.app .playground-source {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 20px;
+}
+.app .playground-source summary {
+  cursor: pointer;
+}
+.app .playground-source p {
+  margin: 10px 0;
+  line-height: 1.8;
+}
+.app .playground-source a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.app .issuer-stamp.playground {
+  color: var(--muted);
+}
+@container workspace (max-width: 680px) {
+  .app .playground-guide {
+    padding: 22px;
+  }
+  .app .playground-heading,
+  .app .playground-invite {
+    flex-wrap: wrap;
+  }
+  .app .playground-invite > button {
+    width: 100%;
+  }
+  .app .playground-steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .app .playground-steps li + li {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+  }
+  .app .playground-steps p {
+    margin-bottom: 12px;
+  }
+  .app .playground-form > div {
+    flex-direction: column;
+  }
+  .app .playground-heading h2 {
+    font-size: 23px;
+  }
+  .app .playground-result {
+    padding: 16px;
+  }
+}

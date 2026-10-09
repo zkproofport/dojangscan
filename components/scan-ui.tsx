@@ -89,7 +89,7 @@ export function IssuerStamp({
   const Icon =
     kind === "registered"
       ? ShieldCheck
-      : kind === "test"
+      : kind === "test" || kind === "playground"
         ? FlaskConical
         : kind === "manager"
           ? Building2
