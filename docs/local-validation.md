@@ -1,4 +1,17 @@
-# Validation
+# Development & validation / 개발·검증
+
+## Local setup / 로컬 실행
+
+Node.js 22.13 이상이 필요합니다. / Requires Node.js 22.13 or newer.
+
+```bash
+npm ci
+npm run dev
+```
+
+Open <http://127.0.0.1:4317>. Wallet actions use **GIWA Sepolia (91342)**.
+
+## Checks / 검사
 
 ```bash
 npm run check
@@ -20,3 +33,11 @@ npm run test:live
 - Public-chain read checks passed at block **38,070,062**: 50 records, 4 current schemas, 10 registered issuers, 10 deployed contracts. Verified current schema membership, administrator roles, and a real Console `hasRole` call.
 - Browser checks covered the Korean/English Proof Studio, dark appearance, light-theme issuer/administrator forms, download links, footer, and disabled write controls without a connected wallet.
 - No public-chain transactions or deployment were performed during this change. Mobile viewport and authorized-wallet writes were not re-tested in this pass.
+
+## Deployment / 배포
+
+`main`에 푸시하면 GitHub Actions가 테스트·빌드 후 `dist/`를 GitHub Pages에 배포합니다.
+
+Pushes to `main` run tests, build the app, and deploy `dist/` to GitHub Pages.
+
+[Workflow status / 배포 상태](https://github.com/zkproofport/dojangscan/actions/workflows/pages.yml)

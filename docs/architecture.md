@@ -20,3 +20,11 @@ Future Proof Studio integration will need wallet ownership, registered schema/is
 Google tag `G-KV5XFCT55F` is included once in `index.html`. GA4 handles its standard page views; `view_section` separately records the six navigation sections, without custom wallet/search fields. No manual `page_view` is sent, avoiding duplicates with GA4 enhanced history measurement. Blocking the tag does not block application navigation.
 
 Onchain loading displays elapsed time and a short explanation. Public RPC calls remain rate-limited (batches of 3, at least 650 ms apart); the first overview includes registration discovery, role checks, and current attestation reads. The indicator changes to a longer-wait message after 30 seconds and disappears when loading finishes or fails.
+
+## Issuer labels / 발행자 표시
+
+EAS stores attestation records; Dojang adds registered schemas, issuers, and issuance rules. Issuer names use [GIWA's documented IDs](https://docs.giwa.io/giwa-chain/en/giwa-ecosystem/dojang/contracts). Current addresses and registration come from `DojangAttesterBook.getAttester(ID)`; unknown names are not inferred.
+
+발행자 이름은 공식 문서의 ID를 근거로 표시합니다. 현재 주소와 등록 여부는 `getAttester(ID)`로 조회하며, 관리자 역할·발행자 등록·실제 발급 권한을 각각 구분합니다.
+
+For local setup, checks, and deployment, see [Development & validation](local-validation.md).
