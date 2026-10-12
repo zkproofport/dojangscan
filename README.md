@@ -1,23 +1,54 @@
-# Dojang Scan
+<p align="center">
+  <a href="https://dojangscan.com/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="public/brand/dojang-scan-dark.svg">
+      <img src="public/brand/dojang-scan.svg" alt="Dojang Scan logo" width="80" height="80">
+    </picture>
+  </a>
+</p>
 
-[한국어](#한국어) · [English](#english) · [Website](https://zkproofport.github.io/dojangscan/)
+<h1 align="center">Dojang Scan</h1>
+
+<p align="center">
+  GIWA 도장 조회와 관리<br>
+  Explore and manage attestations on GIWA Sepolia.
+</p>
+
+<p align="center">
+  <a href="https://dojangscan.com/"><strong>Open Dojang Scan ↗</strong></a> ·
+  <a href="https://dojangscan.com/?view=guide">Guide</a> ·
+  <a href="#한국어">한국어</a> ·
+  <a href="#english">English</a>
+</p>
+
+<p align="center">Powered by <a href="https://masselabs.com/"><strong>Masse Labs</strong></a></p>
+
+---
 
 ## 한국어
 
-GIWA Sepolia의 Dojang을 조회하고 관리하는 웹앱입니다.
+Dojang Scan은 GIWA Sepolia의 도장과 발행자를 조회하고, 권한이 있는 지갑으로 발급·등록·권한 관리를 실행하는 서비스입니다. 공개 기록 조회에는 지갑 연결이 필요하지 않습니다.
 
-- **탐색**: 도장·스키마·발행자 조회, 지갑·UID·트랜잭션 검색, 등록 여부와 유효 상태 확인.
-- **테스트 도장 체험**: 가이드에서 Playground 발급 안내 → 현재 등록된 발행자·스키마로 발급 기록 확인.
-- **발행자·관리자**: 한 화면에서 역할별 목록과 실행 폼 전환, 이름·주소 검색, 5개씩 페이지 조회.
-- **발행자**: 등록된 Dojang 스키마로 발급·취소. 실행 전 시뮬레이션과 지갑 승인.
-- **관리자**: 발행자·스키마 등록/해제, 역할 부여/회수, resolver 발급 권한과 설정 관리.
-- **Contract Console**: 실제 컨트랙트 ABI 조회, 함수 읽기·시뮬레이션·지갑 실행.
-- **Proof Studio — Coming soon**: 내 도장 선택 → ZKProofport 모바일 증명 → 웹에서 결과 확인. 현재는 안내와 iOS·Android 다운로드를 제공합니다.
-- 한국어·영어, 라이트·다크 테마, 공유 링크와 JSON 저장.
+| 기능 | 할 수 있는 일 |
+| --- | --- |
+| **도장 탐색** | 지갑·UID·트랜잭션 검색, 스키마와 발행자 조회, 등록 여부·취소·만료 확인 |
+| **테스트 도장 체험** | GIWA Playground에서 발급받고 같은 지갑의 온체인 기록 확인 |
+| **발행자·관리자** | 도장 발급·취소, 발행자·스키마 등록 관리, 역할·resolver 권한 관리 |
+| **Contract Console** | 검증된 ABI로 함수 조회, 시뮬레이션, 지갑을 통한 실행 |
+| **Proof Studio · Coming soon** | 내 도장 → ZKProofport 모바일 증명 → 웹에서 결과 확인. 현재는 소개와 앱 다운로드 제공 |
 
-EAS는 도장 기록을 저장하는 기반 계약입니다. Dojang은 그 위에 등록 스키마·발행자·발급 규칙을 구성합니다. 관리자 역할, 발행자 등록, 실제 발급 권한은 별개이며 계약이 권한을 검사합니다. 발행자가 컨트랙트인 경우 운영 지갑에서 Console로 해당 발행 함수를 호출합니다.
+한국어·영어 · 라이트·다크 테마 · 공유 링크 · JSON 내보내기
 
-발행자 이름은 [GIWA 공식 ID 문서](https://docs.giwa.io/giwa-chain/en/giwa-ecosystem/dojang/contracts)를 근거로 표시합니다. 현재 주소와 등록 여부는 `getAttester(ID)`로 조회하며, 이름을 확인하지 못한 ID는 일반 표기를 유지합니다.
+**직접 사용해 보기:** [테스트 도장 발급 가이드](https://dojangscan.com/?view=guide)에서 시작하세요. 운영 작업은 [발행자·관리자 사용법](docs/workflows.md)을 참고하세요.
+
+<details>
+<summary>데이터와 권한 확인 기준</summary>
+
+EAS는 도장 기록을 저장하는 기반 계약이며, Dojang은 등록 스키마·발행자·발급 규칙을 구성합니다. 발행자 이름은 [GIWA 공식 ID 문서](https://docs.giwa.io/giwa-chain/en/giwa-ecosystem/dojang/contracts), 현재 주소와 등록 여부는 `getAttester(ID)`를 기준으로 표시합니다. 알 수 없는 이름을 추정하지 않습니다.
+
+관리자 역할, 발행자 등록, 실제 발급 권한은 별개이며 대상 계약이 권한을 검사합니다. 컨트랙트 발행자는 Console에서 해당 발급 함수를 호출합니다. 통계는 조회된 범위이며 전체 체인 수치가 아닙니다.
+
+</details>
 
 ### 실행
 
@@ -43,20 +74,28 @@ npm run test:live # 개발 서버 실행 중, 공개 체인 읽기 전용 검사
 
 ## English
 
-Explore and manage Dojang on GIWA Sepolia.
+Dojang Scan lets you explore GIWA Sepolia attestations and issuers, and manage issuance, registrations, and permissions with an authorized wallet. Browsing public records requires no wallet connection.
 
-- **Explore**: browse attestations, schemas, and issuers; search wallets, UIDs, and transactions; check registration and validity.
-- **Playground guide**: issue a test attestation, then check it against the current issuer and schema registrations.
-- **Issuers & administrators**: one area with role directories, action forms, name/address search, and five-row pagination.
-- **Issuers**: issue and revoke attestations using registered Dojang schemas, with simulation and wallet approval.
-- **Administrators**: manage issuer/schema registrations, contract roles, and resolver permissions and settings.
-- **Contract Console**: load real contract ABIs, read functions, simulate calls, and execute through a wallet.
-- **Proof Studio — Coming soon**: select your attestation → prove in ZKProofport on mobile → view the result on the web. Currently provides a preview and iOS/Android download links.
-- Korean/English, light/dark themes, share links, and JSON export.
+| Feature | What you can do |
+| --- | --- |
+| **Explore** | Search wallets, UIDs, and transactions; inspect schemas, issuers, registration, revocation, and expiration |
+| **Test attestations** | Issue in GIWA Playground, then check the same wallet's onchain record |
+| **Issuers & roles** | Issue and revoke attestations; manage issuer/schema registrations, roles, and resolver permissions |
+| **Contract Console** | Load verified ABIs, read functions, simulate calls, and execute through a wallet |
+| **Proof Studio · Coming soon** | Your attestation → ZKProofport mobile proof → result on the web. Currently provides an introduction and app downloads |
 
-EAS provides the underlying attestation contracts. Dojang adds registered schemas, issuers, and issuance rules. Administrator roles, issuer registration, and issuance permission are separate; contracts enforce access. Contract-based issuers are operated through their own functions in the Console.
+Korean & English · Light & dark themes · Share links · JSON export
 
-Issuer names use [GIWA's documented IDs](https://docs.giwa.io/giwa-chain/en/giwa-ecosystem/dojang/contracts). Current addresses and registration come from `getAttester(ID)`; unknown IDs retain a generic label.
+**Try it:** start with the [test attestation guide](https://dojangscan.com/?view=guide). For management tasks, see the [operator guide](docs/workflows.md).
+
+<details>
+<summary>Data sources and permissions</summary>
+
+EAS stores attestation records; Dojang adds registered schemas, issuers, and issuance rules. Issuer names use [GIWA's documented IDs](https://docs.giwa.io/giwa-chain/en/giwa-ecosystem/dojang/contracts). Current addresses and registration come from `getAttester(ID)`; unknown names are not inferred.
+
+Administrator roles, issuer registration, and issuance permission are separate; target contracts enforce access. Contract-based issuers use their own issuance functions through the Console. Counts cover loaded records, not the entire chain.
+
+</details>
 
 ### Run
 
@@ -70,7 +109,7 @@ Pushes to `main` run tests, build, and deploy `dist/` through GitHub Actions. [D
 
 ---
 
-React + TypeScript + Vite. Static build: `dist/`. Public GIWA RPC and explorer APIs; no application server or API key required. Counts cover loaded records, not the entire chain.
+React + TypeScript + Vite · Static build: `dist/` · Public GIWA RPC & explorer APIs · No application server or API key required.
 
 [Dojang docs](https://docs.giwa.io/giwa-ecosystem/dojang) · [Contracts](https://github.com/giwa-io/dojang) · [Operator guide](docs/workflows.md)
 
