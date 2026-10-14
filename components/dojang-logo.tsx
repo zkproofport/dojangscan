@@ -1,4 +1,8 @@
-/** The mark is decorative when paired with the Dojang Scan wordmark. */
+export function DojangWordmark() {
+  return <span className="dojang-wordmark">Dojangscan</span>;
+}
+
+/** The mark is decorative when paired with the Dojangscan wordmark. */
 export function DojangLogo() {
   const base = import.meta.env.BASE_URL;
   return (

@@ -46,7 +46,7 @@ export function Relationship({
         <div>
           <ScanEye size={21} />
           <span>
-            <strong>Dojang Scan</strong>
+            <strong>Dojangscan</strong>
             <small>{tr("조회·검증·작업 도구")}</small>
           </span>
         </div>

@@ -5,7 +5,7 @@ function read(key:string){try{return localStorage.getItem(key);}catch{return nul
 let language:Language=read('dojang-language')==='en'?'en':'ko';
 let theme:Theme=read('dojang-theme')==='dark'?'dark':read('dojang-theme')==='light'?'light':typeof matchMedia!=='undefined'&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
 const listeners=new Set<()=>void>();
-function apply(){if(typeof document==='undefined')return;document.documentElement.lang=language;document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme;document.title='Dojang Scan';}
+function apply(){if(typeof document==='undefined')return;document.documentElement.lang=language;document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme;document.title='Dojangscan';}
 apply();
 function subscribe(listener:()=>void){listeners.add(listener);return()=>{listeners.delete(listener);};}
 export function getLanguage(){return language;}

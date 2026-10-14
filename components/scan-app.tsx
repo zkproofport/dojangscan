@@ -37,9 +37,10 @@ import { connectWallet, injected } from "@/lib/wallet";
 import { ChainLoading } from "./chain-loading";
 import { trackSection } from "@/lib/analytics";
 import { localURL } from "@/lib/navigation";
-import { DojangLogo } from "./dojang-logo";
+import { DojangWordmark, DojangLogo } from "./dojang-logo";
 const OperatorHub = lazy(() => import("./operator-hub"));
 const ProofStudio = lazy(() => import("./proof-studio"));
+const BrandKit = lazy(() => import("./brand-kit"));
 const LearningGuide = lazy(() => import("./learning-guide"));
 const nav = [
   { id: "explore", label: "도장 탐색", icon: ScanLine },
@@ -58,6 +59,7 @@ export default function ScanApp() {
       : requested &&
           (nav.some((item) => item.id === requested) ||
             requested === "guide" ||
+            requested === "brand" ||
             requested === "issuer")
         ? requested
         : "explore";
@@ -337,7 +339,11 @@ export default function ScanApp() {
     if (v === "workspace") {
       setView("issuers");
       updateURL({ view: "issuers", mode: "manage" });
-    } else if (v && (nav.some((n) => n.id === v) || v === "guide")) setView(v);
+    } else if (
+      v &&
+      (nav.some((n) => n.id === v) || v === "guide" || v === "brand")
+    )
+      setView(v);
     const query =
       q.get("uid") ?? q.get("schema") ?? q.get("address") ?? q.get("tx");
     if (q.get("issuer")) openIssuer(q.get("issuer")!);
@@ -420,7 +426,7 @@ export default function ScanApp() {
     data?.schemas.filter((s) => s.current && s.registered) ?? [];
   const titles: Record<string, { title: string; text: string }> = {
     explore: {
-      title: "Dojang Scan",
+      title: "Dojangscan",
       text: tr("GIWA 도장을 검색하고 발행자와 상태를 확인하세요."),
     },
     schemas: {
@@ -447,6 +453,10 @@ export default function ScanApp() {
       title: "Proof Studio",
       text: tr("개인정보 공개를 줄이는 ZKProofport 증명."),
     },
+    brand: {
+      title: "브랜드 킷",
+      text: "Dojangscan 로고와 소개 이미지를 내려받으세요.",
+    },
     guide: {
       title: tr("가이드"),
       text: tr("도장의 구조와 배지의 의미를 몇 가지 예로 살펴봅니다."),
@@ -462,9 +472,7 @@ export default function ScanApp() {
             <span className="brand-seal">
               <DojangLogo />
             </span>
-            <span>
-              Dojang<span className="brand-light"> Scan</span>
-            </span>
+            <DojangWordmark />
           </button>
           <a
             className="brand-credit"
@@ -555,7 +563,7 @@ export default function ScanApp() {
               {tr(
                 view === "explore"
                   ? "GIWA SEPOLIA"
-                  : "DOJANG SCAN / " + view.toUpperCase(),
+                  : "DOJANGSCAN / " + view.toUpperCase(),
               )}
             </span>
             <h1>
@@ -565,8 +573,10 @@ export default function ScanApp() {
             <p>{tr(heading.text)}</p>
           </div>
         </section>
-        {loading && view !== "lab" && view !== "guide" && <ChainLoading />}
-        {error && view !== "lab" && view !== "guide" && (
+        {loading && view !== "lab" && view !== "guide" && view !== "brand" && (
+          <ChainLoading />
+        )}
+        {error && view !== "lab" && view !== "guide" && view !== "brand" && (
           <div className="notice danger" role="alert">
             <p>
               {tr("온체인 정보를 불러오지 못했습니다.")} {tr(error)}
@@ -581,30 +591,33 @@ export default function ScanApp() {
             </button>
           </div>
         )}
-        {view !== "lab" && view !== "guide" && view !== "issuers" && (
-          <form
-            className="searchbar"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void runSearch(search).catch((e) => toast.error(tr(e.message)));
-            }}
-          >
-            <Search size={20} />
-            <input
-              aria-label={tr("도장 검색")}
-              ref={inputRef}
-              placeholder={tr(
-                "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시",
-              )}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <kbd>/</kbd>
-            <button disabled={searching}>
-              {tr(searching ? tr("조회 중") : tr("검색"))}
-            </button>
-          </form>
-        )}
+        {view !== "lab" &&
+          view !== "guide" &&
+          view !== "brand" &&
+          view !== "issuers" && (
+            <form
+              className="searchbar"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void runSearch(search).catch((e) => toast.error(tr(e.message)));
+              }}
+            >
+              <Search size={20} />
+              <input
+                aria-label={tr("도장 검색")}
+                ref={inputRef}
+                placeholder={tr(
+                  "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시",
+                )}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <kbd>/</kbd>
+              <button disabled={searching}>
+                {tr(searching ? tr("조회 중") : tr("검색"))}
+              </button>
+            </form>
+          )}
         {searching && (
           <ChainLoading
             title="검색 중입니다."
@@ -1036,7 +1049,7 @@ export default function ScanApp() {
             />
           )}
         </Suspense>
-        {!!data?.warnings.length && (
+        {view !== "brand" && !!data?.warnings.length && (
           <details className="data-notes">
             <summary>
               {tr("데이터 조회 안내 ·")}
@@ -1048,16 +1061,38 @@ export default function ScanApp() {
             ))}
           </details>
         )}
+        {view === "brand" && (
+          <Suspense fallback={<Empty title={tr("화면 준비 중")} loading />}>
+            <BrandKit />
+          </Suspense>
+        )}
         <footer className="site-footer">
           <div className="footer-main">
             <div>
               <a className="brand-mini" href={localURL({ view: "explore" })}>
                 <DojangLogo />
-                Dojang Scan
+                <DojangWordmark />
               </a>
               <p>{tr("GIWA Dojang 탐색·관리")}</p>
             </div>
             <nav aria-label={tr("푸터 링크")}>
+              <a
+                href={localURL({ view: "brand" })}
+                onClick={(event) => {
+                  if (
+                    !event.metaKey &&
+                    !event.ctrlKey &&
+                    !event.shiftKey &&
+                    !event.altKey
+                  ) {
+                    event.preventDefault();
+                    navigate("brand");
+                    window.scrollTo({ top: 0, behavior: "instant" });
+                  }
+                }}
+              >
+                {tr("브랜드 킷")}
+              </a>
               <button className="text-button" onClick={() => navigate("guide")}>
                 {tr("가이드")}
               </button>

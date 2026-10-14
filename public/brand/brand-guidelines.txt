@@ -1,0 +1,37 @@
+Dojangscan
+Brand assets · Powered by Masse Labs
+https://dojangscan.com
+
+한국어
+이름: Dojangscan. 띄어쓰기 없이 D만 대문자로 표기합니다.
+워드마크 전체는 같은 색과 굵기로 표기합니다. 적갈색·코랄색은 도장 심볼에만 사용합니다.
+소개: GIWA Sepolia의 도장을 조회하고 관리하는 서비스.
+
+light: 밝은 배경용. dark: 어두운 배경용.
+black / white: 인쇄, 사진 등 단색 사용이 필요한 경우.
+SVG는 벡터 파일이며 글자가 윤곽선으로 변환되어 있습니다.
+PNG 로고는 배경이 투명합니다. 소개 이미지는 1280 × 720입니다.
+로고 주변에 심볼 너비의 ¼ 이상 여백을 유지하세요.
+심볼은 화면에서 최소 24px, 심볼과 이름 조합은 최소 160px 너비를 권장합니다.
+원본의 비율·색상·간격을 유지하고 효과나 장식을 추가하지 마세요.
+
+English
+Name: Dojangscan. One word, capital D, all remaining letters lowercase.
+Use one color and weight for the entire wordmark. Reserve Stamp and Coral for the stamp symbol.
+Description: Explore and manage attestations on GIWA Sepolia.
+
+light: for light backgrounds. dark: for dark backgrounds.
+black / white: monochrome versions for print and photographs.
+SVG files are vectors with outlined lettering; no fonts are required.
+PNG logos have transparent backgrounds. The brand image is 1280 × 720.
+Keep clear space of at least ¼ of the symbol width.
+Suggested minimum sizes: 24px for the symbol; 160px for symbol + wordmark.
+Preserve proportions, colors and spacing. Do not add effects or decoration.
+
+Colors
+Ink    #1D1D1F
+Stamp  #B84536
+Coral  #F29280
+Paper  #F5F5F7
+
+The kit contains only Dojangscan artwork. GIWA and ZKProofport assets are not included.

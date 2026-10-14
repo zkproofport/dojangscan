@@ -23,7 +23,7 @@ export function PlaygroundInvite({ onStart }: { onStart: () => void }) {
       <div>
         <strong>{tr("테스트 도장 발급하기")}</strong>
         <p>
-          {tr("GIWA Playground에서 발급받고, Dojang Scan에서 확인하세요.")}
+          {tr("GIWA Playground에서 발급받고, Dojangscan에서 확인하세요.")}
         </p>
       </div>
       <button className="secondary-button" onClick={onStart}>

@@ -2,12 +2,12 @@
   <a href="https://dojangscan.com/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="public/brand/dojang-scan-dark.svg">
-      <img src="public/brand/dojang-scan.svg" alt="Dojang Scan logo" width="80" height="80">
+      <img src="public/brand/dojang-scan.svg" alt="Dojangscan logo" width="80" height="80">
     </picture>
   </a>
 </p>
 
-<h1 align="center">Dojang Scan</h1>
+<h1 align="center">Dojangscan</h1>
 
 <p align="center">
   GIWA 도장 조회와 관리<br>
@@ -15,8 +15,9 @@
 </p>
 
 <p align="center">
-  <a href="https://dojangscan.com/"><strong>Open Dojang Scan ↗</strong></a> ·
+  <a href="https://dojangscan.com/"><strong>Open Dojangscan ↗</strong></a> ·
   <a href="https://dojangscan.com/?view=guide">Guide</a> ·
+  <a href="https://dojangscan.com/?view=brand">Brand kit</a> ·
   <a href="#한국어">한국어</a> ·
   <a href="#english">English</a>
 </p>
