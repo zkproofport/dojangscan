@@ -1,3 +1,4 @@
+import { AddressHistory } from "./address-history";
 import { invalidateScanCache } from "@/lib/scan-data";
 import { PlaygroundInvite } from "./playground-guide";
 import { tr } from "@/lib/i18n";
@@ -55,7 +56,9 @@ export default function ScanApp() {
     return requested === "workspace"
       ? "issuers"
       : requested &&
-          (nav.some((item) => item.id === requested) || requested === "guide")
+          (nav.some((item) => item.id === requested) ||
+            requested === "guide" ||
+            requested === "issuer")
         ? requested
         : "explore";
   });
@@ -65,6 +68,7 @@ export default function ScanApp() {
     trackSection(view);
     trackedSection.current = view;
   }, [view]);
+  const [issuerAddress, setIssuerAddress] = useState("");
   const [data, setData] = useState<ScanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -114,6 +118,11 @@ export default function ScanApp() {
     setDetail(null);
     clearSchema();
     updateURL({ view: v });
+  }
+  function openIssuer(address: string) {
+    navigate("issuer");
+    setIssuerAddress(address);
+    updateURL({ view: "issuer", issuer: address });
   }
   async function refresh() {
     setLoading(true);
@@ -183,7 +192,15 @@ export default function ScanApp() {
     setSearchError("");
     clearSchema();
     setDetail(a);
-    updateURL({ view, uid: a.uid });
+    updateURL({
+      view,
+      ...(view === "issuer"
+        ? { issuer: issuerAddress }
+        : view === "wallet" && walletData
+          ? { address: walletData.address }
+          : {}),
+      uid: a.uid,
+    });
   }
   async function runSearch(value: string) {
     value = value.trim();
@@ -220,7 +237,15 @@ export default function ScanApp() {
       } else if (found.type === "attestation") {
         setDetail(found.record);
         clearSchema();
-        updateURL({ view, uid: value });
+        updateURL({
+          view,
+          ...(view === "issuer"
+            ? { issuer: issuerAddress }
+            : view === "wallet" && walletData
+              ? { address: walletData.address }
+              : {}),
+          uid: value,
+        });
       } else {
         setView("explore");
         setFilter("all");
@@ -315,9 +340,34 @@ export default function ScanApp() {
     } else if (v && (nav.some((n) => n.id === v) || v === "guide")) setView(v);
     const query =
       q.get("uid") ?? q.get("schema") ?? q.get("address") ?? q.get("tx");
+    if (q.get("issuer")) openIssuer(q.get("issuer")!);
     if (query) {
       setSearch(query);
-      if (q.get("schema")) void openSchema(query);
+      if (q.get("uid") && (q.get("issuer") || q.get("address"))) {
+        const address = q.get("address");
+        const ready =
+          address && !q.get("issuer") ? openWallet(address) : Promise.resolve();
+        const seq = ++sequence.current;
+        setSearching(true);
+        void ready
+          .then(() => getData<Attestation>("attestation", { uid: query }))
+          .then((record) => {
+            if (live && seq === sequence.current) {
+              setDetail(record);
+              updateURL(
+                q.get("issuer")
+                  ? { view: "issuer", issuer: q.get("issuer")!, uid: query }
+                  : { view: "wallet", address: address!, uid: query },
+              );
+            }
+          })
+          .catch((e) => {
+            if (live && seq === sequence.current) setSearchError(e.message);
+          })
+          .finally(() => {
+            if (live && seq === sequence.current) setSearching(false);
+          });
+      } else if (q.get("schema")) void openSchema(query);
       else void searchRef.current(query);
     }
     const keyboard = (e: KeyboardEvent) => {
@@ -379,6 +429,10 @@ export default function ScanApp() {
         "스키마는 도장 내용의 형식입니다. 발급 권한과 데이터의 공개 범위도 함께 봅니다.",
       ),
     },
+    issuer: {
+      title: "발행한 도장",
+      text: "발행 주소별로 도장과 이전 발급 기록을 확인하세요.",
+    },
     issuers: {
       title: tr("발행자와 관리자"),
       text: tr("등록 현황 확인부터 도장 발급과 권한 관리까지."),
@@ -424,7 +478,12 @@ export default function ScanApp() {
         <nav aria-label={tr("주요 메뉴")}>
           {nav.map((n) => (
             <button
-              className={"nav-link " + (view === n.id ? "active" : "")}
+              className={
+                "nav-link " +
+                (view === n.id || (view === "issuer" && n.id === "issuers")
+                  ? "active"
+                  : "")
+              }
               key={n.id}
               aria-current={view === n.id ? "page" : undefined}
               onClick={() => navigate(n.id)}
@@ -726,10 +785,18 @@ export default function ScanApp() {
                   text={tr("전체 EAS를 선택하거나 이전 기록을 불러오세요.")}
                 />
               ) : display === "cards" ? (
-                <ScanCards items={visible} onSelect={openRecord} />
+                <ScanCards
+                  items={visible}
+                  onSelect={openRecord}
+                  onIssuer={openIssuer}
+                />
               ) : (
                 <div className="records-panel">
-                  <ScanTable items={visible} onSelect={openRecord} />
+                  <ScanTable
+                    items={visible}
+                    onSelect={openRecord}
+                    onIssuer={openIssuer}
+                  />
                 </div>
               )}
               {pages > 1 && (
@@ -833,12 +900,22 @@ export default function ScanApp() {
             </div>
           </section>
         )}
+        {view === "issuer" && issuerAddress && (
+          <AddressHistory
+            key={issuerAddress}
+            address={issuerAddress}
+            role="issuer"
+            onSelect={openRecord}
+            onIssuer={openIssuer}
+          />
+        )}
         {view === "issuers" && (
           <Suspense fallback={<Empty title={tr("화면 준비 중")} loading />}>
             <OperatorHub
               data={data}
               error={error}
               onWallet={(address) => void openWallet(address).catch(() => {})}
+              onIssuer={openIssuer}
               initialManage={
                 new URLSearchParams(window.location.search).get("mode") ===
                 "manage"
@@ -924,20 +1001,18 @@ export default function ScanApp() {
                     )}
                   </p>
                 </div>
-                {walletData.attestations.length ? (
-                  <ScanCards
-                    items={walletData.attestations}
-                    onSelect={openRecord}
-                  />
-                ) : (
-                  <Empty
-                    title={tr("조회한 기본 인덱스에는 도장이 없습니다.")}
-                    text={tr(
-                      "발급받은 도장의 UID 또는 트랜잭션 해시로 직접 검색할 수도 있습니다.",
-                    )}
-                  />
-                )}
-                <p className="fine-print">{tr(walletData.coverage)}</p>
+                <AddressHistory
+                  key={walletData.address + walletData.checkedAt}
+                  address={walletData.address}
+                  role="recipient"
+                  initial={walletData}
+                  onRefresh={() => {
+                    invalidateScanCache();
+                    void openWallet(walletData.address).catch(() => {});
+                  }}
+                  onSelect={openRecord}
+                  onIssuer={openIssuer}
+                />
               </>
             ) : (
               <Empty
@@ -1026,7 +1101,19 @@ export default function ScanApp() {
         close={() => {
           setDetail(null);
           clearSchema();
-          updateURL({ view });
+          updateURL({
+            view,
+            ...(view === "issuer"
+              ? { issuer: issuerAddress }
+              : view === "wallet" && walletData
+                ? { address: walletData.address }
+                : {}),
+          });
+        }}
+        goIssuer={openIssuer}
+        goAttestation={(uid) => {
+          setDetail(null);
+          void runSearch(uid);
         }}
         goWallet={(a) =>
           void openWallet(a).catch((e) => toast.error(tr(e.message)))

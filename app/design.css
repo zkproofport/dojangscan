@@ -519,12 +519,36 @@ a {
 .app .credential-issuer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
 }
-.app .credential-issuer > code {
+.app .credential-issuer-label {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.app .credential-issuer-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 0;
+  text-align: right;
+}
+.app .credential-issuer-identity > .record-issuer-name {
+  font-size: 13px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.app .credential-issuer-identity > code {
+  color: var(--muted);
+  font-size: 11px;
+}
+.app .record-issuer-name {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
 }
 .app .credential-recipient {
   display: flex;
@@ -1845,3 +1869,13 @@ a {
     padding: 16px;
   }
 }
+
+.app .credential-issuer-identity > .record-issuer-name { margin: 0; text-align: right; justify-content: flex-end; line-height: 1.5; white-space: normal; }
+.app .address-history { margin-top: 24px; }
+.app .address-history .wallet-summary { margin-bottom: 24px; }
+.app .operator-row-actions { flex-wrap: wrap; }
+
+.app .operator-search { max-width: 640px; flex-wrap: wrap; }
+.app .operator-search input { flex: 1 1 160px; width: auto; }
+.app .operator-search > button { flex-shrink: 0; }
+.app .record-issuer-name:hover { text-decoration: underline; }

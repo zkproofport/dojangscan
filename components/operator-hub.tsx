@@ -1,3 +1,4 @@
+import { isAddress } from "ethers";
 import { issuerMetadata } from "@/lib/issuer-metadata";
 import { lazy, Suspense, useState } from "react";
 import {
@@ -24,11 +25,13 @@ export default function OperatorHub({
   data,
   error,
   onWallet,
+  onIssuer,
   initialManage = false,
 }: {
   data: ScanData | null;
   error: string;
   onWallet: (address: string) => void;
+  onIssuer: (address: string) => void;
   initialManage?: boolean;
 }) {
   const [role, setRole] = useState<Role>("issuer");
@@ -155,6 +158,15 @@ export default function OperatorHub({
                   setPage(1);
                 }}
               />
+              {role === "issuer" && (
+                <button
+                  className="text-button"
+                  disabled={!isAddress(query.trim())}
+                  onClick={() => onIssuer(query.trim())}
+                >
+                  {tr("발행 주소로 조회")}
+                </button>
+              )}
               <span>{total}</span>
             </div>
             <div className="operator-directory">
@@ -185,9 +197,16 @@ export default function OperatorHub({
                     <div className="operator-row-actions">
                       <button
                         className="text-button"
+                        onClick={() => onIssuer(issuer.address)}
+                      >
+                        {tr("발행한 도장")}
+                        <ArrowRight size={14} />
+                      </button>
+                      <button
+                        className="text-button"
                         onClick={() => onWallet(issuer.address)}
                       >
-                        {tr("주소 기록")}
+                        {tr("받은 도장")}
                         <ArrowRight size={14} />
                       </button>
                       <a

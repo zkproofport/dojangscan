@@ -11,7 +11,9 @@ Static React + TypeScript application built with Vite. Relative asset paths and 
 
 Book registration, resolver authorization, and contract roles are separate. Contract-based attesters must be called through their operator functions. A role does not establish an organization's legal identity.
 
-Role candidates are discovered from explorer events and checked onchain. Counts and discovery are limited to the loaded range. Wallet indexing currently covers the latest key=0 records, not every keyed balance or historical attestation.
+Role candidates are discovered from explorer events and checked onchain. Counts and discovery are limited to the loaded range. Wallet and issuer histories use Blockscout's paginated EAS logs filtered by address topic. Each event is checked against the exact recipient or attester topic, then hydrated from EAS. This includes nonzero-key balance/code records, earlier issuance, and currently unregistered issuers. It is not limited to the current catalog or the indexer's default key. The UI distinguishes a page with no matching issuance from the end of explorer-provided history, and reports indexing delays. Failed EAS hydration does not advance the cursor.
+
+DojangScroll still supplies the separate current address-verification summary. Registration labels reflect the current Books, not registration at issuance time. Book discovery remains bounded; warnings describe that limitation. Linked attestation UIDs can be opened to inspect balance snapshots, but the explorer does not independently validate Merkle proofs.
 
 Future Proof Studio integration will need wallet ownership, registered schema/issuer checks, expiration/revocation checks, schema-specific mobile proof support, request/result binding, and proof verification. These are future requirements, not implemented capabilities.
 

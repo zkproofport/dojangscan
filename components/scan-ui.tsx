@@ -127,9 +127,11 @@ export function describeRecord(a: Attestation) {
 export function ScanCards({
   items,
   onSelect,
+  onIssuer,
 }: {
   items: Attestation[];
   onSelect: (a: Attestation) => void;
+  onIssuer?: (address: string) => void;
 }) {
   return (
     <div className="credential-grid">
@@ -152,8 +154,19 @@ export function ScanCards({
             <p>{tr(describeRecord(a))}</p>
           </div>
           <div className="credential-issuer">
-            <IssuerStamp kind={a.issuerClass} />
-            <code>{short(a.attester, 4)}</code>
+            <span className="credential-issuer-label">{tr("발행자")}</span>
+            <div className="credential-issuer-identity">
+              <button
+                className="record-issuer-name text-button"
+                onClick={() => onIssuer?.(a.attester)}
+                disabled={!onIssuer}
+                title={tr("발행한 도장 보기")}
+              >
+                {tr(a.issuerName)}
+              </button>
+              <code title={a.attester}>{short(a.attester)}</code>
+              <IssuerStamp kind={a.issuerClass} compact />
+            </div>
           </div>
           <div className="credential-recipient">
             <span>{tr("받은 지갑")}</span>
@@ -182,16 +195,18 @@ export function ScanCards({
 export function ScanTable({
   items,
   onSelect,
+  onIssuer,
 }: {
   items: Attestation[];
   onSelect: (a: Attestation) => void;
+  onIssuer?: (address: string) => void;
 }) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>{tr("도장")}</TableHead>
-          <TableHead>{tr("발행자 구분")}</TableHead>
+          <TableHead>{tr("발행자")}</TableHead>
           <TableHead>{tr("수신 지갑")}</TableHead>
           <TableHead>{tr("발급일")}</TableHead>
           <TableHead>{tr("상태")}</TableHead>
@@ -207,8 +222,18 @@ export function ScanTable({
               </button>
             </TableCell>
             <TableCell>
+              <button
+                className="record-issuer-name text-button"
+                onClick={() => onIssuer?.(a.attester)}
+                disabled={!onIssuer}
+                title={tr("발행한 도장 보기")}
+              >
+                {tr(a.issuerName)}
+              </button>
               <IssuerStamp kind={a.issuerClass} compact />
-              <span className="sub-label mono">{tr(short(a.attester))}</span>
+              <span className="sub-label mono" title={a.attester}>
+                {short(a.attester)}
+              </span>
             </TableCell>
             <TableCell className="mono">{tr(short(a.recipient))}</TableCell>
             <TableCell>

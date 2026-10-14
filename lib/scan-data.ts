@@ -1,3 +1,4 @@
+import { historyRequest, historyEvents, historyCursor, type HistoryRole, type LogCursor } from "./history";
 import { issuerMetadata, PLAYGROUND_ATTESTER_ID } from "./issuer-metadata";
 import { AbiCoder, Interface, id, isAddress, getAddress, ZeroAddress } from 'ethers';
 import { CONTRACTS, TEST_ATTESTER, NETWORK, SCHEMAS, UPBIT_ID, ZERO, type Attestation, type SchemaRecord, type Issuer, type GovernanceRole } from './giwa';
@@ -121,10 +122,32 @@ export async function getSchema(uid: string, block?: number) {
  const value = (await batchCalls([{ target: CONTRACTS.SchemaRegistry, abi: registry, method: 'getSchema', args: [uid] }], cat.block))[0]?.[0]; if (!value || value.uid === ZERO) return null;
  return { uid, name: 'EAS Schema', label: '사용자 스키마', category: 'Custom', color: 'blue', description: 'Dojang SchemaBook 외부의 EAS 스키마입니다.', definition: value.schema, resolver: value.resolver, revocable: value.revocable, current: false, registered: true };
 }
+export async function addressHistory(address: string, role: HistoryRole, cursor: LogCursor | null = null) {
+ const request = historyRequest(address, role, cursor);
+ const page = await json(request.url);
+ if (!Array.isArray(page.items) || !Object.hasOwn(page, 'next_page_params')) throw new Error('공개 데이터 서비스 응답 오류. 잠시 후 다시 시도해 주세요.');
+ const events = historyEvents(page.items, request.topic, role);
+ let height = await headBlock();
+ if (events.some(e => e.block_number > height)) height = parseInt(await rpc('eth_blockNumber', []), 16);
+ const cat = await catalog(height);
+ const records = await batchCalls(events.map(e => ({ target: CONTRACTS.EAS, abi: eas, method: 'getAttestation', args: [e.data] })), cat.block);
+ // Do not advance past a record we failed to hydrate. A retry reuses this cursor.
+ if (records.some(r => !r || r[0].uid === ZERO)) throw new Error('일부 도장의 현재 상태를 읽지 못했습니다. 다시 조회하세요.');
+ const attestations = await Promise.all(records.map(async (r, i) => {
+  let record = normalize(r![0], cat);
+  if (record.uid.toLowerCase() !== events[i].data.toLowerCase() || (role === 'issuer' ? record.attester : record.recipient).toLowerCase() !== address.toLowerCase()) throw new Error('발급 기록이 조회한 주소·발행자·스키마와 일치하지 않습니다.');
+  if (!record.fields.length) {
+   const schema = await getSchema(record.schema, cat.block);
+   if (schema) record = { ...record, fields: formatFields(schema.definition, record.data) };
+  }
+  return { ...record, tx: events[i].transaction_hash, block: events[i].block_number, timestamp: events[i].block_timestamp };
+ }));
+ return { ...cat, address: getAddress(address), attestations, next: historyCursor(page.next_page_params), coverage: 'EAS 발행 이벤트에서 찾은 기록입니다. 잔액·코드 인증과 과거 발급을 포함하며, 등록 여부와 유효 상태는 현재 기준입니다.' };
+}
 export async function wallet(address: string) {
- if (!isAddress(address)) throw new Error('유효한 지갑 주소를 입력해 주세요.'); const cat = await catalog(await headBlock()); const verified = await batchCalls(cat.issuers.map(i => ({ target: CONTRACTS.DojangScroll, abi: scroll, method: 'isVerified', args: [getAddress(address), i.id] })), cat.block);
- const indexer = new Interface(['function getAttestationUid(bytes32 schemaUid,address attester,address recipient) view returns (bytes32)']); const schemas = cat.schemas.filter(s => s.current && s.registered); const lookups = schemas.flatMap(s => cat.issuers.map(i => ({ target: CONTRACTS.AttestationIndexer, abi: indexer, method: 'getAttestationUid', args: [s.uid, i.address, getAddress(address)] }))); const found = await batchCalls(lookups, cat.block); const uids = [...new Set(found.flatMap(v => v && v[0] !== ZERO ? [String(v[0])] : []))]; const records = await batchCalls(uids.map(uid => ({ target: CONTRACTS.EAS, abi: eas, method: 'getAttestation', args: [uid] })), cat.block);
- return { ...cat, address: getAddress(address), attestations: records.flatMap(v => v ? [normalize(v[0], cat)] : []), verifiedBy: cat.issuers.filter((_, i) => verified[i]?.[0] === true), warnings: [...cat.warnings, ...(found.some(v => !v) || verified.some(v => !v) ? ['일부 지갑 조회에 실패했습니다.'] : [])], coverage: '현재 스키마·등록 발행자의 key=0인 최신 도장입니다. 별도 key를 사용하는 잔액 도장과 이전 이력은 제외됩니다.' };
+ const history = await addressHistory(address, 'recipient');
+ const verified = await batchCalls(history.issuers.map(i => ({ target: CONTRACTS.DojangScroll, abi: scroll, method: 'isVerified', args: [getAddress(address), i.id] })), history.block);
+ return { ...history, verifiedBy: history.issuers.filter((_, i) => verified[i]?.[0] === true), warnings: [...history.warnings, ...(verified.some(v => !v) ? ['일부 지갑 조회에 실패했습니다.'] : [])] };
 }
 export async function transaction(hash: string) {
  if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new Error('유효한 트랜잭션 해시가 필요합니다.'); const receipt = await rpc('eth_getTransactionReceipt', [hash]); if (!receipt) return null; const uids = receipt.logs.filter((l: { address: string; topics: string[] }) => l.address.toLowerCase() === CONTRACTS.EAS.toLowerCase() && l.topics[0] === id('Attested(address,address,bytes32,bytes32)')).map((l: { data: string }) => l.data); return { hash, block: parseInt(receipt.blockNumber, 16), success: receipt.status === '0x1', attestations: await Promise.all(uids.slice(0, 50).map(attestation)), truncated: uids.length > 50 };
@@ -139,6 +162,7 @@ export async function queryScan(kind: string, params: Record<string,string> = {}
   case 'schema':result=await getSchema(params.uid??'');break;
   case 'schemas':result=await catalog();break;
   case 'wallet':result=await wallet(params.address??'');break;
+  case 'history': if((params.cursor?.length??0)>300)throw new Error('페이지 값이 잘못되었습니다.'); result=await addressHistory(params.address??'',params.role as HistoryRole,params.cursor?JSON.parse(params.cursor):null);break;
   case 'transaction':result=await transaction(params.hash??'');break;
   case 'contracts':result=await cached('contracts',60000,contracts);break;
   case 'search':{const value=params.value??'';const schema=await getSchema(value);if(schema)result={type:'schema',record:schema};else{const a=await attestation(value);if(a)result={type:'attestation',record:a};else{const tx=await transaction(value);result=tx?{type:'transaction',record:tx}:null;}}break;}

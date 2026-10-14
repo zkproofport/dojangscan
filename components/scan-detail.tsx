@@ -72,6 +72,8 @@ export default function ScanDetail({
   retrySchema,
   close,
   goWallet,
+  goIssuer,
+  goAttestation,
   goSchema,
 }: {
   record: Attestation | null;
@@ -82,6 +84,8 @@ export default function ScanDetail({
   retrySchema: () => void;
   close: () => void;
   goWallet: (address: string) => void;
+  goIssuer: (address: string) => void;
+  goAttestation: (uid: string) => void;
   goSchema: (uid: string) => void;
 }) {
   const [live, setLive] = useState<
@@ -312,7 +316,7 @@ export default function ScanDetail({
                   )}
                   <button
                     className="address-link mono"
-                    onClick={() => goWallet(a.attester)}
+                    onClick={() => goIssuer(a.attester)}
                   >
                     {tr(a.attester)}
                   </button>
@@ -379,7 +383,16 @@ export default function ScanDetail({
                     }
                   />
                   {a.refUID !== ZERO && (
-                    <Info label={tr("연결된 다른 도장")} value={a.refUID} />
+                    <div>
+                      <Info label={tr("연결된 다른 도장")} value={a.refUID} />
+                      <button
+                        className="text-button"
+                        onClick={() => goAttestation(a.refUID)}
+                      >
+                        {tr("연결된 도장 보기")}
+                        <ExternalLink size={14} />
+                      </button>
+                    </div>
                   )}
                 </TabsContent>
                 <TabsContent value="verify">
