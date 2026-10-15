@@ -56,7 +56,7 @@ Issue through Playground, check the same wallet, install the ZKProofport app, re
 
 Proof types are listed separately from their practice workflows. Faucet and EAS KYC Mock are supported, with independent sessions and circuit-specific validation.
 
-After receipt, the inspector shows the separately entered lookup address alongside a literal-address check against the actual SDK response and public input bytes. Faucet exposes five public values from 160 byte fields; EAS KYC Mock exposes six from 192, including the pinned signer-list root. Full proof hex, original public inputs, and the unfiltered SDK response JSON are available to inspect and download before verification. The UI does not claim anonymity: the nullifier is computable from candidate addresses and scope. The raw response is retained separately from normalized verifier inputs, including any unexpected fields.
+After receipt, the inspector shows the request ID and a link to the pinned circuit-specific verifier contract, followed by collapsed sections for the full proof hex, original public inputs, and unfiltered SDK response JSON, plus a JSON download button. Address comparisons and decoded public value cards are omitted. Circuit-specific public input validation and contract verification remain part of the proof flow.
 
 ### EAS KYC Mock
 

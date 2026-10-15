@@ -2314,23 +2314,6 @@ a {
   }
 }
 
-/* Received proof inspection: source address, public fields, and unfiltered response. */
-.app .studio-data-header, .app .studio-public-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 16px 0 12px; }
-.app .studio-data-header h4, .app .studio-public-header h4 { margin: 0; font-size: 15px; }
-.app .studio-data-header > span, .app .studio-public-header > span { font-size: 11px; color: var(--muted); }
-.app .studio-data-flow { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr); align-items: center; gap: 12px; }
-.app .studio-data-flow > div { align-self: stretch; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
-.app .studio-data-label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 12px; }
-.app .studio-data-flow code { font-size: 12px; overflow-wrap: anywhere; }
-.app .studio-data-flow strong { display: block; font-size: 20px; font-weight: 550; }
-.app .studio-data-flow p { font-size: 11px; margin-bottom: 0; }
-.app .studio-privacy-note { border-left: 2px solid var(--line); padding-left: 12px; margin: 18px 0; }
-.app .studio-public-fields { display: grid; gap: 8px; margin: 16px 0; }
-.app .studio-public-field { padding: 14px; border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
-.app .studio-public-field > div { display: flex; justify-content: space-between; gap: 10px; font: 12px ui-monospace, monospace; }
-.app .studio-public-field > div span { color: var(--muted); font-size: 10px; }
-.app .studio-public-field p { margin: 6px 0 10px; font-size: 11px; }
-.app .studio-public-field code { display: block; font: 11px/1.7 ui-monospace, monospace; overflow-wrap: anywhere; }
 .app .studio-raw { border-top: 1px solid var(--line); }
 .app .studio-raw summary { padding: 14px 0; }
 .app .studio-raw summary span { margin-left: 8px; font-size: 10px; color: var(--muted); }
@@ -2339,8 +2322,6 @@ a {
 @media (max-width: 760px) {
   .app .studio-type { flex-wrap: wrap; }
   .app .studio-type-network { display: none; }
-  .app .studio-data-flow { grid-template-columns: minmax(0, 1fr); }
-  .app .studio-data-flow > svg { transform: rotate(90deg); justify-self: center; }
 }
 
 .app .studio-registration { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid var(--line); border-radius: 12px; padding: 22px; margin-bottom: 24px; background: var(--surface); }

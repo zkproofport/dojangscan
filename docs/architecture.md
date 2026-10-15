@@ -8,7 +8,7 @@ Static React + TypeScript application built with Vite. Relative asset paths and 
 - `lib/transactions.ts`: wallet account/network checks, simulation, gas estimation, transaction submission, and receipts. Confirmed writes invalidate read caches.
 - `components/contract-console.tsx`: verified ABI loading (including proxy implementations), function reads and wallet execution.
 - `components/proof-studio.tsx`: proof-type catalog and independent practice components; Faucet and EAS KYC Mock provide attestation lookup, mobile generation, and verification.
-- `components/proof-inspector.tsx`: received proof/public inputs and unfiltered SDK response, with a literal-address comparison and nullifier linkability explanation.
+- `components/proof-inspector.tsx`: request ID and pinned circuit-specific verifier link, with collapsible raw proof/public inputs, full SDK response JSON, and response download.
 - `lib/mock-kyc.ts`: bounded recipient-event lookup for the pinned mock issuer/schema, followed by a fresh EAS status read; independent of the official Dojang Books.
 - `lib/use-proof-studio.ts`: live attestation preflight, SDK relay lifecycle, bounded polling, cancellation, and stale-response guards.
 - `lib/proof-studio.ts`: session/action, scope, wallet nullifier, chain and verifier binding; GIWA Sepolia verifier calls via read-only `eth_call`.

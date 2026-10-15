@@ -399,13 +399,7 @@ function AttestationPractice({
                 )}
               </button>
             )}
-            {flow.proof && (
-              <ProofInspector
-                proof={flow.proof}
-                address={flow.address}
-                verified={verified}
-              />
-            )}
+            {flow.proof && <ProofInspector proof={flow.proof} />}
             {verified && (
               <button className="text-button" onClick={() => flow.reset()}>
                 {tr("다시 실습하기")} <RefreshCw size={14} />
