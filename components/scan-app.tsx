@@ -97,6 +97,7 @@ export default function ScanApp() {
     setSchemaError("");
   }
   const [walletInput, setWalletInput] = useState("");
+  const [studioAddress, setStudioAddress] = useState("");
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [walletBusy, setWalletBusy] = useState(false);
   const [walletError, setWalletError] = useState("");
@@ -451,7 +452,7 @@ export default function ScanApp() {
     },
     lab: {
       title: "Proof Studio",
-      text: tr("개인정보 공개를 줄이는 ZKProofport 증명."),
+      text: tr("메인넷 도장을 이용하기 전, 테스트넷에서 ZK 증명을 생성하고 검증합니다."),
     },
     brand: {
       title: "브랜드 킷",
@@ -1014,6 +1015,24 @@ export default function ScanApp() {
                     )}
                   </p>
                 </div>
+                <aside className="playground-invite">
+                  <Fingerprint size={22} aria-hidden="true" />
+                  <div>
+                    <strong>{tr("Proof Studio에서 ZK 실습하기")}</strong>
+                    <p>{tr("Playground 도장으로 시작하는 모바일 ZK 실습.")}</p>
+                  </div>
+                  <button
+                    className="secondary-button"
+                    onClick={() => {
+                      setStudioAddress(walletData.address);
+                      navigate("lab");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    {tr("시작하기")}
+                    <ArrowRight size={16} />
+                  </button>
+                </aside>
                 <AddressHistory
                   key={walletData.address + walletData.checkedAt}
                   address={walletData.address}
@@ -1038,10 +1057,20 @@ export default function ScanApp() {
         <Suspense
           fallback={<Empty title={tr("화면을 준비하고 있습니다.")} loading />}
         >
-          {view === "lab" && <ProofStudio />}
+          {view === "lab" && (
+            <ProofStudio
+              initialAddress={studioAddress || walletInput}
+              onGuide={() => navigate("guide")}
+            />
+          )}
           {view === "guide" && (
             <LearningGuide
               data={data}
+              onProof={(address) => {
+                setStudioAddress(address);
+                navigate("lab");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               onWallet={(address) => {
                 invalidateScanCache();
                 void openWallet(address).catch(() => {});

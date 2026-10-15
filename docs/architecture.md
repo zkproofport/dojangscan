@@ -7,7 +7,11 @@ Static React + TypeScript application built with Vite. Relative asset paths and 
 - `components/workspace.tsx`: issuer and administrator forms. The official SchemaBook is re-read before guided issuance/revocation; management roles are checked through `hasRole` and `getRoleAdmin`.
 - `lib/transactions.ts`: wallet account/network checks, simulation, gas estimation, transaction submission, and receipts. Confirmed writes invalidate read caches.
 - `components/contract-console.tsx`: verified ABI loading (including proxy implementations), function reads and wallet execution.
-- `components/proof-studio.tsx`: coming-soon mobile proof flow and app download links. No proof generation, relay requests, or verifier is active.
+- `components/proof-studio.tsx`: proof-type catalog and independent practice components; Faucet and EAS KYC Mock provide attestation lookup, mobile generation, and verification.
+- `components/proof-inspector.tsx`: received proof/public inputs and unfiltered SDK response, with a literal-address comparison and nullifier linkability explanation.
+- `lib/mock-kyc.ts`: bounded recipient-event lookup for the pinned mock issuer/schema, followed by a fresh EAS status read; independent of the official Dojang Books.
+- `lib/use-proof-studio.ts`: live attestation preflight, SDK relay lifecycle, bounded polling, cancellation, and stale-response guards.
+- `lib/proof-studio.ts`: session/action, scope, wallet nullifier, chain and verifier binding; GIWA Sepolia verifier calls via read-only `eth_call`.
 
 Book registration, resolver authorization, and contract roles are separate. Contract-based attesters must be called through their operator functions. A role does not establish an organization's legal identity.
 
@@ -15,7 +19,7 @@ Role candidates are discovered from explorer events and checked onchain. Counts 
 
 DojangScroll still supplies the separate current address-verification summary. Registration labels reflect the current Books, not registration at issuance time. Book discovery remains bounded; warnings describe that limitation. Linked attestation UIDs can be opened to inspect balance snapshots, but the explorer does not independently validate Merkle proofs.
 
-Future Proof Studio integration will need wallet ownership, registered schema/issuer checks, expiration/revocation checks, schema-specific mobile proof support, request/result binding, and proof verification. These are future requirements, not implemented capabilities.
+Proof Studio checks current Playground issuer/schema registration and EAS revocation/expiration before requesting a proof. These are separate RPC observations: the `dojang_playground` circuit proves signatures over a faucet transaction and the practice action, not current KYC status, EAS validity, or transaction inclusion. A fresh random EIP-712 action binds each session; result metadata alone never means verified. The fixed scope binds the public nullifier to the scanned wallet, whose address is already known to this page. Practice can be repeated; there is no reward, persistent spent-nullifier registry, or single-use claim. The verifier accepts cryptographic proofs without consuming them or applying expiry. Relay request expiry is separate from proof validity. See [connection requirements](workflows.md#proof-studio).
 
 ## Analytics and loading
 

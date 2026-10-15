@@ -1926,3 +1926,426 @@ a {
   .app .brand-asset-meta { padding: 16px 18px 12px; }
   .app .brand-asset-row { margin: 0 18px; }
 }
+
+
+/* Playground practice: the existing Dojang palette, with a numbered workbench. */
+.app .studio {
+  margin: 24px 0 56px;
+}
+/* Proof-type catalog stays separate from each circuit's practice workflow. */
+.app .studio-catalog { margin-bottom: 28px; }
+.app .studio-catalog h2 { font-size: 14px; font-weight: 550; margin: 0 0 12px; }
+.app .studio-type-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.app .studio-type { display: flex; align-items: center; text-align: left; gap: 14px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.app .studio-type[aria-pressed="true"] { border-color: var(--accent); }
+.app .studio-type > span:nth-child(2) { flex: 1; }
+.app .studio-type strong { display: block; font-size: 15px; margin-bottom: 4px; }
+.app .studio-type span span, .app .studio-type-network { font-size: 12px; color: var(--muted); }
+.app .studio-type > svg { flex-shrink: 0; color: var(--accent); }
+.app .studio-live > span { width: 7px; height: 7px; background: currentColor; border-radius: 50%; }
+.app .studio-progress {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 0 28px;
+  padding: 18px 0;
+  border-block: 1px solid var(--line);
+  gap: 12px;
+}
+.app .studio-progress li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.app .studio-progress li > span,
+.app .studio-step {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font:
+    11px ui-monospace,
+    monospace;
+}
+.app .studio-progress .done {
+  color: var(--accent);
+}
+.app .studio-progress .done > span {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+.app .studio-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+}
+.app .studio-main,
+.app .studio-aside {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.app .studio-card,
+.app .studio-app-card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 28px;
+  min-width: 0;
+}
+.app .studio-card > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.app .studio-card h3,
+.app .studio-app-card h3,
+.app .studio-about h3 {
+  font-size: 19px;
+  line-height: 1.45;
+  letter-spacing: -0.035em;
+  margin: 1px 0 7px;
+}
+.app .studio-card p,
+.app .studio-app-card p,
+.app .studio-about p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.app .studio-card .wallet-form {
+  margin: 0;
+}
+.app .studio-card .wallet-form label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.app .studio-card .wallet-form input {
+  min-width: 0;
+  width: 100%;
+}
+.app .studio-card .wallet-form > div {
+  display: flex;
+  gap: 8px;
+}
+.app .studio-card .wallet-form button {
+  flex-shrink: 0;
+}
+.app .studio-inline-help {
+  display: flex;
+  gap: 8px 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+  margin-top: 18px;
+  color: var(--muted);
+}
+.app .studio-inline-help a,
+.app .studio-check-result a {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--accent);
+}
+.app .studio-inline-help button {
+  font-size: 12px;
+  padding: 0;
+  min-height: 32px;
+}
+.app .studio-pending {
+  background: var(--paper);
+}
+.app .studio-pending > header .studio-step {
+  color: var(--muted);
+}
+.app .studio-check-result {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  font-size: 12px;
+}
+.app .studio-check-result strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.app .studio-check-result p {
+  margin: 6px 0;
+}
+.app .studio-check-result.is-confirmed strong {
+  color: var(--accent);
+}
+.app .studio-request {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+.app .studio-request > img {
+  width: 200px;
+  height: 200px;
+  background: white;
+  border-radius: 12px;
+}
+.app .studio-request h4 {
+  font-size: 17px;
+  line-height: 1.5;
+  margin: 12px 0 8px;
+}
+.app .studio-request .primary {
+  display: inline-flex;
+  margin-top: 16px;
+}
+.app .studio-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-size: 12px;
+}
+.app p.studio-small {
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.app .studio-received {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--accent);
+}
+.app .studio-received strong {
+  font-size: 14px;
+}
+.app .studio-app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.app .studio-app-brand img {
+  border-radius: 12px;
+}
+.app .studio-app-brand strong,
+.app .studio-app-brand span {
+  display: block;
+}
+.app .studio-app-brand strong {
+  font-size: 16px;
+}
+.app .studio-app-brand span {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.app .studio-downloads {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0 24px;
+}
+.app .studio-downloads a {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.app .studio-app-steps {
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.85;
+}
+.app .studio-app-steps li + li {
+  margin-top: 10px;
+}
+.app .studio-about {
+  padding: 8px 20px;
+}
+.app .studio-about h3 {
+  margin-top: 12px;
+}
+.app .studio-about details {
+  margin-top: 18px;
+}
+.app .studio-about summary,
+.app .studio-evidence summary {
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 10px 0;
+}
+.app .studio-about details p + p {
+  margin-top: 8px;
+}
+.app .studio-success {
+  border-color: var(--accent);
+}
+.app .studio-success .studio-step {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+.app .studio-verification {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-bottom: 16px;
+  color: var(--accent);
+  font-size: 12px;
+}
+.app .studio-verification > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.app .studio-evidence {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 8px;
+}
+.app .studio-evidence dl {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 12px;
+  margin: 12px 0 20px;
+  font-size: 11px;
+}
+.app .studio-evidence dt {
+  color: var(--muted);
+}
+.app .studio-evidence dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, monospace;
+}
+.app .studio-success > .text-button {
+  margin-top: 18px;
+}
+@media (max-width: 1000px) {
+  .app .studio-columns {
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 16px;
+  }
+  .app .studio-card,
+  .app .studio-app-card {
+    padding: 22px;
+  }
+  .app .studio-request {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .app .studio-columns {
+    display: flex;
+    flex-direction: column;
+  }
+  .app .studio-app-card {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .app .studio-app-brand {
+    margin-bottom: 16px;
+  }
+  .app .studio-downloads {
+    grid-template-columns: 1fr 1fr;
+  }
+  .app .studio-app-steps {
+    margin-top: 0;
+  }
+  .app .studio-progress li {
+    font-size: 11px;
+    gap: 6px;
+  }
+  .app .studio-progress li > span {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+  .app .studio-card .wallet-form > div {
+    flex-wrap: wrap;
+  }
+  .app .studio-card .wallet-form input {
+    flex-basis: 100%;
+  }
+  .app .studio-request {
+    justify-items: center;
+  }
+  .app .studio-request > div {
+    width: 100%;
+  }
+  .app .studio-main,
+  .app .studio-aside {
+    display: contents;
+  }
+  .app .studio-main > .studio-card,
+  .app .studio-app-card,
+  .app .studio-about {
+    width: 100%;
+  }
+  .app .studio-main > .studio-card:nth-child(1) {
+    order: 0;
+  }
+  .app .studio-app-card {
+    order: 1;
+  }
+  .app .studio-main > .studio-card:nth-child(2) {
+    order: 2;
+  }
+  .app .studio-main > .studio-card:nth-child(3) {
+    order: 3;
+  }
+  .app .studio-main > .notice {
+    order: 4;
+  }
+  .app .studio-aside .studio-about {
+    display: block;
+    order: 5;
+  }
+}
+
+/* Received proof inspection: source address, public fields, and unfiltered response. */
+.app .studio-data-header, .app .studio-public-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 16px 0 12px; }
+.app .studio-data-header h4, .app .studio-public-header h4 { margin: 0; font-size: 15px; }
+.app .studio-data-header > span, .app .studio-public-header > span { font-size: 11px; color: var(--muted); }
+.app .studio-data-flow { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr); align-items: center; gap: 12px; }
+.app .studio-data-flow > div { align-self: stretch; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.app .studio-data-label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.app .studio-data-flow code { font-size: 12px; overflow-wrap: anywhere; }
+.app .studio-data-flow strong { display: block; font-size: 20px; font-weight: 550; }
+.app .studio-data-flow p { font-size: 11px; margin-bottom: 0; }
+.app .studio-privacy-note { border-left: 2px solid var(--line); padding-left: 12px; margin: 18px 0; }
+.app .studio-public-fields { display: grid; gap: 8px; margin: 16px 0; }
+.app .studio-public-field { padding: 14px; border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.app .studio-public-field > div { display: flex; justify-content: space-between; gap: 10px; font: 12px ui-monospace, monospace; }
+.app .studio-public-field > div span { color: var(--muted); font-size: 10px; }
+.app .studio-public-field p { margin: 6px 0 10px; font-size: 11px; }
+.app .studio-public-field code { display: block; font: 11px/1.7 ui-monospace, monospace; overflow-wrap: anywhere; }
+.app .studio-raw { border-top: 1px solid var(--line); }
+.app .studio-raw summary { padding: 14px 0; }
+.app .studio-raw summary span { margin-left: 8px; font-size: 10px; color: var(--muted); }
+.app .studio-raw pre { max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 14px; font: 11px/1.7 ui-monospace, monospace; }
+.app .studio-evidence > button { margin-top: 16px; }
+@media (max-width: 760px) {
+  .app .studio-type { flex-wrap: wrap; }
+  .app .studio-type-network { display: none; }
+  .app .studio-data-flow { grid-template-columns: minmax(0, 1fr); }
+  .app .studio-data-flow > svg { transform: rotate(90deg); justify-self: center; }
+}
+
+.app .studio-registration { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid var(--line); border-radius: 12px; padding: 22px; margin-bottom: 24px; background: var(--surface); }
+.app .studio-registration h2 { font-size: 16px; margin: 0 0 10px; }
+.app .studio-registration p { font-size: 13px; line-height: 1.8; color: var(--muted); margin: 6px 0; }
+.app .studio-registration span { display: block; font-size: 11px; color: var(--muted); margin-top: 12px; }
+.app .studio-registration > a { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; }
+@media (max-width: 760px) { .app .studio-registration { flex-direction: column; align-items: flex-start; } }

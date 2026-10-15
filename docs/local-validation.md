@@ -24,10 +24,20 @@ npm run test:live
 
 - Unit tests cover issuer classification, calldata, wallet account/chain checks, proxy ABI loading, schema membership checks, and cache invalidation.
 - Live checks read GIWA Sepolia attestations, schemas, roles, and deployed contracts. They do not send transactions.
-- Check Korean/English, light/dark, mobile layout, the three workspace tools, and the coming-soon Proof Studio in a browser.
-- Real operator writes require an authorized wallet and wallet approval. Proof Studio mobile integration is not implemented.
+- Check Korean/English, light/dark, mobile layout, the three workspace tools, and the Playground Proof Studio in a browser.
+- Real operator writes require an authorized wallet and wallet approval. Proof Studio verification uses read-only calls; mobile end-to-end tests require the [relay and app prerequisites](workflows.md#proof-studio).
 
-## Latest validation · 2026-10-08
+## Latest validation · 2026-10-15
+
+- Type checking, all 31 tests, and production build passed. Nine new tests cover proof field validation, request/action binding, wallet binding, malformed results, unfiltered response preservation, and address/public-field inspection. Vite reports large chunks, including the SDK's optional verifier assets.
+- Browser checks covered Korean/light desktop and English/dark at a 390 × 844 mobile viewport. A real Playground record was confirmed for the public test fixture, and a relay CORS failure returned the UI to a retryable error state.
+- The revised proof-type catalog was checked in Korean/dark desktop. The received-data inspector was rendered with an explicitly labeled local fixture and checked at 390 × 844 in light appearance; this checks layout, not a real proof. Temporary fixture pages were removed.
+- Browser verification confirmed both proof-type cards, the mock registration email link, and a real mock attestation lookup for the public fixture `0x5A3E649208Ae15ec52496c1Ae23b2Ff89Ac02f0c` (UID `0xc3dd3813105dc8212a20d6fe04061bab9c6d3980ae8c5a729a580891590e693d`). No registration or email was sent.
+- Mock KYC tests cover the 192-field layout, trusted signer root, cross-type rejection, wrong wallets/actions, issuer configuration, current EAS state, and incomplete history.
+- Production relay origin access and a Playground-capable app build are prerequisites still outside this change. QR scanning, mobile proof generation, and successful live cryptographic verification were not tested end to end.
+- No public-chain transactions, relay configuration changes, or deployment were performed.
+
+## Previous validation · 2026-10-08
 
 - Type checking (including unused imports), 13 unit tests, and production build passed.
 - Public-chain read checks passed at block **38,070,062**: 50 records, 4 current schemas, 10 registered issuers, 10 deployed contracts. Verified current schema membership, administrator roles, and a real Console `hasRole` call.

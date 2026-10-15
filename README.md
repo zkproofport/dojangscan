@@ -37,7 +37,7 @@ GIWA Sepolia의 도장을 검색하고, 누가 발급했는지와 현재 유효�
 | **테스트 도장 체험** | GIWA Playground에서 발급받고 같은 지갑의 온체인 기록 확인 |
 | **발행자·관리자** | 지갑을 연결해 도장 발급·취소, 발행자·도장 종류 등록, 권한 관리 |
 | **Contract Console** | 컨트랙트 함수 조회와 실행, 전송 전 시뮬레이션 |
-| **Proof Studio · Coming soon** | 도장을 기반으로 필요한 조건만 증명하는 ZKProofport 모바일 연동 준비 중 |
+| **Proof Studio** | Playground 발급 확인 → 모바일 ZK 증명 → GIWA Sepolia 검증 실습 ([연결 요건](docs/workflows.md#proof-studio)) |
 
 지갑 연결 없이 조회 · 한국어·영어 · 라이트·다크 테마 · 공유 링크 · JSON 내보내기
 
@@ -54,7 +54,7 @@ Search attestations on GIWA Sepolia, see who issued them, and check their curren
 | **Test attestations** | Issue in GIWA Playground, then check the same wallet's onchain record |
 | **Issuers & roles** | Connect a wallet to issue and revoke attestations, manage registrations, and control permissions |
 | **Contract Console** | Read and execute contract functions, with simulation before sending a transaction |
-| **Proof Studio · Coming soon** | ZKProofport mobile integration to prove required conditions from your attestations is in development |
+| **Proof Studio** | Check Playground issuance → create a mobile ZK proof → verify on GIWA Sepolia ([requirements](docs/workflows.md#proof-studio)) |
 
 Browse without connecting a wallet · Korean & English · Light & dark themes · Share links · JSON export
 

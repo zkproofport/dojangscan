@@ -22,9 +22,7 @@ export function PlaygroundInvite({ onStart }: { onStart: () => void }) {
       <Stamp size={22} aria-hidden="true" />
       <div>
         <strong>{tr("테스트 도장 발급하기")}</strong>
-        <p>
-          {tr("GIWA Playground에서 발급받고, Dojangscan에서 확인하세요.")}
-        </p>
+        <p>{tr("GIWA Playground에서 발급받고, Dojangscan에서 확인하세요.")}</p>
       </div>
       <button className="secondary-button" onClick={onStart}>
         {tr("시작하기")}
@@ -42,8 +40,10 @@ const statusCopy = {
 } as const;
 export default function PlaygroundGuide({
   onWallet,
+  onProof,
 }: {
   onWallet: (address: string) => void;
+  onProof: (address: string) => void;
 }) {
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState(false);
@@ -241,6 +241,15 @@ export default function PlaygroundGuide({
             {result.status === "confirmed" && (
               <button
                 className="primary"
+                onClick={() => onProof(result.address)}
+              >
+                {tr("Proof Studio에서 ZK 실습하기")}
+                <ArrowRight size={15} />
+              </button>
+            )}
+            {result.status === "confirmed" && (
+              <button
+                className="secondary-button"
                 onClick={() => onWallet(result.address)}
               >
                 {tr("내 도장 보기")}

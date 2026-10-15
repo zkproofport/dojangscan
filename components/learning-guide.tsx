@@ -14,9 +14,11 @@ import { Relationship } from "./relationship";
 export default function LearningGuide({
   data,
   onWallet,
+  onProof,
 }: {
   data: ScanData | null;
   onWallet: (address: string) => void;
+  onProof: (address: string) => void;
 }) {
   const [example, setExample] = useState("address");
   const examples = {
@@ -38,7 +40,7 @@ export default function LearningGuide({
   const e = examples[example as keyof typeof examples];
   return (
     <div className="guide-page">
-      <PlaygroundGuide onWallet={onWallet} />
+      <PlaygroundGuide onWallet={onWallet} onProof={onProof} />
       <Relationship full />
       <section className="guide-example">
         <div className="guide-example-copy">
