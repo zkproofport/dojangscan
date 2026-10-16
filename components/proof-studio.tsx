@@ -274,8 +274,8 @@ function AttestationPractice({
                 <img
                   src={flow.qr}
                   alt={tr("ZKProofport 증명 요청 QR 코드")}
-                  width="224"
-                  height="224"
+                  width="320"
+                  height="320"
                 />
                 <div>
                   <span className="studio-live">

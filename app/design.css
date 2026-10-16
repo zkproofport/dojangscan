@@ -2088,16 +2088,26 @@ a {
   color: var(--accent);
 }
 .app .studio-request {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
   align-items: center;
+  justify-content: center;
 }
 .app .studio-request > img {
-  width: 200px;
-  height: 200px;
+  display: block;
+  flex: 0 1 320px;
+  width: 320px;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 1;
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
+}
+.app .studio-request > div {
+  flex: 1 1 240px;
+  min-width: 0;
 }
 .app .studio-request h4 {
   font-size: 17px;
@@ -2241,9 +2251,6 @@ a {
   .app .studio-app-card {
     padding: 22px;
   }
-  .app .studio-request {
-    grid-template-columns: 1fr;
-  }
 }
 @media (max-width: 760px) {
   .app .studio-columns {
@@ -2279,7 +2286,7 @@ a {
     flex-basis: 100%;
   }
   .app .studio-request {
-    justify-items: center;
+    gap: 24px;
   }
   .app .studio-request > div {
     width: 100%;

@@ -153,7 +153,10 @@ export function useProofStudio(
       if (!pending.requestId || !pending.deepLink.startsWith("zkproofport://"))
         throw new Error("앱으로 보낼 증명 요청을 만들지 못했습니다.");
       const image = await client.generateQRCode(pending.deepLink, {
-        width: 480,
+        width: 960,
+        margin: 4,
+        darkColor: "#000000",
+        lightColor: "#ffffff",
       });
       if (current !== version.current) return;
       setQr(image);
