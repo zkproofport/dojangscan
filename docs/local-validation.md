@@ -27,7 +27,15 @@ npm run test:live
 - Check Korean/English, light/dark, mobile layout, the three workspace tools, and the Playground Proof Studio in a browser.
 - Real operator writes require an authorized wallet and wallet approval. Proof Studio verification uses read-only calls; mobile end-to-end tests require the [relay and app prerequisites](workflows.md#proof-studio).
 
-## Latest validation · 2026-10-15
+## Latest validation · 2026-10-23
+
+- Added contract issuance and revocation with verified ABI, operator, pause and schema checks. All 38 tests and the production build passed, including seven new contract adapter tests.
+- The generated Verified Address, Balance Root and Verified Code calls succeeded in read-only GIWA RPC simulations from operator `0xdC5197a8a0ba55f506CFC3DDd491e864f2340590` through `0xb7061879AB74BD9db520Be71b36eEC9BF512D5Cd`. Its explorer-verified ABI was accepted by the adapter with captured onchain operator/pause/schema results.
+- Verified Balance calldata tests cover the recipient, full uint256 balance, salt, proof array and root UID. Live issuance of a dependent balance attestation and revocation were not performed.
+- Browser checks covered switching to contract issuance, selecting the registered contract, all four schema forms, UID-only contract revocation, disabled execution without a wallet, and English/light and Korean/dark text. Mobile layout and actual wallet approval were not exercised.
+- No public-chain transactions were sent.
+
+## Previous validation · 2026-10-15
 
 - Type checking, all 31 tests, and production build passed. Nine new tests cover proof field validation, request/action binding, wallet binding, malformed results, unfiltered response preservation, and address/public-field inspection. Vite reports large chunks, including the SDK's optional verifier assets.
 - Browser checks covered Korean/light desktop and English/dark at a 390 × 844 mobile viewport. A real Playground record was confirmed for the public test fixture, and a relay CORS failure returned the UI to a retryable error state.

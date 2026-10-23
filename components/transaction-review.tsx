@@ -63,6 +63,14 @@ export function TransactionReview({
           <dt>ETH</dt>
           <dd>{BigInt(call.value).toString()} wei</dd>
         </div>
+        {call.attester && (
+          <div>
+            <dt>{tr("도장 발행 주소")}</dt>
+            <dd>
+              <code>{call.attester}</code>
+            </dd>
+          </div>
+        )}
       </dl>
       <p className="fine-print">
         {tr(

@@ -41,6 +41,7 @@ export type PreparedCall = {
   data: string;
   value: string;
   operation: string;
+  attester?: string;
 };
 function uid(v: string) {
   if (!isHexString(v, 32) || v === ZeroHash)

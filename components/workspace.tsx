@@ -19,6 +19,11 @@ import {
 import { Badge } from "./scan-ui";
 import { TransactionHistory } from "./transaction-history";
 import { TransactionReview } from "./transaction-review";
+import {
+  contractIssuerSchema,
+  inspectContractIssuer,
+  prepareContractIssuerCall,
+} from "@/lib/contract-issuer";
 const ContractConsole = lazy(() => import("./contract-console"));
 const options: Record<string, string[][]> = {
   issuer: [
@@ -81,6 +86,12 @@ export default function Workspace({
     > | null>(null),
     [schemaStatus, setSchemaStatus] = useState("");
   const revision = useRef(0);
+  const [issuerMode, setIssuerMode] = useState<"wallet" | "contract">("wallet");
+  const [issuerContract, setIssuerContract] = useState("");
+  const viaContract = role === "issuer" && issuerMode === "contract";
+  const contractSchema = contractIssuerSchema(schema);
+  const fixedRecipient =
+    viaContract && ["root", "code"].includes(contractSchema?.key ?? "");
   const reset = () => {
     revision.current++;
     setCall(null);
@@ -195,7 +206,7 @@ export default function Workspace({
           : !permission.hasRole
       )
         throw new Error(tr("이 작업에 필요한 관리 권한이 없습니다."));
-    } else {
+    } else if (!(viaContract && operation === "revoke")) {
       const selectedSchema = data?.schemas.find(
         (s) => s.uid.toLowerCase() === schema.toLowerCase(),
       );
@@ -204,12 +215,22 @@ export default function Workspace({
       if (operation === "attest") {
         if (record.definition !== definition)
           throw new Error(tr("등록된 스키마 형식을 다시 불러오세요."));
-        if (!record.revocable && revocable)
+        if (!record.revocable && (viaContract || revocable))
           throw new Error(tr("취소할 수 없는 스키마입니다."));
         setResolver(record.resolver);
       }
     }
-    const prepared = prepareCall(operation, input());
+    if (currentRevision !== revision.current) return;
+    const prepared = viaContract
+      ? prepareContractIssuerCall(operation, {
+          ...input(),
+          target: issuerContract,
+        })
+      : prepareCall(operation, input());
+    if (viaContract) {
+      await inspectContractIssuer(prepared, connected, schema);
+      if (currentRevision !== revision.current) return;
+    }
     await simulateCall(prepared, connected);
     if (currentRevision !== revision.current) return;
     setSchemaStatus(tr("권한·실행 시뮬레이션 확인 완료"));
@@ -282,6 +303,81 @@ export default function Workspace({
         <div className="studio-grid">
           <div className="studio-panel">
             <h3>{tr(role === "admin" ? "Dojang 관리" : "도장 발급·취소")}</h3>
+            {role === "issuer" && (
+              <>
+                <label className="input-label">
+                  {tr("발급 방식")}
+                  <select
+                    className="form-input"
+                    value={issuerMode}
+                    onChange={(e) => {
+                      setIssuerMode(e.target.value as "wallet" | "contract");
+                      if (
+                        e.target.value === "contract" &&
+                        contractSchema?.key === "address"
+                      )
+                        setValues("[true]");
+                      reset();
+                    }}
+                  >
+                    <option value="wallet">{tr("지갑 직접 발급")}</option>
+                    <option value="contract">{tr("컨트랙트로 발급")}</option>
+                  </select>
+                </label>
+                {viaContract ? (
+                  <>
+                    <label className="input-label">
+                      {tr("등록 주소에서 선택")}
+                      <select
+                        className="form-input"
+                        value={
+                          data?.issuers.some(
+                            (i) =>
+                              i.address.toLowerCase() ===
+                              issuerContract.toLowerCase(),
+                          )
+                            ? issuerContract.toLowerCase()
+                            : ""
+                        }
+                        onChange={(e) =>
+                          edit(setIssuerContract)(e.target.value)
+                        }
+                      >
+                        <option value="">
+                          {tr("발행자 컨트랙트를 선택하거나 직접 입력하세요.")}
+                        </option>
+                        {data?.issuers.map((i) => (
+                          <option key={i.id} value={i.address.toLowerCase()}>
+                            {tr(i.name)} · {short(i.address, 8)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <Field
+                      label="발행자 컨트랙트"
+                      value={issuerContract}
+                      setValue={edit(setIssuerContract)}
+                    />
+                    <p className="notice">
+                      {tr(
+                        "운영 지갑으로 연결하세요. 도장은 선택한 컨트랙트 주소로 발급됩니다.",
+                      )}
+                    </p>
+                    <p className="fine-print">
+                      {tr(
+                        "MasseDojangAttester 호환 계약의 네 가지 발급과 취소를 지원합니다. 실행 준비 시 계약 함수와 운영 권한을 확인합니다. 다른 계약은 Contract Console을 사용하세요.",
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <p className="fine-print">
+                    {tr(
+                      "연결 지갑이 EAS를 직접 호출합니다. 등록 발행자가 컨트랙트라면 ‘컨트랙트로 발급’을 선택하세요.",
+                    )}
+                  </p>
+                )}
+              </>
+            )}
             {role === "admin" && (
               <p className="notice">
                 {tr(
@@ -408,7 +504,8 @@ export default function Workspace({
                 </p>
               </>
             )}
-            {["attest", "revoke"].includes(operation) && (
+            {(operation === "attest" ||
+              (operation === "revoke" && !viaContract)) && (
               <>
                 <label className="input-label">
                   {tr("현재 Dojang 스키마")}
@@ -442,79 +539,130 @@ export default function Workspace({
             {operation === "attest" && definition && (
               <>
                 <p className="fine-print break-code">{definition}</p>
-                <SchemaFields
-                  definition={definition}
-                  values={values}
-                  setValues={edit(setValues)}
-                />
+                {viaContract && contractSchema?.key === "address" ? (
+                  <p className="notice">
+                    {tr("이 컨트랙트는 isVerified=true로 발급합니다.")}
+                  </p>
+                ) : (
+                  <SchemaFields
+                    definition={definition}
+                    values={values}
+                    setValues={edit(setValues)}
+                  />
+                )}
               </>
             )}
             {["attest", "revoke", "book-schema", "balance-root"].includes(
               operation,
-            ) && (
-              <details
-                className="explain-detail"
-                open={role === "admin" ? true : undefined}
-              >
-                <summary>{tr("스키마 UID 직접 입력")}</summary>
-                <Field
-                  label="EAS Schema UID"
-                  value={schema}
-                  setValue={edit(setSchema)}
-                />
-                {operation === "attest" && (
-                  <button
-                    className="text-button"
-                    disabled={busy || !schema}
-                    onClick={() =>
-                      void run(async () => {
-                        const record = await readSchema(schema);
-                        if (!record.exists)
-                          throw new Error("Schema not found.");
-                        useSchema(record);
-                        setSchemaStatus(tr("온체인 스키마 확인 완료"));
-                      })
-                    }
-                  >
-                    {tr("UID에서 형식 불러오기")}
-                  </button>
-                )}
-              </details>
-            )}
+            ) &&
+              !(viaContract && operation === "revoke") && (
+                <details
+                  className="explain-detail"
+                  open={role === "admin" ? true : undefined}
+                >
+                  <summary>{tr("스키마 UID 직접 입력")}</summary>
+                  <Field
+                    label="EAS Schema UID"
+                    value={schema}
+                    setValue={edit(setSchema)}
+                  />
+                  {operation === "attest" && (
+                    <button
+                      className="text-button"
+                      disabled={busy || !schema}
+                      onClick={() =>
+                        void run(async () => {
+                          const record = await readSchema(schema);
+                          if (!record.exists)
+                            throw new Error("Schema not found.");
+                          useSchema(record);
+                          setSchemaStatus(tr("온체인 스키마 확인 완료"));
+                        })
+                      }
+                    >
+                      {tr("UID에서 형식 불러오기")}
+                    </button>
+                  )}
+                </details>
+              )}
             {operation === "attest" && (
               <>
-                <Field
-                  label={tr("수신 지갑")}
-                  value={recipient}
-                  setValue={edit(setRecipient)}
-                />
-                <button
-                  className="text-button"
-                  disabled={!connected}
-                  onClick={() => edit(setRecipient)(connected)}
-                >
-                  {tr("내 지갑 사용")}
-                </button>
-                <Expiry value={expiration} setValue={edit(setExpiration)} />
-                <details className="explain-detail">
-                  <summary>{tr("추가 설정")}</summary>
-                  <Field
-                    label="refUID (optional)"
-                    value={refUID}
-                    setValue={edit(setRefUID)}
-                  />
-                  <label className="check-label">
-                    <input
-                      type="checkbox"
-                      checked={revocable}
-                      onChange={(e) => {
-                        setRevocable(e.target.checked);
-                        reset();
-                      }}
+                {fixedRecipient ? (
+                  <p className="fine-print">
+                    {tr(
+                      "이 도장은 개별 수신 지갑 없이 발급됩니다 (recipient = 0x0).",
+                    )}
+                  </p>
+                ) : (
+                  <>
+                    <Field
+                      label={tr("수신 지갑")}
+                      value={recipient}
+                      setValue={edit(setRecipient)}
                     />
-                    {tr("취소 가능")}
-                  </label>
-                </details>
+                    <button
+                      className="text-button"
+                      disabled={!connected}
+                      onClick={() => edit(setRecipient)(connected)}
+                    >
+                      {tr("내 지갑 사용")}
+                    </button>
+                  </>
+                )}
+                {viaContract && contractSchema?.key === "balance" && (
+                  <>
+                    <Field
+                      label="Balance Root Attestation UID"
+                      value={refUID}
+                      setValue={edit(setRefUID)}
+                    />
+                    <p className="fine-print">
+                      {tr(
+                        "같은 컨트랙트가 발급한 유효한 Balance Root의 UID와 해당 잔액의 Merkle proof가 필요합니다.",
+                      )}
+                    </p>
+                  </>
+                )}
+                {viaContract && contractSchema?.key === "root" && (
+                  <p className="fine-print">
+                    {tr(
+                      "coinType은 BIP44 번호가 아닌 Dojang 티커 인코딩입니다. Contract Console의 coinTypeFromTicker로 조회할 수 있습니다.",
+                    )}
+                  </p>
+                )}
+                {viaContract && contractSchema?.key === "code" && (
+                  <p className="fine-print">
+                    {tr(
+                      "codeHash에는 코드의 keccak256 해시를 입력하세요. 도메인은 계약에서 ASCII 공백 제거와 소문자 변환을 적용합니다.",
+                    )}
+                  </p>
+                )}
+                <Expiry value={expiration} setValue={edit(setExpiration)} />
+                {viaContract ? (
+                  <p className="fine-print">
+                    {tr("이 컨트랙트가 발급한 도장은 취소할 수 있습니다.")}
+                  </p>
+                ) : (
+                  <details className="explain-detail">
+                    <summary>{tr("추가 설정")}</summary>
+                    <Field
+                      label="refUID (optional)"
+                      value={refUID}
+                      setValue={edit(setRefUID)}
+                    />
+                    <label className="check-label">
+                      <input
+                        type="checkbox"
+                        checked={revocable}
+                        onChange={(e) => {
+                          setRevocable(e.target.checked);
+                          reset();
+                        }}
+                      />
+                      {tr("취소 가능")}
+                    </label>
+                  </details>
+                )}
                 <p className="notice">
                   {tr(
                     "온체인 발급 내용은 공개됩니다. 개인정보나 원본 증명서를 입력하지 마세요.",
@@ -591,6 +739,7 @@ export default function Workspace({
                 busy ||
                 !connected ||
                 chain !== NETWORK.chainId ||
+                (viaContract && !issuerContract) ||
                 (role === "admin" &&
                   ["allow", "disallow", "indexer", "balance-root"].includes(
                     operation,
@@ -664,7 +813,7 @@ export default function Workspace({
             {role === "issuer" && (
               <p className="fine-print">
                 {tr(
-                  "등록된 발행자가 계약 주소라면 Contract Console에서 그 계약의 발급 함수를 호출하세요. 운영 지갑과 실제 EAS attester가 다를 수 있습니다.",
+                  "지갑 직접 발급은 연결 지갑이, 컨트랙트 발급은 선택한 계약이 EAS 발행자로 기록됩니다. 전송 전에 대상 계약과 함수를 확인하세요.",
                 )}
               </p>
             )}

@@ -7,13 +7,18 @@ Open **Issuers & roles**, choose a role, then switch between the directory and a
 ## 발행자 / Issuer
 
 1. GIWA Sepolia 지갑을 연결합니다.
-2. 등록된 Dojang 스키마를 선택하고 수신 주소·필드·만료 시각을 입력합니다.
-3. **권한 확인 후 실행 준비** → 호출 검토 → **지갑으로 실행**.
-4. 영수증의 UID로 발급 결과를 확인합니다. 취소는 동일 스키마와 발급 UID를 사용합니다.
+2. **발급 방식**에서 **지갑 직접 발급** 또는 **컨트랙트로 발급**을 선택합니다. 컨트랙트 방식은 등록 주소에서 발행자 계약을 선택하거나 직접 입력합니다.
+3. 등록된 Dojang 스키마를 선택하고 수신 주소·필드·만료 시각을 입력합니다.
+4. **권한 확인 후 실행 준비** → 호출 검토 → **지갑으로 실행**.
+5. 영수증의 UID로 발급 결과를 확인합니다. 컨트랙트 취소는 발급한 계약과 발급 UID를 선택합니다. 지갑 직접 취소는 동일 스키마와 발급 UID를 사용합니다.
 
-발행자가 컨트랙트 주소라면 **Contract Console**에서 그 계약의 발급 함수를 호출하세요. 등록 목록에 있다는 사실만으로 resolver 발급 권한이 생기지는 않습니다.
+컨트랙트 방식은 `MasseDojangAttester` 호환 ABI의 Verified Address, Balance Root, Verified Balance, Verified Code 및 `revokeAttestation`을 지원합니다. 검증된 ABI, 운영 지갑의 `operators` 권한, 발급 일시정지 여부, 스키마 UID를 확인한 뒤 연결 지갑에서 계약을 호출하는 경로를 시뮬레이션합니다. 도장의 EAS 발행자는 해당 계약입니다. 다른 인터페이스의 계약은 **Contract Console**을 사용하세요. 등록 목록에 있다는 사실만으로 resolver 발급 권한이 생기지는 않습니다.
 
-Connect a GIWA Sepolia wallet, select a registered schema, fill in the recipient and fields, check permissions, then approve the transaction. For contract-based issuers, call the issuer contract through the Console.
+주소 인증은 `isVerified=true`, Root·Code는 수신 주소 `0x0`, 모든 발급은 취소 가능으로 고정됩니다. 잔액 인증에는 같은 계약이 발급한 유효한 Balance Root UID와 잔액 Merkle proof가 필요합니다. Root의 `coinType`은 BIP44 번호가 아닌 Dojang 티커 인코딩이며 계약의 `coinTypeFromTicker`로 조회할 수 있습니다. Code에는 원문이 아닌 코드 해시를 입력합니다.
+
+Connect a GIWA Sepolia wallet and choose **Issue directly from wallet** or **Issue through contract**. For a contract issuer, select a registered address or enter the contract address. The guided form supports MasseDojangAttester-compatible contracts and checks the verified ABI, operator permission, pause state and schema before simulating the call from the connected wallet. The contract becomes the EAS attester. Other interfaces remain available through the Console. Review the target and function before approving. Contract revocation takes the issuing contract and attestation UID; direct wallet revocation also requires the schema.
+
+Verified Address always asserts true. Root and Code use a zero recipient. All contract-issued attestations are revocable. Verified Balance requires an active root issued by the same contract and a matching Merkle proof. Use Dojang ticker encoding for Root coinType (the contract's `coinTypeFromTicker` helper), and a code hash for Verified Code.
 
 ## 관리자 / Administrator
 
