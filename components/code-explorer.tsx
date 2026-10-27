@@ -10,13 +10,14 @@ import {
   filterCodeRecords,
   readCodeFilters,
   verifyCode,
+  prepareCodeVerification,
   type CodeFilters,
 } from "@/lib/code-records";
 import { localURL, shareURL } from "@/lib/navigation";
 import { short, type Attestation } from "@/lib/giwa";
 import { tr } from "@/lib/i18n";
 import { ChainLoading } from "./chain-loading";
-import { Status, getData } from "./scan-ui";
+import { Status, CopyButton, getData } from "./scan-ui";
 
 type Page = Awaited<ReturnType<typeof codeHistory>>;
 const date = (time: number) =>
@@ -57,6 +58,8 @@ export default function CodeExplorer({
     if (!more) {
       setData(null);
       setPage(1);
+      setOriginalCode("");
+      resetVerification();
     }
     try {
       const result = await codeHistory(
@@ -107,6 +110,7 @@ export default function CodeExplorer({
     setShowAllDomains(false);
     resetVerification();
     setShowVerification(false);
+    setOriginalCode("");
     void load();
   }
   function selectDomain(domain: string) {
@@ -145,6 +149,9 @@ export default function CodeExplorer({
     currentPage = Math.min(page, pages);
   const [verifyDomain, setVerifyDomain] = useState(filters.domain);
   const [codeHash, setCodeHash] = useState("");
+  const [originalCode, setOriginalCode] = useState("");
+  const [inputKind, setInputKind] = useState<"code" | "hash">("code");
+  const [selectedRecordUID, setSelectedRecordUID] = useState("");
   const [issuerId, setIssuerId] = useState("");
   const [verification, setVerification] = useState<Awaited<
     ReturnType<typeof verifyCode>
@@ -166,9 +173,13 @@ export default function CodeExplorer({
     setVerifyError("");
     setVerifyBusy(true);
     try {
+      const prepared = prepareCodeVerification(
+        inputKind === "code" ? originalCode : codeHash,
+        verifyDomain,
+        inputKind,
+      );
       const result = await verifyCode({
-        domain: verifyDomain,
-        codeHash: codeHash.trim(),
+        ...prepared,
         attesterId: issuerId,
         expectedIssuer: selectedIssuer.address,
       });
@@ -182,6 +193,9 @@ export default function CodeExplorer({
   function selectCode(record: Attestation) {
     resetVerification();
     setShowVerification(true);
+    setInputKind("hash");
+    setOriginalCode("");
+    setSelectedRecordUID(record.uid);
     setVerifyDomain(codeField(record, "domain"));
     setCodeHash(codeField(record, "codeHash"));
     setIssuerId(
@@ -189,6 +203,36 @@ export default function CodeExplorer({
         (i) => i.address.toLowerCase() === record.attester.toLowerCase(),
       )?.id ?? "",
     );
+    requestAnimationFrame(() =>
+      document
+        .getElementById("code-verification")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
+  function openReceivedCode() {
+    resetVerification();
+    setInputKind("code");
+    setOriginalCode("");
+    setCodeHash("");
+    setSelectedRecordUID("");
+    const domain =
+      filters.domain ||
+      (matchingDomains.length === 1 ? matchingDomains[0] : "");
+    setVerifyDomain(domain);
+    const addresses = [
+      ...new Set(
+        items
+          .filter((a) => codeField(a, "domain") === domain)
+          .map((a) => a.attester.toLowerCase()),
+      ),
+    ];
+    setIssuerId(
+      addresses.length === 1
+        ? (data?.issuers.find((i) => i.address.toLowerCase() === addresses[0])
+            ?.id ?? "")
+        : "",
+    );
+    setShowVerification(true);
     requestAnimationFrame(() =>
       document
         .getElementById("code-verification")
@@ -425,6 +469,19 @@ export default function CodeExplorer({
         )}
         {data && (
           <>
+            <div className="code-results-heading">
+              <div>
+                <h2>{tr("인증 코드 발급 내역")}</h2>
+                <p className="fine-print">
+                  {tr(
+                    "사용처가 같아도 코드 식별값이 다르면 다른 코드입니다. 한 코드가 여러 번 발급될 수 있어 각 발급 기록은 UID로 구분합니다.",
+                  )}
+                </p>
+              </div>
+              <button className="secondary-button" onClick={openReceivedCode}>
+                {tr("전달받은 코드 확인")}
+              </button>
+            </div>
             <p className="code-coverage">
               {tr("조회한 사용처: {0}", [
                 filters.domain || filters.query || tr("전체"),
@@ -468,11 +525,12 @@ export default function CodeExplorer({
                   <thead>
                     <tr>
                       {[
+                        "코드 · 발급 기록",
                         "사용처",
                         "발행자",
                         "발급 시각 (UTC)",
                         "만료 시각 (UTC)",
-                        "상태",
+                        "기록 상태",
                         "조회",
                       ].map((h) => (
                         <th key={h}>{tr(h)}</th>
@@ -484,6 +542,24 @@ export default function CodeExplorer({
                       .slice((currentPage - 1) * 25, currentPage * 25)
                       .map((a) => (
                         <tr key={a.uid}>
+                          <td className="code-record-identity">
+                            <div>
+                              <code title={codeField(a, "codeHash")}>
+                                {short(codeField(a, "codeHash"), 8)}
+                              </code>
+                              <CopyButton
+                                value={codeField(a, "codeHash")}
+                                label="코드 식별값 복사"
+                              />
+                            </div>
+                            <button
+                              className="text-button"
+                              title={a.uid}
+                              onClick={() => onSelect(a)}
+                            >
+                              UID {short(a.uid, 6)}
+                            </button>
+                          </td>
                           <td>
                             <button
                               className="text-button"
@@ -525,7 +601,7 @@ export default function CodeExplorer({
                               className="text-button"
                               onClick={() => selectCode(a)}
                             >
-                              {tr("인증 확인")}
+                              {tr("현재 유효성 확인")}
                             </button>
                           </td>
                         </tr>
@@ -586,12 +662,18 @@ export default function CodeExplorer({
           className="studio-panel code-verifier"
           id="code-verification"
           open={showVerification}
-          onToggle={(e) => setShowVerification(e.currentTarget.open)}
+          onToggle={(e) => {
+            setShowVerification(e.currentTarget.open);
+            if (!e.currentTarget.open) {
+              setOriginalCode("");
+              resetVerification();
+            }
+          }}
         >
-          <summary>{tr("코드 해시로 유효성 확인")}</summary>
+          <summary>{tr("인증 코드 유효성 확인")}</summary>
           <p>
             {tr(
-              "사용처·등록 발행자·코드 해시로 현재 온체인 인증 여부를 확인합니다. 지갑 연결이나 서명이 필요 없습니다.",
+              "발행자가 해당 사용처에 발급한 코드의 현재 유효성을 확인합니다. 지갑 연결 없이 조회하며 코드를 사용 처리하지 않습니다.",
             )}
           </p>
           <form
@@ -600,6 +682,35 @@ export default function CodeExplorer({
               void checkCode();
             }}
           >
+            <div
+              className="code-input-mode"
+              role="group"
+              aria-label={tr("확인할 값")}
+            >
+              <button
+                type="button"
+                aria-pressed={inputKind === "code"}
+                onClick={() => {
+                  setInputKind("code");
+                  setSelectedRecordUID("");
+                  resetVerification();
+                }}
+              >
+                {tr("전달받은 코드")}
+              </button>
+              <button
+                type="button"
+                aria-pressed={inputKind === "hash"}
+                onClick={() => {
+                  setInputKind("hash");
+                  setOriginalCode("");
+                  setSelectedRecordUID("");
+                  resetVerification();
+                }}
+              >
+                {tr("공개 코드 해시")}
+              </button>
+            </div>
             <div className="code-filters">
               <label>
                 {tr("인증 코드 사용처")}
@@ -609,6 +720,7 @@ export default function CodeExplorer({
                   value={verifyDomain}
                   onChange={(e) => {
                     setVerifyDomain(e.target.value);
+                    setSelectedRecordUID("");
                     resetVerification();
                   }}
                 />
@@ -621,6 +733,7 @@ export default function CodeExplorer({
                   value={issuerId}
                   onChange={(e) => {
                     setIssuerId(e.target.value);
+                    setSelectedRecordUID("");
                     resetVerification();
                   }}
                 >
@@ -633,14 +746,27 @@ export default function CodeExplorer({
                 </select>
               </label>
               <label className="code-hash-input">
-                {tr("인증 코드 해시")}
+                {tr(
+                  inputKind === "code"
+                    ? "전달받은 인증 코드"
+                    : "코드 식별값 (해시)",
+                )}
                 <input
                   className="form-input"
                   required
-                  placeholder="0x… (bytes32)"
-                  value={codeHash}
+                  type={inputKind === "code" ? "password" : "text"}
+                  autoComplete={inputKind === "code" ? "one-time-code" : "off"}
+                  autoCapitalize="none"
+                  placeholder={
+                    inputKind === "code"
+                      ? tr("전달받은 코드를 그대로 입력하세요.")
+                      : "0x… (bytes32)"
+                  }
+                  value={inputKind === "code" ? originalCode : codeHash}
                   onChange={(e) => {
-                    setCodeHash(e.target.value);
+                    if (inputKind === "code") setOriginalCode(e.target.value);
+                    else setCodeHash(e.target.value);
+                    setSelectedRecordUID("");
                     resetVerification();
                   }}
                   spellCheck={false}
@@ -654,16 +780,21 @@ export default function CodeExplorer({
             )}
             <p className="fine-print">
               {tr(
-                "원본 인증번호가 아닌 코드 해시를 입력하세요. 인증번호와 코드 해시는 공유 링크에 포함하지 않습니다.",
+                inputKind === "code"
+                  ? "원본 코드는 브라우저에서 해시로 변환하고 해시만 조회에 사용합니다. 이 확인 도구의 입력값은 공유 링크나 CSV에 추가하지 않습니다."
+                  : "공개된 코드 해시로 발급 기록을 확인합니다. 원본 코드를 알고 있거나 정당한 사용자라는 증명은 아닙니다.",
               )}
             </p>
             <button
               className="primary"
               disabled={
-                verifyBusy || !selectedIssuer || !verifyDomain || !codeHash
+                verifyBusy ||
+                !selectedIssuer ||
+                !verifyDomain ||
+                !(inputKind === "code" ? originalCode : codeHash)
               }
             >
-              {tr(verifyBusy ? "조회 중" : "인증 확인")}
+              {tr(verifyBusy ? "조회 중" : "유효성 확인")}
             </button>
           </form>
           {verifyBusy && (
@@ -679,10 +810,38 @@ export default function CodeExplorer({
               <strong>
                 {tr(
                   verification.valid
-                    ? "온체인 코드 인증 유효"
-                    : "현재 유효한 코드 인증을 확인하지 못했습니다.",
+                    ? "현재 유효한 발급 기록을 찾았습니다."
+                    : "이 조건의 유효한 발급 기록을 찾지 못했습니다.",
                 )}
               </strong>
+              <dl className="code-check-context">
+                <div>
+                  <dt>{tr("사용처")}</dt>
+                  <dd>{verification.domain}</dd>
+                </div>
+                <div>
+                  <dt>{tr("발행자")}</dt>
+                  <dd>
+                    <code>{verification.expectedIssuer}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>{tr("코드 식별값 (해시)")}</dt>
+                  <dd>
+                    <code>{verification.codeHash}</code>
+                  </dd>
+                </div>
+              </dl>
+              {verification.uid &&
+                selectedRecordUID &&
+                verification.uid.toLowerCase() !==
+                  selectedRecordUID.toLowerCase() && (
+                  <p>
+                    {tr(
+                      "현재 조회되는 발급 기록은 선택한 기록과 UID가 다릅니다. 아래 상세에서 확인하세요.",
+                    )}
+                  </p>
+                )}
               <p>
                 {tr("조회 기준: 블록 {0} · {1}", [
                   verification.block,
@@ -691,7 +850,7 @@ export default function CodeExplorer({
               </p>
               <p>
                 {tr(
-                  "이 결과는 온체인 인증 상태입니다. 외부 서비스의 처리 상태나 코드 사용 여부를 뜻하지 않습니다.",
+                  "이 결과는 발급 기록의 유효성만 확인합니다. 제출자의 신원·이용 자격·코드 사용 완료나 외부 서비스의 처리 결과를 증명하지 않습니다.",
                 )}
               </p>
               {!verification.valid && (
@@ -718,7 +877,8 @@ export default function CodeExplorer({
                       });
                   }}
                 >
-                  {tr("인증 도장 상세 보기")} · {short(verification.uid, 8)}
+                  {tr("현재 발급 기록 상세 보기")} ·{" "}
+                  {short(verification.uid, 8)}
                 </button>
               )}
             </div>

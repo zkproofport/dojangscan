@@ -29,11 +29,17 @@ export async function getData<T = any>(
 ): Promise<T> {
   return queryScan(kind, params) as Promise<T>;
 }
-export function CopyButton({ value }: { value: string }) {
+export function CopyButton({
+  value,
+  label = "주소 복사",
+}: {
+  value: string;
+  label?: string;
+}) {
   return (
     <button
       className="icon-button"
-      aria-label={tr("주소 복사")}
+      aria-label={tr(label)}
       onClick={() =>
         navigator.clipboard
           .writeText(value)
@@ -121,6 +127,12 @@ export function describeRecord(a: Attestation) {
       Number(count.value).toLocaleString(),
     ]);
   const domain = a.fields.find((f) => f.name === "domain");
+  const codeHash = a.fields.find((f) => f.name === "codeHash");
+  if (domain && codeHash)
+    return tr("{0} · 코드 식별값 {1}", [
+      domain.value,
+      short(codeHash.value, 6),
+    ]);
   if (domain) return tr("인증 코드의 사용처: {0}", [domain.value]);
   return a.fields.length
     ? `${a.fields[0].name}: ${a.fields[0].value.slice(0, 60)}`

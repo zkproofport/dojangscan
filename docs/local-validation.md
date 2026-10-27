@@ -27,7 +27,14 @@ npm run test:live
 - Check Korean/English, light/dark, mobile layout, the three workspace tools, and the Playground Proof Studio in a browser.
 - Real operator writes require an authorized wallet and wallet approval. Proof Studio verification uses read-only calls; mobile end-to-end tests require the [relay and app prerequisites](workflows.md#proof-studio).
 
-## Latest validation · 2026-10-27 · explicit use-case search
+## Latest validation · 2026-10-27 · received-code validity
+
+- All 49 tests passed, including exact UTF-8 hashing, leading zeros/whitespace, distinct Unicode code representations, GIWA ASCII domain normalization, public-hash passthrough and hashed-only RPC arguments. Type checking and production build passed; the existing large-bundle warning remains.
+- Chrome confirmed the initially idle menu, typing without a lookup, and Enter loading 50 live records with separate code hashes and issuance UIDs. The received-code action filled the unique actual use case/current issuer, leaving only the code to enter.
+- A synthetic received code returned a negative live result without a wallet prompt. A public hash from an older record returned a valid current UID different from the selected UID, with the difference explicitly explained. Query URLs did not gain verifier inputs.
+- Verified Korean/English labels, the 390×844 dark mobile verifier layout, hash-mode clearing of the raw input, and an empty input after closing/reopening the tool. No transactions were sent. This pass did not repeat CSV downloading or real private-code success testing; no private code was available or needed.
+
+## Earlier validation · 2026-10-27 · explicit use-case search
 
 - `npm run check`, `npm run build` and all 46 existing tests passed. The existing large-bundle warning remains.
 - Chrome confirmed an idle initial screen with an empty search field and disabled Find button. Typing enabled Find without starting a lookup; Enter started loading and returned 50 live records.

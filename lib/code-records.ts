@@ -5,6 +5,8 @@ import {
   getAddress,
   isAddress,
   isHexString,
+  keccak256,
+  toUtf8Bytes,
 } from "ethers";
 import { CONTRACTS, type Attestation } from "./giwa";
 import { rpc } from "./scan-data";
@@ -151,6 +153,25 @@ export const CODE_SCROLL_ABI = [
   "function isVerifiedCode(bytes32 codeHash,string domain,bytes32 attesterId) view returns(bool)",
   "function getVerifyCodeAttestationUid(bytes32 codeHash,string domain,bytes32 attesterId) view returns(bytes32)",
 ];
+// GIWA's offchain-specs/verify-code/VerifyCodeSpec.sol. Never trim or normalize
+// the original code: its exact UTF-8 bytes are hashed. Only the hash leaves this helper.
+export function prepareCodeVerification(
+  value: string,
+  domain: string,
+  kind: "code" | "hash",
+) {
+  if (kind === "hash") {
+    const codeHash = value.trim();
+    if (!isHexString(codeHash, 32))
+      throw new Error("32바이트 코드 해시를 입력하세요.");
+    return { codeHash, domain };
+  }
+  if (!value) throw new Error("전달받은 인증 코드를 입력하세요.");
+  return {
+    codeHash: keccak256(toUtf8Bytes(value)),
+    domain: domain.replace(/ /g, "").replace(/[A-Z]/g, (c) => c.toLowerCase()),
+  };
+}
 const scroll = new Interface(CODE_SCROLL_ABI);
 const book = new Interface([
   "function getAttester(bytes32) view returns(address)",

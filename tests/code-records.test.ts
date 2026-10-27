@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   AbiCoder,
+  keccak256,
   Interface,
   ZeroAddress,
   ZeroHash,
@@ -16,6 +17,7 @@ import {
   filterCodeRecords,
   readCodeFilters,
   verifyCode,
+  prepareCodeVerification,
   CODE_SCROLL_ABI,
 } from "../lib/code-records";
 import {
@@ -388,4 +390,72 @@ test("use case discovery supports partial Unicode searches without inventing ali
     readCodeFilters(new URLSearchParams(codeParams(filters))),
     filters,
   );
+});
+
+test("received codes hash exact UTF-8 bytes and only domains follow GIWA ASCII normalization", () => {
+  assert.deepEqual(
+    prepareCodeVerification("abc", " T EST-Scope 한글 Ä ", "code"),
+    {
+      codeHash:
+        "0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45",
+      domain: "test-scope한글Ä",
+    },
+  );
+  assert.equal(
+    prepareCodeVerification(" 001A ", "test-scope", "code").codeHash,
+    keccak256("0x203030314120"),
+  );
+  assert.notEqual(
+    prepareCodeVerification("é", "x", "code").codeHash,
+    prepareCodeVerification("e\u0301", "x", "code").codeHash,
+  );
+  assert.equal(
+    prepareCodeVerification("한", "A\tB", "code").codeHash,
+    keccak256("0xed959c"),
+  );
+  assert.equal(prepareCodeVerification("한", "A\tB", "code").domain, "a\tb");
+  assert.throws(() => prepareCodeVerification("", "x", "code"), /입력/);
+});
+test("public hash mode preserves the onchain domain and never hashes a hash again", () => {
+  assert.deepEqual(
+    prepareCodeVerification(" " + hash(2) + " ", " Mixed Scope ", "hash"),
+    {
+      codeHash: hash(2),
+      domain: " Mixed Scope ",
+    },
+  );
+  assert.throws(() => prepareCodeVerification("abc", "x", "hash"), /32바이트/);
+});
+test("received-code verification sends only the prepared hash and domain to Scroll", async () => {
+  const raw = "synthetic-private-code";
+  const prepared = prepareCodeVerification(raw, "TEST Scope", "code");
+  const abi = new Interface([
+    ...CODE_SCROLL_ABI,
+    "function getAttester(bytes32) view returns(address)",
+  ]);
+  const sent: unknown[] = [];
+  const result = await verifyCode(
+    { ...prepared, attesterId: hash(3), expectedIssuer: issuer },
+    async (method, params) => {
+      sent.push(params);
+      if (method === "eth_blockNumber") return "0x64";
+      const call = params[0] as { data: string };
+      const decoded = abi.parseTransaction({ data: call.data })!;
+      if (decoded.name !== "getAttester")
+        assert.deepEqual(Array.from(decoded.args), [
+          prepared.codeHash,
+          "testscope",
+          hash(3),
+        ]);
+      return abi.encodeFunctionResult(decoded.name, [
+        decoded.name === "getAttester"
+          ? issuer
+          : decoded.name === "isVerifiedCode"
+            ? true
+            : hash(4),
+      ]);
+    },
+  );
+  assert.equal(result.valid, true);
+  assert.equal(JSON.stringify({ sent, result }).includes(raw), false);
 });

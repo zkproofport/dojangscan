@@ -61,7 +61,7 @@ const FIELD_LABELS: Record<string, string> = {
   leafCount: "묶인 잔액 수",
   totalAmount: "합산 금액",
   root: "잔액 스냅샷 root",
-  codeHash: "인증 코드 해시",
+  codeHash: "코드 식별값 (해시)",
   domain: "인증 코드 사용처",
 };
 export default function ScanDetail({
@@ -292,6 +292,13 @@ export default function ScanDetail({
                 {busy && <RefreshCw size={14} className="spinning" />}
               </div>
               <p className="record-statement">{tr(describeRecord(a))}</p>
+              {a.dojang && a.schemaName === "Verified Code" && (
+                <p className="notice">
+                  {tr(
+                    "이 도장은 발행자가 특정 사용처에 코드를 발급한 기록입니다. 코드 식별값은 원본 코드의 해시이며, UID는 이 발급 기록의 번호입니다. 이 기록만으로 제출자의 신원이나 코드 사용 완료를 확인할 수는 없습니다.",
+                  )}
+                </p>
+              )}
 
               <Tabs defaultValue="read">
                 <TabsList variant="line">
