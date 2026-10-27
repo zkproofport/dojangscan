@@ -21,6 +21,8 @@ import {
 import { short, type Attestation, type IssuerClass } from "@/lib/giwa";
 import { queryScan } from "@/lib/scan-data";
 import { ISSUER_LABELS, ISSUER_EXPLANATIONS } from "@/lib/trust";
+import { ZeroAddress } from "ethers";
+import { codeField, codeLink } from "@/lib/code-records";
 export async function getData<T = any>(
   kind: string,
   params: Record<string, string> = {},
@@ -151,7 +153,15 @@ export function ScanCards({
           </div>
           <div className="credential-body">
             <h3>{tr(a.schemaLabel)}</h3>
-            <p>{tr(describeRecord(a))}</p>
+            <p>
+              {codeField(a, "domain") ? (
+                <a href={codeLink(codeField(a, "domain"), a.attester)}>
+                  {tr(describeRecord(a))} ↗
+                </a>
+              ) : (
+                tr(describeRecord(a))
+              )}
+            </p>
           </div>
           <div className="credential-issuer">
             <span className="credential-issuer-label">{tr("발행자")}</span>
@@ -170,7 +180,12 @@ export function ScanCards({
           </div>
           <div className="credential-recipient">
             <span>{tr("받은 지갑")}</span>
-            <code>{short(a.recipient)}</code>
+            <span className="recipient-value">
+              {a.recipient === ZeroAddress && (
+                <small>{tr("개별 수신 지갑 없음")}</small>
+              )}
+              <code title={a.recipient}>{short(a.recipient)}</code>
+            </span>
           </div>
           <div className="credential-bottom">
             <span>
@@ -235,7 +250,12 @@ export function ScanTable({
                 {short(a.attester)}
               </span>
             </TableCell>
-            <TableCell className="mono">{tr(short(a.recipient))}</TableCell>
+            <TableCell className="mono">
+              {a.recipient === ZeroAddress && (
+                <span className="sub-label">{tr("개별 수신 지갑 없음")}</span>
+              )}
+              <code title={a.recipient}>{short(a.recipient)}</code>
+            </TableCell>
             <TableCell>
               {tr(new Date(a.time * 1000).toLocaleDateString(getLocale()))}
             </TableCell>

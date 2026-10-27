@@ -1,4 +1,4 @@
-import { getAddress, id, isAddress, zeroPadValue } from "ethers";
+import { getAddress, id, isAddress, isHexString, zeroPadValue } from "ethers";
 import { CONTRACTS, NETWORK } from "./giwa";
 
 export type HistoryRole = "recipient" | "issuer";
@@ -11,6 +11,32 @@ export type HistoryLog = {
   block_timestamp: string;
 };
 export const ATTESTED_TOPIC = id("Attested(address,address,bytes32,bytes32)");
+
+export function schemaHistoryRequest(
+  schema: string,
+  cursor?: LogCursor | null,
+) {
+  if (!isHexString(schema, 32)) throw new Error("Invalid schema UID.");
+  const params = new URLSearchParams({ topic: schema });
+  if (cursor)
+    for (const [key, value] of Object.entries(historyCursor(cursor)!))
+      params.set(key, String(value));
+  return `${NETWORK.explorer}/api/v2/addresses/${CONTRACTS.EAS}/logs?${params}`;
+}
+
+export function schemaHistoryEvents(
+  logs: HistoryLog[],
+  schema: string,
+  block: number,
+) {
+  return logs.filter(
+    (log) =>
+      log.topics[0]?.toLowerCase() === ATTESTED_TOPIC &&
+      log.topics[3]?.toLowerCase() === schema.toLowerCase() &&
+      log.block_number <= block &&
+      /^0x[0-9a-fA-F]{64}$/.test(log.data),
+  );
+}
 
 export function historyRequest(
   address: string,

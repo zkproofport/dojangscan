@@ -1,4 +1,4 @@
-import { historyRequest, historyEvents, historyCursor, type HistoryRole, type LogCursor } from "./history";
+import { historyRequest, historyEvents, historyCursor, schemaHistoryRequest, schemaHistoryEvents, type HistoryRole, type LogCursor } from "./history";
 import { issuerMetadata, PLAYGROUND_ATTESTER_ID } from "./issuer-metadata";
 import { AbiCoder, Interface, id, isAddress, getAddress, ZeroAddress } from 'ethers';
 import { CONTRACTS, TEST_ATTESTER, NETWORK, SCHEMAS, UPBIT_ID, ZERO, type Attestation, type SchemaRecord, type Issuer, type GovernanceRole } from './giwa';
@@ -98,9 +98,35 @@ export async function catalog(block?: number) {
  });
 }
 // The EAS tuple is decoded by ethers from the fixed contract ABI.
-function normalize(raw: { uid: string; schema: string; recipient: string; attester: string; time: bigint; expirationTime: bigint; revocationTime: bigint; revocable: boolean; refUID: string; data: string }, cat: Awaited<ReturnType<typeof catalog>>): Attestation {
+function normalize(raw: { uid: string; schema: string; recipient: string; attester: string; time: bigint; expirationTime: bigint; revocationTime: bigint; revocable: boolean; refUID: string; data: string }, cat: Awaited<ReturnType<typeof catalog>>, at = Date.now() / 1000): Attestation {
  const schema = cat.schemas.find(s => s.uid === String(raw.schema).toLowerCase()); const issuer = cat.issuers.find(i => i.address.toLowerCase() === raw.attester.toLowerCase()); const expirationTime = Number(raw.expirationTime); const revocationTime = Number(raw.revocationTime);
- return { uid: raw.uid, schema: raw.schema, recipient: raw.recipient, attester: raw.attester, time: Number(raw.time), expirationTime, revocationTime, revocable: raw.revocable, refUID: raw.refUID, data: raw.data, status: revocationTime > 0 ? 'revoked' : expirationTime > 0 && expirationTime <= Date.now() / 1000 ? 'expired' : 'active', fields: schema ? formatFields(schema.definition, raw.data) : [], schemaName: schema?.name ?? 'EAS Schema', schemaLabel: schema?.label ?? '사용자 도장', schemaCurrent:!!schema?.current, dojang: !!schema, ...classifyIssuer(raw.attester,cat.issuers,cat.governance,cat.issuerDiscoveryComplete), issuerId: issuer?.id, issuerName: issuer?.name ?? (raw.attester.toLowerCase()===TEST_ATTESTER.toLowerCase()?'ZKProofport 테스트':'개별 발행자') };
+ return { uid: raw.uid, schema: raw.schema, recipient: raw.recipient, attester: raw.attester, time: Number(raw.time), expirationTime, revocationTime, revocable: raw.revocable, refUID: raw.refUID, data: raw.data, status: revocationTime > 0 ? 'revoked' : expirationTime > 0 && expirationTime <= at ? 'expired' : 'active', fields: schema ? formatFields(schema.definition, raw.data) : [], schemaName: schema?.name ?? 'EAS Schema', schemaLabel: schema?.label ?? '사용자 도장', schemaCurrent:!!schema?.current, dojang: !!schema, ...classifyIssuer(raw.attester,cat.issuers,cat.governance,cat.issuerDiscoveryComplete), issuerId: issuer?.id, issuerName: issuer?.name ?? (raw.attester.toLowerCase()===TEST_ATTESTER.toLowerCase()?'ZKProofport 테스트':'개별 발행자') };
+}
+
+// A code-specific event stream, pinned to one block across pagination. Domain
+// is not an indexed event topic: only claim coverage of the pages actually read.
+export async function codeHistory(cursor: LogCursor | null = null, snapshot?: number) {
+ if (snapshot !== undefined && (!Number.isSafeInteger(snapshot) || snapshot < 0)) throw new Error('Invalid snapshot block.');
+ const height = snapshot ?? Number(BigInt(await rpc('eth_blockNumber', [])));
+ const cat = await catalog(height);
+ const schema = cat.schemas.find(s => s.id === SCHEMAS[3].id && s.current && s.registered);
+ if (!schema || schema.definition !== SCHEMAS[3].definition) throw new Error('현재 코드 인증 스키마를 확인할 수 없습니다.');
+ const page: Page = await json(schemaHistoryRequest(schema.uid, cursor));
+ if (!Array.isArray(page.items) || !Object.hasOwn(page, 'next_page_params')) throw new Error('공개 데이터 서비스 응답 오류. 잠시 후 다시 시도해 주세요.');
+ const block = await rpc('eth_getBlockByNumber', ['0x'+height.toString(16), false]);
+ if (!block?.timestamp) throw new Error('조회 기준 블록을 확인할 수 없습니다.');
+ const at = Number(BigInt(block.timestamp));
+ const events = schemaHistoryEvents(page.items, schema.uid, height);
+ const values = await batchCalls(events.map(l => ({target: CONTRACTS.EAS, abi: eas, method: 'getAttestation', args: [l.data]})), height);
+ const attestations = values.map((v,i) => {
+  if (!v || v[0].uid.toLowerCase() !== events[i].data.toLowerCase() || v[0].schema.toLowerCase() !== schema.uid.toLowerCase())
+   throw new Error('일부 코드 인증 기록을 확인하지 못했습니다. 다시 조회하세요.');
+  const record = normalize(v[0], cat, at);
+  if (record.fields.length !== 2) throw new Error('코드 인증 데이터 형식을 확인할 수 없습니다.');
+  return {...record, tx: events[i].transaction_hash, block: events[i].block_number};
+ });
+ return {...cat, checkedAt: new Date(at * 1000).toISOString(), schemaUID: schema.uid, attestations,
+  next: historyCursor(page.next_page_params), coverage: '현재 코드 인증 스키마의 불러온 기록만 표시합니다. 전체 발급량이 아닙니다.'};
 }
 export async function recent(cursor: Record<string, number> | null = null, filter = '') {
  // Read the head after the explorer page so a just-issued record is not queried before its block.

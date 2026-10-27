@@ -70,3 +70,13 @@ Upbit KYC의 테스트넷 활용 한계로 메인넷 적용 전 흐름을 테스
 등록 확인 → 앱 증명 생성 → 데이터 확인 및 검증 순서입니다. `giwa_attestation` 서킷, verifier `0x5da234546874304f8c51bbeed00fc632938211c1`, scope `dojangscan:mock-kyc:v1`를 사용합니다. `MockGiwaAttester`는 `0x6646d970499bbed728636823a5a7e551e811b414`, 허용된 서명자는 `0xEE099845CDfF93e73aDcBcB36A9B93578bcCed4b`입니다. Proof Studio는 192개 공개 입력 중 발급자 root, 요청 action/domain, scope, 계정 nullifier를 모두 검사합니다.
 
 공식 Dojang Book 등록과 별개인 목업이므로 정확한 EAS 발급자·스키마의 수신 이벤트를 조회하고 최신 블록의 EAS 상태를 읽습니다. 최대 10페이지 조회가 끝나지 않으면 미등록으로 단정하지 않습니다. 취소·만료 여부는 별도 RPC 사전 검사이며 ZK 증명 자체가 현재 KYC 상태를 보장하지 않습니다. 실습은 반복 가능하며 실제 Upbit 인증이나 보상 청구가 아닙니다.
+## Code verification history / 코드 인증 이력
+
+Open **코드 인증 / Code verification** from the navigation, enter a use case such as `doctorloan`, and select its issuer. A domain is an exact, case-sensitive onchain string; it is not an institutional identity. Different issuers can use the same domain.
+
+- Filter by use case, issuer address, record status, and inclusive UTC issue dates. Plain-text searches that do not match a schema open this view. Domain links in attestation cards and details open a view scoped to both domain and issuer.
+- **조회 링크 복사 / Copy view link** preserves filters. **조회 결과 CSV 저장 / Export results as CSV** exports matching loaded records with full addresses, hashes, UIDs, timestamps, snapshot block, and coverage. CSV text is escaped to avoid spreadsheet formula evaluation.
+- History reads the current Verified Code schema's explorer event stream and confirms EAS records at one block across pagination. Load earlier records to extend the scope; the count is not a network-wide total, and explorer indexing can lag. Refresh starts a new snapshot.
+- **인증 확인 / Check verification** on a row fills the verification form. Submit it to read `DojangScroll.isVerifiedCode` and, if valid, `getVerifyCodeAttestationUid`, after confirming the selected issuer ID still maps to that address. All reads use one fresh block. No wallet or signature is required. Enter a code hash, not an original verification code; hashes are not put in shared view links.
+- Record status and current Scroll verification are distinct: an active historical record is not by itself proof of a currently valid lookup. An unsuccessful verification does not distinguish missing records, expiry, revocation or mismatched inputs. Verification does not establish loan application completion or code redemption.
+- Zero-recipient records show **개별 수신 지갑 없음 / No individual recipient wallet** alongside the actual zero address. **문제 신고·기능 제안 / Report an issue or suggest a feature** opens GitHub's issue forms.

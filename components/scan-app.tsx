@@ -37,14 +37,17 @@ import { connectWallet, injected } from "@/lib/wallet";
 import { ChainLoading } from "./chain-loading";
 import { trackSection } from "@/lib/analytics";
 import { localURL } from "@/lib/navigation";
+import { codeParams, readCodeFilters } from "@/lib/code-records";
 import { DojangWordmark, DojangLogo } from "./dojang-logo";
 const OperatorHub = lazy(() => import("./operator-hub"));
 const ProofStudio = lazy(() => import("./proof-studio"));
 const BrandKit = lazy(() => import("./brand-kit"));
 const LearningGuide = lazy(() => import("./learning-guide"));
+const CodeExplorer = lazy(() => import("./code-explorer"));
 const nav = [
   { id: "explore", label: "도장 탐색", icon: ScanLine },
   { id: "schemas", label: "도장 종류", icon: Layers },
+  { id: "codes", label: "코드 인증", icon: Fingerprint },
   { id: "issuers", label: "발행자·관리자", icon: ShieldCheck },
   { id: "wallet", label: "내 도장", icon: Wallet },
   { id: "lab", label: "Proof Studio", icon: Fingerprint },
@@ -112,6 +115,7 @@ export default function ScanApp() {
     window.history.replaceState(null, "", localURL(params));
   }
   function navigate(v: string) {
+    if (v === "codes" && view === "codes") return;
     sequence.current++;
     walletSequence.current++;
     setSearching(false);
@@ -121,6 +125,7 @@ export default function ScanApp() {
     setDetail(null);
     clearSchema();
     updateURL({ view: v });
+    if (v !== "codes" && !data && !loading) void refresh();
   }
   function openIssuer(address: string) {
     navigate("issuer");
@@ -197,6 +202,11 @@ export default function ScanApp() {
     setDetail(a);
     updateURL({
       view,
+      ...(view === "codes"
+        ? codeParams(
+            readCodeFilters(new URLSearchParams(window.location.search)),
+          )
+        : {}),
       ...(view === "issuer"
         ? { issuer: issuerAddress }
         : view === "wallet" && walletData
@@ -224,9 +234,13 @@ export default function ScanApp() {
             tr(s.label).toLowerCase().includes(value.toLowerCase()),
         );
         if (found) return await openSchema(found.uid);
-        throw new Error(
-          tr("주소, UID, 트랜잭션 해시 또는 도장 종류 이름을 입력하세요."),
-        );
+        if (/^0x/i.test(value))
+          throw new Error(
+            tr("주소, UID, 트랜잭션 해시 또는 도장 종류 이름을 입력하세요."),
+          );
+        navigate("codes");
+        updateURL({ view: "codes", domain: value });
+        return;
       }
       const found = await getData("search", { value });
       if (seq !== sequence.current) return found;
@@ -242,6 +256,11 @@ export default function ScanApp() {
         clearSchema();
         updateURL({
           view,
+          ...(view === "codes"
+            ? codeParams(
+                readCodeFilters(new URLSearchParams(window.location.search)),
+              )
+            : {}),
           ...(view === "issuer"
             ? { issuer: issuerAddress }
             : view === "wallet" && walletData
@@ -322,21 +341,23 @@ export default function ScanApp() {
   }
   useEffect(() => {
     let live = true;
-    void getData<ScanData>("overview")
-      .then((d) => {
-        if (live) {
-          setData(d);
-          setLoading(false);
-        }
-      })
-      .catch((e) => {
-        if (live) {
-          setError(e.message);
-          setLoading(false);
-        }
-      });
     const q = new URLSearchParams(window.location.search);
     const v = q.get("view");
+    if (v === "codes") setLoading(false);
+    else
+      void getData<ScanData>("overview")
+        .then((d) => {
+          if (live) {
+            setData(d);
+            setLoading(false);
+          }
+        })
+        .catch((e) => {
+          if (live) {
+            setError(e.message);
+            setLoading(false);
+          }
+        });
     if (v === "workspace") {
       setView("issuers");
       updateURL({ view: "issuers", mode: "manage" });
@@ -350,7 +371,15 @@ export default function ScanApp() {
     if (q.get("issuer")) openIssuer(q.get("issuer")!);
     if (query) {
       setSearch(query);
-      if (q.get("uid") && (q.get("issuer") || q.get("address"))) {
+      if (v === "codes" && q.get("uid")) {
+        void getData<Attestation>("attestation", { uid: query })
+          .then((record) => {
+            if (live) setDetail(record);
+          })
+          .catch((e) => {
+            if (live) setSearchError(e.message);
+          });
+      } else if (q.get("uid") && (q.get("issuer") || q.get("address"))) {
         const address = q.get("address");
         const ready =
           address && !q.get("issuer") ? openWallet(address) : Promise.resolve();
@@ -436,6 +465,10 @@ export default function ScanApp() {
         "스키마는 도장 내용의 형식입니다. 발급 권한과 데이터의 공개 범위도 함께 봅니다.",
       ),
     },
+    codes: {
+      title: "코드 인증",
+      text: "사용처별 발급 이력을 살펴보고 현재 코드 인증 여부를 확인하세요.",
+    },
     issuer: {
       title: "발행한 도장",
       text: "발행 주소별로 도장과 이전 발급 기록을 확인하세요.",
@@ -452,7 +485,9 @@ export default function ScanApp() {
     },
     lab: {
       title: "Proof Studio",
-      text: tr("메인넷 도장을 이용하기 전, 테스트넷에서 ZK 증명을 생성하고 검증합니다."),
+      text: tr(
+        "메인넷 도장을 이용하기 전, 테스트넷에서 ZK 증명을 생성하고 검증합니다.",
+      ),
     },
     brand: {
       title: "브랜드 킷",
@@ -574,25 +609,32 @@ export default function ScanApp() {
             <p>{tr(heading.text)}</p>
           </div>
         </section>
-        {loading && view !== "lab" && view !== "guide" && view !== "brand" && (
-          <ChainLoading />
-        )}
-        {error && view !== "lab" && view !== "guide" && view !== "brand" && (
-          <div className="notice danger" role="alert">
-            <p>
-              {tr("온체인 정보를 불러오지 못했습니다.")} {tr(error)}
-            </p>
-            {data && <p>{tr("마지막으로 불러온 정보를 표시합니다.")}</p>}
-            <button
-              className="secondary-button"
-              disabled={loading}
-              onClick={refresh}
-            >
-              {tr("다시 조회")}
-            </button>
-          </div>
-        )}
+        {loading &&
+          view !== "codes" &&
+          view !== "lab" &&
+          view !== "guide" &&
+          view !== "brand" && <ChainLoading />}
+        {error &&
+          view !== "codes" &&
+          view !== "lab" &&
+          view !== "guide" &&
+          view !== "brand" && (
+            <div className="notice danger" role="alert">
+              <p>
+                {tr("온체인 정보를 불러오지 못했습니다.")} {tr(error)}
+              </p>
+              {data && <p>{tr("마지막으로 불러온 정보를 표시합니다.")}</p>}
+              <button
+                className="secondary-button"
+                disabled={loading}
+                onClick={refresh}
+              >
+                {tr("다시 조회")}
+              </button>
+            </div>
+          )}
         {view !== "lab" &&
+          view !== "codes" &&
           view !== "guide" &&
           view !== "brand" &&
           view !== "issuers" && (
@@ -608,7 +650,7 @@ export default function ScanApp() {
                 aria-label={tr("도장 검색")}
                 ref={inputRef}
                 placeholder={tr(
-                  "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시",
+                  "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시, 코드 사용처",
                 )}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -914,6 +956,11 @@ export default function ScanApp() {
             </div>
           </section>
         )}
+        {view === "codes" && (
+          <Suspense fallback={<Empty title={tr("화면 준비 중")} loading />}>
+            <CodeExplorer onSelect={openRecord} onIssuer={openIssuer} />
+          </Suspense>
+        )}
         {view === "issuer" && issuerAddress && (
           <AddressHistory
             key={issuerAddress}
@@ -1139,6 +1186,13 @@ export default function ScanApp() {
               >
                 GitHub ↗
               </a>
+              <a
+                href="https://github.com/zkproofport/dojangscan/issues/new/choose"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {tr("문제 신고·기능 제안")} ↗
+              </a>
             </nav>
           </div>
           <div className="footer-bottom">
@@ -1167,6 +1221,11 @@ export default function ScanApp() {
           clearSchema();
           updateURL({
             view,
+            ...(view === "codes"
+              ? codeParams(
+                  readCodeFilters(new URLSearchParams(window.location.search)),
+                )
+              : {}),
             ...(view === "issuer"
               ? { issuer: issuerAddress }
               : view === "wallet" && walletData

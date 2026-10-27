@@ -31,6 +31,7 @@ import {
 } from "@/lib/giwa";
 import { ISSUER_EXPLANATIONS } from "@/lib/trust";
 import { shareURL } from "@/lib/navigation";
+import { codeLink } from "@/lib/code-records";
 import {
   getData,
   CopyButton,
@@ -321,6 +322,9 @@ export default function ScanDetail({
                     {tr(a.attester)}
                   </button>
                   <h3>{tr("받은 지갑")}</h3>
+                  {a.recipient === ZeroAddress && (
+                    <p>{tr("개별 수신 지갑 없음")}</p>
+                  )}
                   <button
                     className="address-link mono"
                     onClick={() => goWallet(a.recipient)}
@@ -340,17 +344,26 @@ export default function ScanDetail({
                               {tr(f.name)} · {tr(f.type)}
                             </small>
                           </span>
-                          <code>
-                            {tr(
-                              f.type === "bool"
-                                ? f.value === "true"
-                                  ? tr("예 (true)")
-                                  : tr("아니오 (false)")
-                                : f.name === "snapshotAt"
-                                  ? date(Number(f.value))
-                                  : f.value,
-                            )}
-                          </code>
+                          {f.name === "domain" ? (
+                            <a
+                              className="text-button"
+                              href={codeLink(f.value, a.attester)}
+                            >
+                              {f.value} ↗
+                            </a>
+                          ) : (
+                            <code>
+                              {tr(
+                                f.type === "bool"
+                                  ? f.value === "true"
+                                    ? tr("예 (true)")
+                                    : tr("아니오 (false)")
+                                  : f.name === "snapshotAt"
+                                    ? date(Number(f.value))
+                                    : f.value,
+                              )}
+                            </code>
+                          )}
                         </div>
                       ))}
                     </div>

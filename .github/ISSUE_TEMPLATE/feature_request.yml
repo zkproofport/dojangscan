@@ -1,0 +1,17 @@
+name: 기능 제안 / Suggest a feature
+description: 더 편리하게 사용하기 위한 아이디어를 알려주세요. / Share an improvement idea.
+title: "[제안 / Feature] "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: 어떤 일을 더 편하게 하고 싶나요? / What would you like to do more easily?
+      placeholder: "예: 특정 사용처의 발급 기록을 매일 확인하고 싶습니다."
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 원하는 기능이나 개선점 / Your idea
+    validations:
+      required: true

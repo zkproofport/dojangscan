@@ -1,0 +1,26 @@
+name: 문제 신고 / Report a problem
+description: 도장스캔을 사용하다가 겪은 문제를 알려주세요. / Tell us what went wrong.
+title: "[문제 / Bug] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 어떤 문제가 있었나요? / What happened?
+      description: 사용한 화면, 누른 버튼, 표시된 오류를 알려주세요. 스크린샷을 첨부해도 좋습니다.
+      placeholder: "예: 코드 인증에서 인증 확인을 눌렀는데 결과가 나오지 않습니다."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 결과 / Expected result
+  - type: input
+    id: link
+    attributes:
+      label: 관련 조회 링크 / View link
+      description: 조회 링크 복사 버튼으로 얻은 링크를 붙여 넣어 주세요. / Paste a link from Copy view link.
+  - type: input
+    id: environment
+    attributes:
+      label: 사용 환경 / Device and browser
+      placeholder: "예: Windows Chrome, iPhone Safari"

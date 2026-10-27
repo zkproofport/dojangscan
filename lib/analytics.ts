@@ -1,7 +1,7 @@
 // Section events complement GA4's page views; do not send search or wallet data.
 export function trackSection(section: string) {
   if (
-    !["explore", "schemas", "issuers", "wallet", "lab", "guide"].includes(
+    !["explore", "schemas", "codes", "issuers", "wallet", "lab", "guide"].includes(
       section,
     )
   )

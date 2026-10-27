@@ -27,7 +27,14 @@ npm run test:live
 - Check Korean/English, light/dark, mobile layout, the three workspace tools, and the Playground Proof Studio in a browser.
 - Real operator writes require an authorized wallet and wallet approval. Proof Studio verification uses read-only calls; mobile end-to-end tests require the [relay and app prerequisites](workflows.md#proof-studio).
 
-## Latest validation · 2026-10-23
+## Latest validation · 2026-10-27
+
+- Added use-case/issuer/date/status filters for the current code schema, shareable views, scoped CSV exports and read-only DojangScroll verification. All 45 tests and the production build passed. Seven new tests cover exact domain/issuer separation, UTC dates, CSV escaping, schema event filtering, snapshot pagination, registration changes, negative verification and RPC failures.
+- Browser checks covered Korean/English, light/dark, and a 390 × 844 mobile viewport. The `doctorloan` view loaded 50 records, then 100 at the same snapshot block **39,746,892**. A downloaded CSV contained the expected 50 matching records, full zero recipients and partial-coverage metadata.
+- A real `doctorloan` record verified through DojangScroll at block **39,746,977** and returned UID `0xa17c01ee1e39c90f50ad9555e6eb1c8e00a037c1bd7b50b4d6abf29b2a2ed672`. The detail view displayed both the zero address and the no-individual-recipient explanation, retaining domain/issuer filters in its URL.
+- Added bilingual GitHub issue forms and a user-facing report/suggestion footer link. No issues or public-chain transactions were submitted. History coverage is limited to loaded explorer pages for the current code schema; this is not a full historical index.
+
+## Previous validation · 2026-10-23
 
 - Added contract issuance and revocation with verified ABI, operator, pause and schema checks. All 38 tests and the production build passed, including seven new contract adapter tests.
 - The generated Verified Address, Balance Root and Verified Code calls succeeded in read-only GIWA RPC simulations from operator `0xdC5197a8a0ba55f506CFC3DDd491e864f2340590` through `0xb7061879AB74BD9db520Be71b36eEC9BF512D5Cd`. Its explorer-verified ABI was accepted by the adapter with captured onchain operator/pause/schema results.
