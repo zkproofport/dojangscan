@@ -7,7 +7,7 @@ body:
     attributes:
       label: 어떤 문제가 있었나요? / What happened?
       description: 사용한 화면, 누른 버튼, 표시된 오류를 알려주세요. 스크린샷을 첨부해도 좋습니다.
-      placeholder: "예: 코드 인증에서 인증 확인을 눌렀는데 결과가 나오지 않습니다."
+      placeholder: "예: 사용처별 조회에서 상세 보기를 눌렀는데 결과가 나오지 않습니다."
     validations:
       required: true
   - type: textarea

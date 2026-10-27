@@ -47,7 +47,7 @@ const CodeExplorer = lazy(() => import("./code-explorer"));
 const nav = [
   { id: "explore", label: "도장 탐색", icon: ScanLine },
   { id: "schemas", label: "도장 종류", icon: Layers },
-  { id: "codes", label: "코드 인증", icon: Fingerprint },
+  { id: "codes", label: "사용처별 조회", icon: Fingerprint },
   { id: "issuers", label: "발행자·관리자", icon: ShieldCheck },
   { id: "wallet", label: "내 도장", icon: Wallet },
   { id: "lab", label: "Proof Studio", icon: Fingerprint },
@@ -239,7 +239,7 @@ export default function ScanApp() {
             tr("주소, UID, 트랜잭션 해시 또는 도장 종류 이름을 입력하세요."),
           );
         navigate("codes");
-        updateURL({ view: "codes", domain: value });
+        updateURL({ view: "codes", q: value.slice(0, 512) });
         return;
       }
       const found = await getData("search", { value });
@@ -466,8 +466,8 @@ export default function ScanApp() {
       ),
     },
     codes: {
-      title: "코드 인증",
-      text: "사용처별 발급 이력을 살펴보고 현재 코드 인증 여부를 확인하세요.",
+      title: "사용처별 조회",
+      text: "인증 코드의 사용처를 찾아 발급된 도장을 확인하세요.",
     },
     issuer: {
       title: "발행한 도장",
@@ -650,7 +650,7 @@ export default function ScanApp() {
                 aria-label={tr("도장 검색")}
                 ref={inputRef}
                 placeholder={tr(
-                  "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시, 코드 사용처",
+                  "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시, 인증 코드 사용처",
                 )}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -1191,7 +1191,7 @@ export default function ScanApp() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {tr("문제 신고·기능 제안")} ↗
+                {tr("문제 제보·기능 제안")} ↗
               </a>
             </nav>
           </div>

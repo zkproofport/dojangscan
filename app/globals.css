@@ -114,3 +114,14 @@ button>svg,a>svg,.relationship-flow>.flow-arrow{flex-shrink:0}
 /* Code usage history and read-only verification. */
 .code-explorer{display:grid;gap:24px}.code-explorer h2{font-size:22px;color:var(--ink);margin:0 0 16px}.code-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}.code-filters label{display:grid;gap:8px;font-size:13px;color:var(--ink);min-width:0}.code-filters .form-input{width:100%;min-width:0}.code-hash-input{grid-column:1/-1}.code-coverage{padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;font-size:13px;line-height:1.9;overflow-wrap:anywhere}.code-table-scroll{overflow:auto;max-width:100%;margin:20px 0;border:1px solid var(--line);border-radius:10px}.code-table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}.code-table th,.code-table td{padding:14px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}.code-table th{font-weight:600;color:var(--ink);background:var(--surface)}.code-table td:first-child{white-space:normal;overflow-wrap:anywhere;min-width:110px;max-width:200px}.code-table td:last-child{display:flex;gap:12px}.code-table td code{font-size:12px}.code-verification-result{margin-top:20px;padding:20px;border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}.code-verification-result p{font-size:13px;line-height:1.8;margin-top:12px}.recipient-value{display:flex;flex-direction:column;gap:4px;align-items:flex-end}.recipient-value small{font-size:11px}.code-explorer .notice{flex-wrap:wrap}#code-verification{scroll-margin-top:24px}
 @media(max-width:950px){.code-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.code-filters{grid-template-columns:1fr}.code-explorer .studio-panel{padding:18px}.code-explorer .section-heading{align-items:flex-start;gap:12px}.code-explorer .example-actions{gap:10px}.code-explorer h2{font-size:20px}}
+
+/* Keep use-case discovery primary; advanced controls are opt-in. */
+.usecase-search{display:grid;gap:8px;font-size:13px;color:var(--ink);margin:16px 0}
+.usecase-search .form-input{width:100%;min-width:0}
+.usecase-options{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+.usecase-options button{max-width:100%;overflow-wrap:anywhere;white-space:normal;text-align:left}
+.usecase-options button[aria-pressed=true]{border-color:var(--purple);color:var(--purple);background:var(--ds-f2f0fc)}
+.code-extra-filters{margin:18px 0}.code-extra-filters>summary{width:fit-content}
+.code-verifier>summary{cursor:pointer;font-size:16px;font-weight:600;color:var(--ink)}
+.code-verifier[open]>summary{margin-bottom:18px}
+.code-verifier>p{font-size:13px;line-height:1.8}

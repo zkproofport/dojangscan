@@ -27,11 +27,19 @@ npm run test:live
 - Check Korean/English, light/dark, mobile layout, the three workspace tools, and the Playground Proof Studio in a browser.
 - Real operator writes require an authorized wallet and wallet approval. Proof Studio verification uses read-only calls; mobile end-to-end tests require the [relay and app prerequisites](workflows.md#proof-studio).
 
-## Latest validation · 2026-10-27
+## Latest validation · 2026-10-27 · simplified use-case browsing
+
+- `npm test`: all 46 tests passed. Search tests cover case-insensitive partial matching, Korean Unicode normalization, exact selected domains, no invented translated aliases, and query-link round trips.
+- `npm run check` and `npm run build` passed; the existing large-bundle warning remains.
+- Desktop Chrome loaded 50 live code records. An unmatched Korean query showed actual recorded use cases separately; selecting one immediately showed the 50 matching records and preserved the original domain in the URL. The row verification action opened the collapsed tool and filled domain, current issuer and code hash.
+- Confirmed the main search routes plain text into the use-case query, advanced filters/verifier are initially collapsed, and the Korean/English navigation and GitHub issue-form link are present. This pass did not repeat mobile, CSV download, or onchain verifier execution checks; those underlying paths were not changed.
+- Removed customer-specific placeholders, business assumptions and customer-named test fixtures. Domains and addresses continue to come from live records; no customer alias map was introduced.
+
+## Earlier validation · 2026-10-27
 
 - Added use-case/issuer/date/status filters for the current code schema, shareable views, scoped CSV exports and read-only DojangScroll verification. All 45 tests and the production build passed. Seven new tests cover exact domain/issuer separation, UTC dates, CSV escaping, schema event filtering, snapshot pagination, registration changes, negative verification and RPC failures.
-- Browser checks covered Korean/English, light/dark, and a 390 × 844 mobile viewport. The `doctorloan` view loaded 50 records, then 100 at the same snapshot block **39,746,892**. A downloaded CSV contained the expected 50 matching records, full zero recipients and partial-coverage metadata.
-- A real `doctorloan` record verified through DojangScroll at block **39,746,977** and returned UID `0xa17c01ee1e39c90f50ad9555e6eb1c8e00a037c1bd7b50b4d6abf29b2a2ed672`. The detail view displayed both the zero address and the no-individual-recipient explanation, retaining domain/issuer filters in its URL.
+- Browser checks covered Korean/English, light/dark, and a 390 × 844 mobile viewport. The use-case view loaded 50 records, then 100 at the same snapshot block **39,746,892**. A downloaded CSV contained the expected 50 matching records, full zero recipients and partial-coverage metadata.
+- A real use-case record verified through DojangScroll at block **39,746,977** and returned UID `0xa17c01ee1e39c90f50ad9555e6eb1c8e00a037c1bd7b50b4d6abf29b2a2ed672`. The detail view displayed both the zero address and the no-individual-recipient explanation, retaining domain/issuer filters in its URL.
 - Added bilingual GitHub issue forms and a user-facing report/suggestion footer link. No issues or public-chain transactions were submitted. History coverage is limited to loaded explorer pages for the current code schema; this is not a full historical index.
 
 ## Previous validation · 2026-10-23

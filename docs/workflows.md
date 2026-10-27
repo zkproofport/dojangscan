@@ -70,13 +70,21 @@ Upbit KYC의 테스트넷 활용 한계로 메인넷 적용 전 흐름을 테스
 등록 확인 → 앱 증명 생성 → 데이터 확인 및 검증 순서입니다. `giwa_attestation` 서킷, verifier `0x5da234546874304f8c51bbeed00fc632938211c1`, scope `dojangscan:mock-kyc:v1`를 사용합니다. `MockGiwaAttester`는 `0x6646d970499bbed728636823a5a7e551e811b414`, 허용된 서명자는 `0xEE099845CDfF93e73aDcBcB36A9B93578bcCed4b`입니다. Proof Studio는 192개 공개 입력 중 발급자 root, 요청 action/domain, scope, 계정 nullifier를 모두 검사합니다.
 
 공식 Dojang Book 등록과 별개인 목업이므로 정확한 EAS 발급자·스키마의 수신 이벤트를 조회하고 최신 블록의 EAS 상태를 읽습니다. 최대 10페이지 조회가 끝나지 않으면 미등록으로 단정하지 않습니다. 취소·만료 여부는 별도 RPC 사전 검사이며 ZK 증명 자체가 현재 KYC 상태를 보장하지 않습니다. 실습은 반복 가능하며 실제 Upbit 인증이나 보상 청구가 아닙니다.
-## Code verification history / 코드 인증 이력
+## Browse by use case / 사용처별 조회
 
-Open **코드 인증 / Code verification** from the navigation, enter a use case such as `doctorloan`, and select its issuer. A domain is an exact, case-sensitive onchain string; it is not an institutional identity. Different issuers can use the same domain.
+**사용처별 조회** 메뉴에서 인증 코드의 사용처 이름을 검색하거나, 불러온 기록의 사용처를 누르면 발급된 도장을 볼 수 있습니다. 첫 화면은 검색창 하나로 시작합니다. 발행자·상태·기간은 **상세 조건**을 펼칠 때만 표시하며, 추가 조건 없이도 조회할 수 있습니다. 도장 탐색의 일반 검색창에서도 사용처 이름을 입력할 수 있습니다. 도장 종류 이름과 일치하는 검색은 기존처럼 해당 종류를 엽니다.
 
-- Filter by use case, issuer address, record status, and inclusive UTC issue dates. Plain-text searches that do not match a schema open this view. Domain links in attestation cards and details open a view scoped to both domain and issuer.
-- **조회 링크 복사 / Copy view link** preserves filters. **조회 결과 CSV 저장 / Export results as CSV** exports matching loaded records with full addresses, hashes, UIDs, timestamps, snapshot block, and coverage. CSV text is escaped to avoid spreadsheet formula evaluation.
-- History reads the current Verified Code schema's explorer event stream and confirms EAS records at one block across pagination. Load earlier records to extend the scope; the count is not a network-wide total, and explorer indexing can lag. Refresh starts a new snapshot.
-- **인증 확인 / Check verification** on a row fills the verification form. Submit it to read `DojangScroll.isVerifiedCode` and, if valid, `getVerifyCodeAttestationUid`, after confirming the selected issuer ID still maps to that address. All reads use one fresh block. No wallet or signature is required. Enter a code hash, not an original verification code; hashes are not put in shared view links.
-- Record status and current Scroll verification are distinct: an active historical record is not by itself proof of a currently valid lookup. An unsuccessful verification does not distinguish missing records, expiry, revocation or mismatched inputs. Verification does not establish loan application completion or code redemption.
-- Zero-recipient records show **개별 수신 지갑 없음 / No individual recipient wallet** alongside the actual zero address. **문제 신고·기능 제안 / Report an issue or suggest a feature** opens GitHub's issue forms.
+- 검색은 대소문자와 Unicode 정규화를 적용한 부분 일치입니다. 사용처를 선택하면 원래 온체인 문자열로 정확히 필터링합니다. 다른 언어 표기나 기관 이름을 임의로 연결하지 않습니다. 검색 결과가 없으면 실제 불러온 기록의 사용처를 별도로 제시합니다.
+- 사용처는 EAS 데이터의 `domain`, 발행 주소는 EAS `attester`, 등록 정보는 AttesterBook에서 가져옵니다. 사용처 이름으로 기관이나 업무 내용을 추정하지 않습니다. 발행자 표시명 일부는 출처가 명시된 공식 ID 메타데이터(`lib/issuer-metadata.ts`)이며 온체인 값이 아닙니다.
+- 같은 사용처를 여러 발행자가 쓸 수 있으므로 목록에 발행 주소를 함께 표시합니다. 도장 카드·상세의 사용처 링크는 사용처와 발행 주소를 함께 선택합니다.
+- **조회 링크 복사**는 검색어·선택 조건을 보존합니다. **조회 결과 CSV 저장**은 불러온 범위 중 일치하는 기록과 원본 주소·해시·UID·시각·기준 블록·조회 범위를 내보냅니다. 전체 네트워크 발급량이 아닙니다.
+- 현재 Verified Code 스키마의 이력만 조회하며, 페이지를 추가로 불러와도 같은 블록을 기준으로 EAS 상태를 확인합니다. **조회 범위와 기준 시점**에 자세한 설명을 두고, 이전 기록은 더 보기로 불러옵니다. 새로고침하면 새 기준 블록으로 조회합니다. 탐색기 반영은 지연될 수 있습니다.
+- **코드 해시로 유효성 확인**은 기본적으로 접혀 있습니다. 기록의 **인증 확인**을 누르면 펼쳐지고 사용처·발행자·해시가 채워집니다. 실행 시 발행자 ID의 현재 주소를 확인하고 새 블록에서 `DojangScroll.isVerifiedCode`, 유효하면 `getVerifyCodeAttestationUid`를 읽습니다. 지갑 연결이나 서명이 필요 없습니다. 원본 인증번호 대신 해시를 사용하며 이 확인 도구의 입력값은 공유 링크에 포함하지 않습니다.
+- 기록의 활성 상태와 현재 Scroll 조회의 유효성은 구분합니다. 온체인 인증은 외부 서비스의 처리 상태나 코드 사용 여부를 보장하지 않습니다. 0 수신 주소에는 실제 주소와 **개별 수신 지갑 없음**을 함께 표시합니다.
+- 하단 **문제 제보·기능 제안**에서 GitHub 이슈 양식으로 이동합니다.
+
+Open **Browse by use case** and search a verification code use case or choose one from loaded onchain records. The default screen has one search field; issuer, status and dates live under **More filters**. General plain-text searches also open this view unless they match a schema name.
+
+Search supports case-insensitive, Unicode-normalized partial matches. Selecting a use case applies its exact original domain. There are no invented language aliases or institutional mappings. Suggestions on an empty search result are actual use cases from loaded records, not claimed matches. Issuer addresses stay visible because multiple issuers may use the same domain.
+
+Shared links preserve the search and filters. CSV exports only matching loaded records, including snapshot and coverage. History uses the current Verified Code schema and a fixed block across pagination. Earlier records can be loaded on request. The optional code-hash verifier is collapsed until needed; a row action opens and prefills it. Verification is read-only and says nothing about an external business process. **Report an issue or suggest a feature** opens GitHub issue forms.

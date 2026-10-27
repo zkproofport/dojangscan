@@ -34,3 +34,9 @@ EAS stores attestation records; Dojang adds registered schemas, issuers, and iss
 발행자 이름은 공식 문서의 ID를 근거로 표시합니다. 현재 주소와 등록 여부는 `getAttester(ID)`로 조회하며, 관리자 역할·발행자 등록·실제 발급 권한을 각각 구분합니다.
 
 For local setup, checks, and deployment, see [Development & validation](local-validation.md).
+
+### Use-case discovery
+
+The standalone `codes` view is labeled **사용처별 조회 / Browse by use case**. It remains scoped to the current Verified Code schema; it is not a general history console. Its primary control searches decoded `domain` values. Suggestions are distinct original domains from loaded EAS records, never a static customer list. `q` is a Unicode-normalized, case-insensitive substring search, while a selected `domain` stays exact and case-sensitive. Search normalization does not affect contract arguments or CSV values. Unknown text from the main search routes here. Additional issuer/status/date filters and the read-only verifier remain collapsed until needed.
+
+Do not infer institutions, industry, eligibility, or translated aliases from a use-case string or a conversation example. EAS supplies domains and issuing addresses; AttesterBook supplies current registration. Human issuer labels from documented ID metadata have their own source and are not onchain names.

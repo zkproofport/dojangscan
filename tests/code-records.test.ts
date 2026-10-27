@@ -9,6 +9,8 @@ import {
 } from "ethers";
 import {
   codeCSV,
+  codeParams,
+  matchesUseCase,
   codeLink,
   emptyCodeFilters,
   filterCodeRecords,
@@ -28,7 +30,7 @@ const issuer = "0x1111111111111111111111111111111111111111";
 const other = "0x2222222222222222222222222222222222222222";
 const hash = (n: number) => "0x" + n.toString(16).padStart(64, "0");
 function record(
-  domain = "doctorloan",
+  domain = "test-scope",
   address = issuer,
   time = 1793059200,
 ): Attestation {
@@ -62,16 +64,16 @@ function record(
 test("code filters preserve exact domain and separate issuers, status and UTC inclusive dates", () => {
   const start = Date.parse("2026-10-27T00:00:00Z") / 1000;
   const records = [
-    record("doctorloan", issuer, start),
-    record("doctorloan", issuer, start + 86399),
-    record("doctorloan", issuer, start + 86400),
-    record("Doctorloan", issuer, start),
-    record("doctorloan", other, start),
-    { ...record("doctorloan", issuer, start), status: "revoked" as const },
+    record("test-scope", issuer, start),
+    record("test-scope", issuer, start + 86399),
+    record("test-scope", issuer, start + 86400),
+    record("Test-scope", issuer, start),
+    record("test-scope", other, start),
+    { ...record("test-scope", issuer, start), status: "revoked" as const },
   ];
   const filters = {
     ...emptyCodeFilters,
-    domain: "doctorloan",
+    domain: "test-scope",
     issuer,
     status: "active",
     from: "2026-10-27",
@@ -85,11 +87,11 @@ test("code filters preserve exact domain and separate issuers, status and UTC in
 });
 test("shared links round-trip use case and issuer without code hashes; malformed filters are discarded", () => {
   const query = new URLSearchParams(
-    codeLink("doctorloan & 신청", issuer).slice(1),
+    codeLink("test-scope & 신청", issuer).slice(1),
   );
   assert.deepEqual(readCodeFilters(query), {
     ...emptyCodeFilters,
-    domain: "doctorloan & 신청",
+    domain: "test-scope & 신청",
     issuer,
   });
   assert.equal(query.has("codeHash"), false);
@@ -185,7 +187,7 @@ function verificationRPC(valid = true, current = issuer, uid = hash(4)) {
       if (decoded.name !== "getAttester")
         assert.deepEqual(Array.from(decoded.args), [
           hash(2),
-          "doctorloan",
+          "test-scope",
           hash(3),
         ]);
       return abi.encodeFunctionResult(decoded.name, [
@@ -199,7 +201,7 @@ function verificationRPC(valid = true, current = issuer, uid = hash(4)) {
   };
 }
 const verificationInput = {
-  domain: "doctorloan",
+  domain: "test-scope",
   codeHash: hash(2),
   attesterId: hash(3),
   expectedIssuer: issuer,
@@ -322,7 +324,7 @@ test("code history pins pagination and expiry to one snapshot and rejects failed
                 true,
                 AbiCoder.defaultAbiCoder().encode(
                   ["bytes32", "string"],
-                  [hash(2), "doctorloan"],
+                  [hash(2), "test-scope"],
                 ),
               ],
             ];
@@ -359,4 +361,31 @@ test("code history pins pagination and expiry to one snapshot and rejects failed
     globalThis.fetch = original;
     invalidateScanCache();
   }
+});
+
+test("use case discovery supports partial Unicode searches without inventing aliases", () => {
+  assert.equal(matchesUseCase("Test-Scope", " SCOPE "), true);
+  assert.equal(
+    matchesUseCase("테스트 사용처", "테스트".normalize("NFD")),
+    true,
+  );
+  assert.equal(matchesUseCase("Test-Scope", "테스트"), false);
+  const records = [
+    record("Test-Scope"),
+    record("test-scope"),
+    record("unrelated"),
+  ];
+  assert.deepEqual(
+    filterCodeRecords(records, { ...emptyCodeFilters, query: "SCOPE" }),
+    records.slice(0, 2),
+  );
+  assert.deepEqual(
+    filterCodeRecords(records, { ...emptyCodeFilters, domain: "Test-Scope" }),
+    records.slice(0, 1),
+  );
+  const filters = { ...emptyCodeFilters, query: "테스트 사용처" };
+  assert.deepEqual(
+    readCodeFilters(new URLSearchParams(codeParams(filters))),
+    filters,
+  );
 });

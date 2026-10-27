@@ -10,6 +10,7 @@ import { CONTRACTS, type Attestation } from "./giwa";
 import { rpc } from "./scan-data";
 
 export type CodeFilters = {
+  query: string;
   domain: string;
   issuer: string;
   status: string;
@@ -17,6 +18,7 @@ export type CodeFilters = {
   to: string;
 };
 export const emptyCodeFilters: CodeFilters = {
+  query: "",
   domain: "",
   issuer: "",
   status: "all",
@@ -25,8 +27,15 @@ export const emptyCodeFilters: CodeFilters = {
 };
 export const codeField = (a: Attestation, name: string) =>
   a.fields.find((f) => f.name === name)?.value ?? "";
+// Search is for discovery only. Exact filters and contract calls retain original values.
+export function matchesUseCase(domain: string, query: string) {
+  const normalize = (value: string) =>
+    value.normalize("NFKC").trim().toLowerCase();
+  return normalize(domain).includes(normalize(query));
+}
 export function readCodeFilters(query: URLSearchParams): CodeFilters {
   return {
+    query: (query.get("q") ?? "").slice(0, 512),
     domain: (query.get("domain") ?? "").slice(0, 512),
     issuer: isAddress(query.get("attester") ?? "")
       ? query.get("attester")!
@@ -61,6 +70,7 @@ export function filterCodeRecords(
   if (start >= end) throw new Error("시작일은 종료일보다 늦을 수 없습니다.");
   return records.filter(
     (a) =>
+      matchesUseCase(codeField(a, "domain"), filters.query) &&
       (!filters.domain || codeField(a, "domain") === filters.domain) &&
       (!filters.issuer ||
         a.attester.toLowerCase() === filters.issuer.toLowerCase()) &&
@@ -72,6 +82,7 @@ export function filterCodeRecords(
 export function codeParams(filters: CodeFilters): Record<string, string> {
   return {
     view: "codes",
+    ...(filters.query ? { q: filters.query } : {}),
     ...(filters.domain ? { domain: filters.domain } : {}),
     ...(filters.issuer ? { attester: filters.issuer } : {}),
     ...(filters.status !== "all" ? { status: filters.status } : {}),
