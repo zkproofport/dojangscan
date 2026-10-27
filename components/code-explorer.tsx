@@ -591,18 +591,20 @@ export default function CodeExplorer({
                             <Status value={a.status} />
                           </td>
                           <td>
-                            <button
-                              className="text-button"
-                              onClick={() => onSelect(a)}
-                            >
-                              {tr("상세 보기")}
-                            </button>
-                            <button
-                              className="text-button"
-                              onClick={() => selectCode(a)}
-                            >
-                              {tr("현재 유효성 확인")}
-                            </button>
+                            <div className="code-row-actions">
+                              <button
+                                className="text-button"
+                                onClick={() => onSelect(a)}
+                              >
+                                {tr("상세 보기")}
+                              </button>
+                              <button
+                                className="text-button"
+                                onClick={() => selectCode(a)}
+                              >
+                                {tr("현재 유효성 확인")}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
