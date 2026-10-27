@@ -206,7 +206,7 @@ export default function CodeExplorer({
           <input
             className="form-input"
             type="search"
-            placeholder={tr("사용처 이름으로 검색")}
+            placeholder="doctorloan"
             maxLength={512}
             value={filters.query || filters.domain}
             onChange={(e) => {
