@@ -72,8 +72,9 @@ Upbit KYC의 테스트넷 활용 한계로 메인넷 적용 전 흐름을 테스
 공식 Dojang Book 등록과 별개인 목업이므로 정확한 EAS 발급자·스키마의 수신 이벤트를 조회하고 최신 블록의 EAS 상태를 읽습니다. 최대 10페이지 조회가 끝나지 않으면 미등록으로 단정하지 않습니다. 취소·만료 여부는 별도 RPC 사전 검사이며 ZK 증명 자체가 현재 KYC 상태를 보장하지 않습니다. 실습은 반복 가능하며 실제 Upbit 인증이나 보상 청구가 아닙니다.
 ## Browse by use case / 사용처별 조회
 
-**사용처별 조회** 메뉴에서 인증 코드의 사용처 이름을 검색하거나, 불러온 기록의 사용처를 누르면 발급된 도장을 볼 수 있습니다. 첫 화면은 검색창 하나로 시작합니다. 발행자·상태·기간은 **상세 조건**을 펼칠 때만 표시하며, 추가 조건 없이도 조회할 수 있습니다. 도장 탐색의 일반 검색창에서도 사용처 이름을 입력할 수 있습니다. 도장 종류 이름과 일치하는 검색은 기존처럼 해당 종류를 엽니다.
+새 기능은 메뉴 옆 **N** 배지로 표시합니다. **사용처별 조회** 메뉴에서 인증 코드의 사용처 이름을 검색하거나, 불러온 기록의 사용처를 누르면 발급된 도장을 볼 수 있습니다. 첫 화면은 검색창 하나로 시작합니다. 발행자·상태·기간은 **상세 조건**을 펼칠 때만 표시하며, 추가 조건 없이도 조회할 수 있습니다. 도장 탐색의 일반 검색창에서도 사용처 이름을 입력할 수 있습니다. 도장 종류 이름과 일치하는 검색은 기존처럼 해당 종류를 엽니다.
 
+- 검색창의 `doctorloan`은 입력 예시인 플레이스홀더입니다. 기본 검색값이나 고정 사용처 목록이 아니며 기관·업무를 의미하는 별도 매핑도 없습니다.
 - 검색은 대소문자와 Unicode 정규화를 적용한 부분 일치입니다. 사용처를 선택하면 원래 온체인 문자열로 정확히 필터링합니다. 다른 언어 표기나 기관 이름을 임의로 연결하지 않습니다. 검색 결과가 없으면 실제 불러온 기록의 사용처를 별도로 제시합니다.
 - 사용처는 EAS 데이터의 `domain`, 발행 주소는 EAS `attester`, 등록 정보는 AttesterBook에서 가져옵니다. 사용처 이름으로 기관이나 업무 내용을 추정하지 않습니다. 발행자 표시명 일부는 출처가 명시된 공식 ID 메타데이터(`lib/issuer-metadata.ts`)이며 온체인 값이 아닙니다.
 - 같은 사용처를 여러 발행자가 쓸 수 있으므로 목록에 발행 주소를 함께 표시합니다. 도장 카드·상세의 사용처 링크는 사용처와 발행 주소를 함께 선택합니다.
@@ -83,8 +84,8 @@ Upbit KYC의 테스트넷 활용 한계로 메인넷 적용 전 흐름을 테스
 - 기록의 활성 상태와 현재 Scroll 조회의 유효성은 구분합니다. 온체인 인증은 외부 서비스의 처리 상태나 코드 사용 여부를 보장하지 않습니다. 0 수신 주소에는 실제 주소와 **개별 수신 지갑 없음**을 함께 표시합니다.
 - 하단 **문제 제보·기능 제안**에서 GitHub 이슈 양식으로 이동합니다.
 
-Open **Browse by use case** and search a verification code use case or choose one from loaded onchain records. The default screen has one search field; issuer, status and dates live under **More filters**. General plain-text searches also open this view unless they match a schema name.
+The **N** badge marks the new feature. Open **Browse by use case** and search a verification code use case or choose one from loaded onchain records. The default screen has one search field; issuer, status and dates live under **More filters**. General plain-text searches also open this view unless they match a schema name.
 
-Search supports case-insensitive, Unicode-normalized partial matches. Selecting a use case applies its exact original domain. There are no invented language aliases or institutional mappings. Suggestions on an empty search result are actual use cases from loaded records, not claimed matches. Issuer addresses stay visible because multiple issuers may use the same domain.
+The `doctorloan` placeholder is an input example only, not a default filter, fixed use-case list or institutional mapping. Search supports case-insensitive, Unicode-normalized partial matches. Selecting a use case applies its exact original domain. There are no invented language aliases or institutional mappings. Suggestions on an empty search result are actual use cases from loaded records, not claimed matches. Issuer addresses stay visible because multiple issuers may use the same domain.
 
 Shared links preserve the search and filters. CSV exports only matching loaded records, including snapshot and coverage. History uses the current Verified Code schema and a fixed block across pagination. Earlier records can be loaded on request. The optional code-hash verifier is collapsed until needed; a row action opens and prefills it. Verification is read-only and says nothing about an external business process. **Report an issue or suggest a feature** opens GitHub issue forms.

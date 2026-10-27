@@ -125,3 +125,5 @@ button>svg,a>svg,.relationship-flow>.flow-arrow{flex-shrink:0}
 .code-verifier>summary{cursor:pointer;font-size:16px;font-weight:600;color:var(--ink)}
 .code-verifier[open]>summary{margin-bottom:18px}
 .code-verifier>p{font-size:13px;line-height:1.8}
+
+.nav-new-badge{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:17px;height:17px;border-radius:5px;background:#6c5ac2;color:#fff;font-size:10px;font-weight:750;line-height:1;letter-spacing:0}

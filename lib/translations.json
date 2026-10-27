@@ -777,5 +777,6 @@
   "이 결과는 온체인 인증 상태입니다. 외부 서비스의 처리 상태나 코드 사용 여부를 뜻하지 않습니다.": "This result describes onchain verification. It does not establish an external service’s processing status or code redemption.",
   "문제 제보·기능 제안": "Report an issue or suggest a feature",
   "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시, 인증 코드 사용처": "Wallet address, attestation UID, schema name, transaction hash, or verification code use case",
-  "접기": "Show less"
+  "접기": "Show less",
+  "새로운 기능": "New feature"
 }

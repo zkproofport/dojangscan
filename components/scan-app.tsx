@@ -534,6 +534,11 @@ export default function ScanApp() {
             >
               <n.icon size={16} />
               {tr(n.label)}
+              {n.id === "codes" && (
+                <span className="nav-new-badge" role="img" aria-label={tr("새로운 기능")}>
+                  N
+                </span>
+              )}
             </button>
           ))}
         </nav>
