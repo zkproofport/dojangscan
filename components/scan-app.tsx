@@ -78,6 +78,7 @@ export default function ScanApp() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [codeSearchRequested, setCodeSearchRequested] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [connecting, setConnecting] = useState(false);
@@ -122,6 +123,7 @@ export default function ScanApp() {
     setSearchError("");
     setWalletBusy(false);
     setView(v);
+    setCodeSearchRequested(false);
     setDetail(null);
     clearSchema();
     updateURL({ view: v });
@@ -239,6 +241,7 @@ export default function ScanApp() {
             tr("주소, UID, 트랜잭션 해시 또는 도장 종류 이름을 입력하세요."),
           );
         navigate("codes");
+        setCodeSearchRequested(true);
         updateURL({ view: "codes", q: value.slice(0, 512) });
         return;
       }
@@ -535,7 +538,11 @@ export default function ScanApp() {
               <n.icon size={16} />
               {tr(n.label)}
               {n.id === "codes" && (
-                <span className="nav-new-badge" role="img" aria-label={tr("새로운 기능")}>
+                <span
+                  className="nav-new-badge"
+                  role="img"
+                  aria-label={tr("새로운 기능")}
+                >
                   N
                 </span>
               )}
@@ -963,7 +970,11 @@ export default function ScanApp() {
         )}
         {view === "codes" && (
           <Suspense fallback={<Empty title={tr("화면 준비 중")} loading />}>
-            <CodeExplorer onSelect={openRecord} onIssuer={openIssuer} />
+            <CodeExplorer
+              onSelect={openRecord}
+              onIssuer={openIssuer}
+              searchRequested={codeSearchRequested}
+            />
           </Suspense>
         )}
         {view === "issuer" && issuerAddress && (

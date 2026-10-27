@@ -26,12 +26,17 @@ const date = (time: number) =>
 export default function CodeExplorer({
   onSelect,
   onIssuer,
+  searchRequested = false,
 }: {
   onSelect: (record: Attestation) => void;
   onIssuer: (address: string) => void;
+  searchRequested?: boolean;
 }) {
   const [filters, setFilters] = useState(() =>
     readCodeFilters(new URLSearchParams(window.location.search)),
+  );
+  const [searchInput, setSearchInput] = useState(
+    filters.query || filters.domain,
   );
   const [data, setData] = useState<Page | null>(null);
   const [busy, setBusy] = useState(false),
@@ -78,7 +83,8 @@ export default function CodeExplorer({
     }
   }
   useEffect(() => {
-    void load();
+    // A main-search submission is an explicit request; opening a menu or URL is not.
+    if (searchRequested) void load();
     return () => {
       revision.current++;
       pending.current = false;
@@ -89,6 +95,23 @@ export default function CodeExplorer({
     setFilters(next);
     setPage(1);
     window.history.replaceState(null, "", localURL(codeParams(next)));
+  }
+  function submitSearch() {
+    if (pending.current || !searchInput.trim()) return;
+    const next =
+      filters.domain && searchInput === filters.domain
+        ? { ...filters, query: "" }
+        : { ...filters, domain: "", query: searchInput.trim() };
+    change(next);
+    setSearchInput(next.query || next.domain);
+    setShowAllDomains(false);
+    resetVerification();
+    setShowVerification(false);
+    void load();
+  }
+  function selectDomain(domain: string) {
+    setSearchInput(domain);
+    change({ ...filters, domain, query: "" });
   }
   let items: Attestation[] = [],
     filterError = "";
@@ -190,31 +213,53 @@ export default function CodeExplorer({
       <div className="studio-panel">
         <div className="section-heading">
           <h2>{tr("사용처 찾기")}</h2>
-          <button
-            className="secondary-button"
-            disabled={busy}
-            onClick={() => {
-              resetVerification();
-              void load();
-            }}
-          >
-            {tr("새로고침")}
-          </button>
+          {data && (
+            <button
+              className="secondary-button"
+              disabled={busy}
+              onClick={() => {
+                resetVerification();
+                void load();
+              }}
+            >
+              {tr("새로고침")}
+            </button>
+          )}
         </div>
-        <label className="usecase-search">
-          {tr("인증 코드 사용처")}
-          <input
-            className="form-input"
-            type="search"
-            placeholder="doctorloan"
-            maxLength={512}
-            value={filters.query || filters.domain}
-            onChange={(e) => {
-              setShowAllDomains(false);
-              change({ ...filters, domain: "", query: e.target.value });
-            }}
-          />
-        </label>
+        <form
+          className="usecase-search-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitSearch();
+          }}
+        >
+          <label className="usecase-search">
+            {tr("인증 코드 사용처")}
+            <input
+              className="form-input"
+              type="search"
+              placeholder="doctorloan"
+              maxLength={512}
+              required
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </label>
+          <button
+            className="primary"
+            type="submit"
+            disabled={busy || !searchInput.trim()}
+          >
+            {tr(busy ? "조회 중" : "찾기")}
+          </button>
+        </form>
+        {!data && !busy && !error && (
+          <p className="fine-print">
+            {tr(
+              "사용처를 입력하고 찾기 또는 Enter를 누르면 발급 내역을 조회합니다.",
+            )}
+          </p>
+        )}
         {!!domains.length && (
           <div className="usecase-discovery">
             <p className="fine-print">
@@ -228,7 +273,7 @@ export default function CodeExplorer({
               <button
                 className="secondary-button"
                 aria-pressed={!filters.domain && !filters.query}
-                onClick={() => change({ ...filters, domain: "", query: "" })}
+                onClick={() => selectDomain("")}
               >
                 {tr("전체")}
               </button>
@@ -240,7 +285,7 @@ export default function CodeExplorer({
                   key={domain}
                   className="secondary-button"
                   aria-pressed={filters.domain === domain}
-                  onClick={() => change({ ...filters, domain, query: "" })}
+                  onClick={() => selectDomain(domain)}
                 >
                   {domain}
                 </button>
@@ -256,95 +301,105 @@ export default function CodeExplorer({
             </div>
           </div>
         )}
-        <details
-          className="data-notes code-extra-filters"
-          open={extraFilters || undefined}
-        >
-          <summary>
-            {tr("상세 조건")}
-            {extraFilters && ` · ${tr("적용 중")}`}
-          </summary>
-          <div className="code-filters">
-            <label>
-              {tr("발행자")}
-              <select
-                className="form-input"
-                value={filters.issuer}
-                onChange={(e) => change({ ...filters, issuer: e.target.value })}
+        {data && (
+          <>
+            <details
+              className="data-notes code-extra-filters"
+              open={extraFilters || undefined}
+            >
+              <summary>
+                {tr("상세 조건")}
+                {extraFilters && ` · ${tr("적용 중")}`}
+              </summary>
+              <div className="code-filters">
+                <label>
+                  {tr("발행자")}
+                  <select
+                    className="form-input"
+                    value={filters.issuer}
+                    onChange={(e) =>
+                      change({ ...filters, issuer: e.target.value })
+                    }
+                  >
+                    <option value="">{tr("전체")}</option>
+                    {issuers.map((a) => (
+                      <option key={a} value={a}>
+                        {short(a, 10)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  {tr("상태")}
+                  <select
+                    className="form-input"
+                    value={filters.status}
+                    onChange={(e) =>
+                      change({ ...filters, status: e.target.value })
+                    }
+                  >
+                    <option value="all">{tr("전체")}</option>
+                    <option value="active">{tr("활성")}</option>
+                    <option value="expired">{tr("만료")}</option>
+                    <option value="revoked">{tr("취소")}</option>
+                  </select>
+                </label>
+                <label>
+                  {tr("발급 시작일 (UTC)")}
+                  <input
+                    className="form-input"
+                    type="date"
+                    value={filters.from}
+                    onChange={(e) =>
+                      change({ ...filters, from: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  {tr("발급 종료일 (UTC)")}
+                  <input
+                    className="form-input"
+                    type="date"
+                    value={filters.to}
+                    onChange={(e) => change({ ...filters, to: e.target.value })}
+                  />
+                </label>
+              </div>
+              <button
+                className="text-button"
+                onClick={() =>
+                  change({
+                    ...emptyCodeFilters,
+                    domain: filters.domain,
+                    query: filters.query,
+                  })
+                }
               >
-                <option value="">{tr("전체")}</option>
-                {issuers.map((a) => (
-                  <option key={a} value={a}>
-                    {short(a, 10)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {tr("상태")}
-              <select
-                className="form-input"
-                value={filters.status}
-                onChange={(e) => change({ ...filters, status: e.target.value })}
+                {tr("상세 조건 초기화")}
+              </button>
+            </details>
+            <div className="example-actions">
+              <button
+                className="secondary-button"
+                onClick={() =>
+                  void navigator.clipboard
+                    .writeText(shareURL(codeParams(filters)))
+                    .then(() => toast.success(tr("조회 링크를 복사했습니다.")))
+                    .catch(() => toast.error(tr("링크를 복사하지 못했습니다.")))
+                }
               >
-                <option value="all">{tr("전체")}</option>
-                <option value="active">{tr("활성")}</option>
-                <option value="expired">{tr("만료")}</option>
-                <option value="revoked">{tr("취소")}</option>
-              </select>
-            </label>
-            <label>
-              {tr("발급 시작일 (UTC)")}
-              <input
-                className="form-input"
-                type="date"
-                value={filters.from}
-                onChange={(e) => change({ ...filters, from: e.target.value })}
-              />
-            </label>
-            <label>
-              {tr("발급 종료일 (UTC)")}
-              <input
-                className="form-input"
-                type="date"
-                value={filters.to}
-                onChange={(e) => change({ ...filters, to: e.target.value })}
-              />
-            </label>
-          </div>
-          <button
-            className="text-button"
-            onClick={() =>
-              change({
-                ...emptyCodeFilters,
-                domain: filters.domain,
-                query: filters.query,
-              })
-            }
-          >
-            {tr("상세 조건 초기화")}
-          </button>
-        </details>
-        <div className="example-actions">
-          <button
-            className="secondary-button"
-            onClick={() =>
-              void navigator.clipboard
-                .writeText(shareURL(codeParams(filters)))
-                .then(() => toast.success(tr("조회 링크를 복사했습니다.")))
-                .catch(() => toast.error(tr("링크를 복사하지 못했습니다.")))
-            }
-          >
-            {tr("조회 링크 복사")}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={!items.length || !!filterError}
-            onClick={download}
-          >
-            {tr("조회 결과 CSV 저장")}
-          </button>
-        </div>
+                {tr("조회 링크 복사")}
+              </button>
+              <button
+                className="secondary-button"
+                disabled={!items.length || !!filterError}
+                onClick={download}
+              >
+                {tr("조회 결과 CSV 저장")}
+              </button>
+            </div>
+          </>
+        )}
         {busy && (
           <ChainLoading
             title="코드 인증 기록을 불러오고 있습니다."
@@ -371,6 +426,10 @@ export default function CodeExplorer({
         {data && (
           <>
             <p className="code-coverage">
+              {tr("조회한 사용처: {0}", [
+                filters.domain || filters.query || tr("전체"),
+              ])}
+              <br />
               {tr("불러온 기록 {0}개 · 조건에 맞는 기록 {1}개", [
                 data.attestations.length,
                 items.length,
@@ -428,14 +487,15 @@ export default function CodeExplorer({
                           <td>
                             <button
                               className="text-button"
-                              onClick={() =>
+                              onClick={() => {
+                                setSearchInput(codeField(a, "domain"));
                                 change({
                                   ...filters,
                                   query: "",
                                   domain: codeField(a, "domain"),
                                   issuer: a.attester,
-                                })
-                              }
+                                });
+                              }}
                             >
                               {codeField(a, "domain")}
                             </button>
@@ -521,148 +581,150 @@ export default function CodeExplorer({
           </>
         )}
       </div>
-      <details
-        className="studio-panel code-verifier"
-        id="code-verification"
-        open={showVerification}
-        onToggle={(e) => setShowVerification(e.currentTarget.open)}
-      >
-        <summary>{tr("코드 해시로 유효성 확인")}</summary>
-        <p>
-          {tr(
-            "사용처·등록 발행자·코드 해시로 현재 온체인 인증 여부를 확인합니다. 지갑 연결이나 서명이 필요 없습니다.",
-          )}
-        </p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void checkCode();
-          }}
+      {data && (
+        <details
+          className="studio-panel code-verifier"
+          id="code-verification"
+          open={showVerification}
+          onToggle={(e) => setShowVerification(e.currentTarget.open)}
         >
-          <div className="code-filters">
-            <label>
-              {tr("인증 코드 사용처")}
-              <input
-                className="form-input"
-                required
-                value={verifyDomain}
-                onChange={(e) => {
-                  setVerifyDomain(e.target.value);
-                  resetVerification();
-                }}
-              />
-            </label>
-            <label>
-              {tr("등록 발행자")}
-              <select
-                className="form-input"
-                required
-                value={issuerId}
-                onChange={(e) => {
-                  setIssuerId(e.target.value);
-                  resetVerification();
-                }}
-              >
-                <option value="">{tr("등록 발행자를 선택하세요.")}</option>
-                {data?.issuers.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {tr(i.name)} · {short(i.address, 8)} · {short(i.id, 4)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="code-hash-input">
-              {tr("인증 코드 해시")}
-              <input
-                className="form-input"
-                required
-                placeholder="0x… (bytes32)"
-                value={codeHash}
-                onChange={(e) => {
-                  setCodeHash(e.target.value);
-                  resetVerification();
-                }}
-                spellCheck={false}
-              />
-            </label>
-          </div>
-          {selectedIssuer && (
-            <p className="fine-print break-code">
-              {tr("발행자")}: {selectedIssuer.address}
-            </p>
-          )}
-          <p className="fine-print">
+          <summary>{tr("코드 해시로 유효성 확인")}</summary>
+          <p>
             {tr(
-              "원본 인증번호가 아닌 코드 해시를 입력하세요. 인증번호와 코드 해시는 공유 링크에 포함하지 않습니다.",
+              "사용처·등록 발행자·코드 해시로 현재 온체인 인증 여부를 확인합니다. 지갑 연결이나 서명이 필요 없습니다.",
             )}
           </p>
-          <button
-            className="primary"
-            disabled={
-              verifyBusy || !selectedIssuer || !verifyDomain || !codeHash
-            }
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void checkCode();
+            }}
           >
-            {tr(verifyBusy ? "조회 중" : "인증 확인")}
-          </button>
-        </form>
-        {verifyBusy && (
-          <ChainLoading title="온체인 코드 인증 여부를 확인하고 있습니다." />
-        )}
-        {verifyError && (
-          <p className="notice danger" role="alert">
-            {tr(verifyError)}
-          </p>
-        )}
-        {verification && (
-          <div className="code-verification-result" role="status">
-            <strong>
-              {tr(
-                verification.valid
-                  ? "온체인 코드 인증 유효"
-                  : "현재 유효한 코드 인증을 확인하지 못했습니다.",
-              )}
-            </strong>
-            <p>
-              {tr("조회 기준: 블록 {0} · {1}", [
-                verification.block,
-                verification.checkedAt,
-              ])}
-            </p>
-            <p>
-              {tr(
-                "이 결과는 온체인 인증 상태입니다. 외부 서비스의 처리 상태나 코드 사용 여부를 뜻하지 않습니다.",
-              )}
-            </p>
-            {!verification.valid && (
-              <p>
-                {tr(
-                  "입력값 불일치, 기록 없음, 만료 또는 취소 등이 원인일 수 있습니다.",
-                )}
+            <div className="code-filters">
+              <label>
+                {tr("인증 코드 사용처")}
+                <input
+                  className="form-input"
+                  required
+                  value={verifyDomain}
+                  onChange={(e) => {
+                    setVerifyDomain(e.target.value);
+                    resetVerification();
+                  }}
+                />
+              </label>
+              <label>
+                {tr("등록 발행자")}
+                <select
+                  className="form-input"
+                  required
+                  value={issuerId}
+                  onChange={(e) => {
+                    setIssuerId(e.target.value);
+                    resetVerification();
+                  }}
+                >
+                  <option value="">{tr("등록 발행자를 선택하세요.")}</option>
+                  {data?.issuers.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {tr(i.name)} · {short(i.address, 8)} · {short(i.id, 4)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="code-hash-input">
+                {tr("인증 코드 해시")}
+                <input
+                  className="form-input"
+                  required
+                  placeholder="0x… (bytes32)"
+                  value={codeHash}
+                  onChange={(e) => {
+                    setCodeHash(e.target.value);
+                    resetVerification();
+                  }}
+                  spellCheck={false}
+                />
+              </label>
+            </div>
+            {selectedIssuer && (
+              <p className="fine-print break-code">
+                {tr("발행자")}: {selectedIssuer.address}
               </p>
             )}
-            {verification.uid && (
-              <button
-                className="text-button"
-                onClick={() => {
-                  const seq = verifyRevision.current;
-                  void getData<Attestation>("attestation", {
-                    uid: verification.uid!,
-                  })
-                    .then((record) => {
-                      if (seq === verifyRevision.current) onSelect(record);
+            <p className="fine-print">
+              {tr(
+                "원본 인증번호가 아닌 코드 해시를 입력하세요. 인증번호와 코드 해시는 공유 링크에 포함하지 않습니다.",
+              )}
+            </p>
+            <button
+              className="primary"
+              disabled={
+                verifyBusy || !selectedIssuer || !verifyDomain || !codeHash
+              }
+            >
+              {tr(verifyBusy ? "조회 중" : "인증 확인")}
+            </button>
+          </form>
+          {verifyBusy && (
+            <ChainLoading title="온체인 코드 인증 여부를 확인하고 있습니다." />
+          )}
+          {verifyError && (
+            <p className="notice danger" role="alert">
+              {tr(verifyError)}
+            </p>
+          )}
+          {verification && (
+            <div className="code-verification-result" role="status">
+              <strong>
+                {tr(
+                  verification.valid
+                    ? "온체인 코드 인증 유효"
+                    : "현재 유효한 코드 인증을 확인하지 못했습니다.",
+                )}
+              </strong>
+              <p>
+                {tr("조회 기준: 블록 {0} · {1}", [
+                  verification.block,
+                  verification.checkedAt,
+                ])}
+              </p>
+              <p>
+                {tr(
+                  "이 결과는 온체인 인증 상태입니다. 외부 서비스의 처리 상태나 코드 사용 여부를 뜻하지 않습니다.",
+                )}
+              </p>
+              {!verification.valid && (
+                <p>
+                  {tr(
+                    "입력값 불일치, 기록 없음, 만료 또는 취소 등이 원인일 수 있습니다.",
+                  )}
+                </p>
+              )}
+              {verification.uid && (
+                <button
+                  className="text-button"
+                  onClick={() => {
+                    const seq = verifyRevision.current;
+                    void getData<Attestation>("attestation", {
+                      uid: verification.uid!,
                     })
-                    .catch((e) => {
-                      if (seq === verifyRevision.current)
-                        setVerifyError(e.message);
-                    });
-                }}
-              >
-                {tr("인증 도장 상세 보기")} · {short(verification.uid, 8)}
-              </button>
-            )}
-          </div>
-        )}
-      </details>
+                      .then((record) => {
+                        if (seq === verifyRevision.current) onSelect(record);
+                      })
+                      .catch((e) => {
+                        if (seq === verifyRevision.current)
+                          setVerifyError(e.message);
+                      });
+                  }}
+                >
+                  {tr("인증 도장 상세 보기")} · {short(verification.uid, 8)}
+                </button>
+              )}
+            </div>
+          )}
+        </details>
+      )}
     </section>
   );
 }

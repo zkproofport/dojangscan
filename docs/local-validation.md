@@ -27,7 +27,14 @@ npm run test:live
 - Check Korean/English, light/dark, mobile layout, the three workspace tools, and the Playground Proof Studio in a browser.
 - Real operator writes require an authorized wallet and wallet approval. Proof Studio verification uses read-only calls; mobile end-to-end tests require the [relay and app prerequisites](workflows.md#proof-studio).
 
-## Latest validation · 2026-10-27 · simplified use-case browsing
+## Latest validation · 2026-10-27 · explicit use-case search
+
+- `npm run check`, `npm run build` and all 46 existing tests passed. The existing large-bundle warning remains.
+- Chrome confirmed an idle initial screen with an empty search field and disabled Find button. Typing enabled Find without starting a lookup; Enter started loading and returned 50 live records.
+- Editing the input kept the applied query and existing results unchanged. Clicking Find applied the new query and started a new lookup. Reloading its query URL restored the input while returning to the idle screen without an automatic history load.
+- README, workflows and architecture now describe explicit submission and the unchanged loaded-page search coverage. No wallet transactions were sent.
+
+## Earlier validation · 2026-10-27 · simplified use-case browsing
 
 - `npm test`: all 46 tests passed. Search tests cover case-insensitive partial matching, Korean Unicode normalization, exact selected domains, no invented translated aliases, and query-link round trips.
 - `npm run check` and `npm run build` passed; the existing large-bundle warning remains.

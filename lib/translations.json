@@ -778,5 +778,8 @@
   "문제 제보·기능 제안": "Report an issue or suggest a feature",
   "지갑 주소, 도장 UID, 스키마 이름, 트랜잭션 해시, 인증 코드 사용처": "Wallet address, attestation UID, schema name, transaction hash, or verification code use case",
   "접기": "Show less",
-  "새로운 기능": "New feature"
+  "새로운 기능": "New feature",
+  "찾기": "Find",
+  "사용처를 입력하고 찾기 또는 Enter를 누르면 발급 내역을 조회합니다.": "Enter a use case and press Find or Enter to load issued records.",
+  "조회한 사용처: {0}": "Results for: {0}"
 }
