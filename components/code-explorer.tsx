@@ -761,7 +761,7 @@ export default function CodeExplorer({
                   <option value="">{tr("등록 발행자를 선택하세요.")}</option>
                   {data?.issuers.map((i) => (
                     <option key={i.id} value={i.id}>
-                      {tr(i.name)} · {short(i.address, 8)} · {short(i.id, 4)}
+                      {tr(i.name)} · {short(i.address, 8)}
                     </option>
                   ))}
                 </select>
