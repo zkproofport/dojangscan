@@ -2,7 +2,7 @@ import { AddressHistory } from "./address-history";
 import { invalidateScanCache } from "@/lib/scan-data";
 import { PlaygroundInvite } from "./playground-guide";
 import { tr } from "@/lib/i18n";
-import { getLocale } from "@/lib/preferences";
+import { formatTime } from "@/lib/date-time";
 import { usePreferences, setLanguage, setTheme } from "@/lib/preferences";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
@@ -716,10 +716,7 @@ export default function ScanApp() {
                   data
                     ? tr("블록 {0} · {1}", [
                         data.block.toLocaleString(),
-                        new Date(data.checkedAt).toLocaleTimeString(
-                          getLocale(),
-                          { hour: "2-digit", minute: "2-digit" },
-                        ),
+                        formatTime(data.checkedAt),
                       ])
                     : tr("GIWA 조회 중"),
                 )}

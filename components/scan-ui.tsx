@@ -1,5 +1,5 @@
 import { tr } from "@/lib/i18n";
-import { getLocale } from "@/lib/preferences";
+import { formatDate, formatDateTime } from "@/lib/date-time";
 import {
   Copy,
   ArrowUpRight,
@@ -200,9 +200,7 @@ export function ScanCards({
             </span>
           </div>
           <div className="credential-bottom">
-            <span>
-              {new Date(a.time * 1000).toLocaleDateString(getLocale())}
-            </span>
+            <span title={formatDateTime(a.time)}>{formatDate(a.time)}</span>
             <button
               className="record-open"
               onClick={() => onSelect(a)}
@@ -268,8 +266,8 @@ export function ScanTable({
               )}
               <code title={a.recipient}>{short(a.recipient)}</code>
             </TableCell>
-            <TableCell>
-              {tr(new Date(a.time * 1000).toLocaleDateString(getLocale()))}
+            <TableCell title={formatDateTime(a.time)}>
+              {formatDate(a.time)}
             </TableCell>
             <TableCell>
               <Status value={a.status} />

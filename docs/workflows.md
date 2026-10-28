@@ -92,3 +92,9 @@ The **N** badge marks the new feature. Opening **Browse by use case** or a share
 The `doctorloan` placeholder is an input example only, not a default filter, fixed use-case list or institutional mapping. Search supports case-insensitive, Unicode-normalized partial matches. Selecting a use case applies its exact original domain. There are no invented language aliases or institutional mappings. Suggestions on an empty search result are actual use cases from loaded records, not claimed matches. Issuer addresses stay visible because multiple issuers may use the same domain.
 
 Shared links preserve the search and filters. CSV exports only matching loaded records, including snapshot and coverage. On submission, history fetches the latest explorer page (normally 50 records) for the current Verified Code schema and filters it locally, using a fixed block across pagination. This is not a full-history domain search. Earlier records can be loaded on request. The optional code-hash verifier is collapsed until needed; a row action opens and prefills it. Verification is read-only and says nothing about an external business process. **Report an issue or suggest a feature** opens GitHub issue forms.
+
+## 시각과 날짜 조건
+
+- 발급·만료·취소·스냅샷·조회 기준 시각은 브라우저/기기의 시간대를 사용하고 UTC 오프셋을 함께 표시합니다. `Asia/Seoul` 기기에서는 한국 시간(GMT+9), 다른 시간대에서는 해당 지역 시각으로 표시합니다. 언어를 영어로 바꿔도 시간대는 바뀌지 않습니다. IP 위치나 위치 권한을 사용하지 않으며 별도 선택 입력도 없습니다.
+- 사용처별 조회의 새 발급 날짜 조건도 기기 시간대의 자정부터 해당 종료일 끝까지 적용합니다. 공유 링크에는 날짜 조건의 `tz`를 포함하므로 다른 시간대의 기기에서 열어도 필터 범위가 유지됩니다. 필터 옆에 조건의 시간대를 표시하며, 표의 시각은 보는 기기 시간대입니다. `tz` 없는 기존 날짜 링크는 이전 UTC 기준을 유지합니다.
+- CSV와 기술 정보의 원본 ISO/Unix 타임스탬프는 UTC 기준을 유지합니다. 화면 표시만 변환하며 온체인 값과 만료 판정은 변경하지 않습니다.

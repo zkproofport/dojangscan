@@ -2,7 +2,7 @@ import { ChainLoading } from "./chain-loading";
 import { lazy, Suspense, useEffect, useState, useRef } from "react";
 import { ParamType, ZeroAddress, ZeroHash, id as hashId } from "ethers";
 import { tr } from "@/lib/i18n";
-import { getLocale } from "@/lib/preferences";
+import { formatDateTime } from "@/lib/date-time";
 import { NETWORK, short, type ScanData } from "@/lib/giwa";
 import { connectWallet, addGiwa, injected } from "@/lib/wallet";
 import { walletState, explainError } from "@/lib/transactions";
@@ -988,9 +988,7 @@ function Expiry({
         ))}
       </div>
       <p className="fine-print">
-        {value === "0"
-          ? tr("기한 없음")
-          : new Date(Number(value) * 1000).toLocaleString(getLocale())}
+        {value === "0" ? tr("기한 없음") : formatDateTime(Number(value))}
       </p>
     </div>
   );

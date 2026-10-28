@@ -27,7 +27,13 @@ npm run test:live
 - Check Korean/English, light/dark, mobile layout, the three workspace tools, and the Playground Proof Studio in a browser.
 - Real operator writes require an authorized wallet and wallet approval. Proof Studio verification uses read-only calls; mobile end-to-end tests require the [relay and app prerequisites](workflows.md#proof-studio).
 
-## Latest validation · 2026-10-27 · received-code validity
+## Latest validation · 2026-10-28 · device time zones
+
+- All 53 tests passed. Added coverage for matching Unix/ISO timestamp display, Korean and English with explicit offsets, Korean midnight boundaries, 23-hour/25-hour DST days, filter timezone sharing, invalid timezone input and legacy UTC links. Type checking and production build passed; the existing bundle-size warning remains.
+- Timestamp displays now share one formatter across code history, attestation details, cards/tables, expiration previews and scan snapshots. The fixed numeric format avoids differing browser locale time punctuation; the timezone follows the device independently of language.
+- Browser validation was attempted but unavailable: native Chrome returned `cgWindowNotFound`, and the extension connection failed. No new visual verification or live transaction was performed in this pass.
+
+## Earlier validation · 2026-10-27 · received-code validity
 
 - All 49 tests passed, including exact UTF-8 hashing, leading zeros/whitespace, distinct Unicode code representations, GIWA ASCII domain normalization, public-hash passthrough and hashed-only RPC arguments. Type checking and production build passed; the existing large-bundle warning remains.
 - Chrome confirmed the initially idle menu, typing without a lookup, and Enter loading 50 live records with separate code hashes and issuance UIDs. The received-code action filled the unique actual use case/current issuer, leaving only the code to enter.

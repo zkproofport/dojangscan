@@ -67,3 +67,5 @@ Browse without connecting a wallet · Korean & English · Light & dark themes ·
 [Website](https://dojangscan.com/) · [Guide](https://dojangscan.com/?view=guide) · [Dojang Docs](https://docs.giwa.io/giwa-ecosystem/dojang)
 
 Powered by **[Masse Labs](https://masselabs.com)**
+
+발급·만료·취소 시각은 기기 시간대에 맞춰 표시합니다(한국: GMT+9). 날짜 조건 공유 링크에는 기준 시간대를 보존하며, CSV의 원본 시각은 UTC입니다.

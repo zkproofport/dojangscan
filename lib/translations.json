@@ -807,5 +807,8 @@
   "현재 조회되는 발급 기록은 선택한 기록과 UID가 다릅니다. 아래 상세에서 확인하세요.": "The current issuance has a different UID from the record you selected. Open its details below.",
   "이 결과는 발급 기록의 유효성만 확인합니다. 제출자의 신원·이용 자격·코드 사용 완료나 외부 서비스의 처리 결과를 증명하지 않습니다.": "This result only checks the validity of the issuance record. It does not prove the submitter’s identity, eligibility, code redemption, or completion in another service.",
   "현재 발급 기록 상세 보기": "View current issuance details",
-  "이 도장은 발행자가 특정 사용처에 코드를 발급한 기록입니다. 코드 식별값은 원본 코드의 해시이며, UID는 이 발급 기록의 번호입니다. 이 기록만으로 제출자의 신원이나 코드 사용 완료를 확인할 수는 없습니다.": "This attestation records a code issued for a specific use case. The code ID is a hash of the original code, while the UID identifies this issuance. This record alone does not establish the submitter’s identity or code redemption."
+  "이 도장은 발행자가 특정 사용처에 코드를 발급한 기록입니다. 코드 식별값은 원본 코드의 해시이며, UID는 이 발급 기록의 번호입니다. 이 기록만으로 제출자의 신원이나 코드 사용 완료를 확인할 수는 없습니다.": "This attestation records a code issued for a specific use case. The code ID is a hash of the original code, while the UID identifies this issuance. This record alone does not establish the submitter’s identity or code redemption.",
+  "발급 시작일 ({0})": "Issued from ({0})",
+  "발급 종료일 ({0})": "Issued through ({0})",
+  "시각은 기기 시간대({0}) 기준입니다. CSV는 UTC로 저장됩니다.": "Times use your device’s time zone ({0}). CSV exports use UTC."
 }

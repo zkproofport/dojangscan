@@ -1,6 +1,6 @@
 import { issuerMetadata } from "@/lib/issuer-metadata";
 import { tr } from "@/lib/i18n";
-import { getLocale } from "@/lib/preferences";
+import { formatDateTime } from "@/lib/date-time";
 import { useEffect, useState } from "react";
 import {
   Sheet,
@@ -467,7 +467,7 @@ export default function ScanDetail({
                   {a.checkedAt && (
                     <Info
                       label={tr("확인 시각")}
-                      value={new Date(a.checkedAt).toLocaleString(getLocale())}
+                      value={formatDateTime(a.checkedAt)}
                     />
                   )}
                   <details className="explain-detail">
@@ -527,7 +527,7 @@ export default function ScanDetail({
   );
 }
 function date(time: number) {
-  return new Date(time * 1000).toLocaleString(getLocale());
+  return formatDateTime(time);
 }
 function Info({ label, value }: { label: string; value: string }) {
   return (

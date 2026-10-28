@@ -16,14 +16,12 @@ import {
 import { localURL, shareURL } from "@/lib/navigation";
 import { short, type Attestation } from "@/lib/giwa";
 import { tr } from "@/lib/i18n";
+import { formatDateTime, getTimeZone } from "@/lib/date-time";
 import { ChainLoading } from "./chain-loading";
 import { Status, CopyButton, getData } from "./scan-ui";
 
 type Page = Awaited<ReturnType<typeof codeHistory>>;
-const date = (time: number) =>
-  time
-    ? new Date(time * 1000).toISOString().replace("T", " ").slice(0, 19)
-    : tr("기한 없음");
+const date = (time: number) => (time ? formatDateTime(time) : tr("기한 없음"));
 export default function CodeExplorer({
   onSelect,
   onIssuer,
@@ -36,6 +34,8 @@ export default function CodeExplorer({
   const [filters, setFilters] = useState(() =>
     readCodeFilters(new URLSearchParams(window.location.search)),
   );
+  const filterTimeZone =
+    filters.timeZone || (filters.from || filters.to ? "UTC" : getTimeZone());
   const [searchInput, setSearchInput] = useState(
     filters.query || filters.domain,
   );
@@ -389,23 +389,33 @@ export default function CodeExplorer({
                   </select>
                 </label>
                 <label>
-                  {tr("발급 시작일 (UTC)")}
+                  {tr("발급 시작일 ({0})", [filterTimeZone])}
                   <input
                     className="form-input"
                     type="date"
                     value={filters.from}
                     onChange={(e) =>
-                      change({ ...filters, from: e.target.value })
+                      change({
+                        ...filters,
+                        from: e.target.value,
+                        timeZone: filterTimeZone,
+                      })
                     }
                   />
                 </label>
                 <label>
-                  {tr("발급 종료일 (UTC)")}
+                  {tr("발급 종료일 ({0})", [filterTimeZone])}
                   <input
                     className="form-input"
                     type="date"
                     value={filters.to}
-                    onChange={(e) => change({ ...filters, to: e.target.value })}
+                    onChange={(e) =>
+                      change({
+                        ...filters,
+                        to: e.target.value,
+                        timeZone: filterTimeZone,
+                      })
+                    }
                   />
                 </label>
               </div>
@@ -495,7 +505,10 @@ export default function CodeExplorer({
             <details className="data-notes">
               <summary>{tr("조회 범위와 기준 시점")}</summary>
               <p className="fine-print">
-                {tr("조회 기준: 블록 {0} · {1}", [data.block, data.checkedAt])}
+                {tr("조회 기준: 블록 {0} · {1}", [
+                  data.block,
+                  formatDateTime(data.checkedAt),
+                ])}
                 <br />
                 {tr(
                   data.next
@@ -514,6 +527,12 @@ export default function CodeExplorer({
                 )}
               </p>
             </details>
+            <p className="fine-print">
+              {tr(
+                "시각은 기기 시간대({0}) 기준입니다. CSV는 UTC로 저장됩니다.",
+                [getTimeZone()],
+              )}
+            </p>
             {items.length ? (
               <div
                 className="code-table-scroll"
@@ -528,8 +547,8 @@ export default function CodeExplorer({
                         "코드 · 발급 기록",
                         "사용처",
                         "발행자",
-                        "발급 시각 (UTC)",
-                        "만료 시각 (UTC)",
+                        "발급 시각",
+                        "만료 시각",
                         "기록 상태",
                         "조회",
                       ].map((h) => (
@@ -847,7 +866,7 @@ export default function CodeExplorer({
               <p>
                 {tr("조회 기준: 블록 {0} · {1}", [
                   verification.block,
-                  verification.checkedAt,
+                  formatDateTime(verification.checkedAt),
                 ])}
               </p>
               <p>

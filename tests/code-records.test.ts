@@ -459,3 +459,50 @@ test("received-code verification sends only the prepared hash and domain to Scro
   assert.equal(result.valid, true);
   assert.equal(JSON.stringify({ sent, result }).includes(raw), false);
 });
+
+test("local issue-date filters include midnight boundaries and keep their timezone in shared links", () => {
+  const start = Date.parse("2026-10-27T15:00:00Z") / 1000;
+  const records = [-1, 0, 86399, 86400].map((offset) =>
+    record("scope", issuer, start + offset),
+  );
+  const filters = {
+    ...emptyCodeFilters,
+    from: "2026-10-28",
+    to: "2026-10-28",
+    timeZone: "Asia/Seoul",
+  };
+  assert.deepEqual(filterCodeRecords(records, filters), records.slice(1, 3));
+  const restored = readCodeFilters(new URLSearchParams(codeParams(filters)));
+  assert.deepEqual(restored, filters);
+  assert.deepEqual(filterCodeRecords(records, restored), records.slice(1, 3));
+  const legacy = readCodeFilters(
+    new URLSearchParams("from=2026-10-28&to=2026-10-28"),
+  );
+  assert.deepEqual(filterCodeRecords(records, legacy), records.slice(2));
+  assert.equal(
+    readCodeFilters(new URLSearchParams("tz=Not/AZone")).timeZone,
+    undefined,
+  );
+});
+
+test("local issue-date filters include all of both 23-hour and 25-hour days", () => {
+  for (const [day, startISO, endISO] of [
+    ["2026-03-08", "2026-03-08T05:00:00Z", "2026-03-09T04:00:00Z"],
+    ["2026-11-01", "2026-11-01T04:00:00Z", "2026-11-02T05:00:00Z"],
+  ]) {
+    const start = Date.parse(startISO) / 1000;
+    const end = Date.parse(endISO) / 1000;
+    const records = [start - 1, start, end - 1, end].map((time) =>
+      record("scope", issuer, time),
+    );
+    assert.deepEqual(
+      filterCodeRecords(records, {
+        ...emptyCodeFilters,
+        from: day,
+        to: day,
+        timeZone: "America/New_York",
+      }),
+      records.slice(1, 3),
+    );
+  }
+});

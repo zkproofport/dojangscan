@@ -10,6 +10,7 @@ import {
 } from "ethers";
 import { CONTRACTS, type Attestation } from "./giwa";
 import { rpc } from "./scan-data";
+import { calendarDateFormatter, validTimeZone } from "./date-time";
 
 export type CodeFilters = {
   query: string;
@@ -18,6 +19,7 @@ export type CodeFilters = {
   status: string;
   from: string;
   to: string;
+  timeZone?: string;
 };
 export const emptyCodeFilters: CodeFilters = {
   query: "",
@@ -47,6 +49,9 @@ export function readCodeFilters(query: URLSearchParams): CodeFilters {
       : "all",
     from: validDate(query.get("from") ?? "") ? query.get("from")! : "",
     to: validDate(query.get("to") ?? "") ? query.get("to")! : "",
+    ...(validTimeZone(query.get("tz") ?? "")
+      ? { timeZone: query.get("tz")! }
+      : {}),
   };
 }
 function validDate(value: string) {
@@ -56,20 +61,18 @@ function validDate(value: string) {
     new Date(value).toISOString().slice(0, 10) === value
   );
 }
-// Date inputs use UTC so shared links select the same records in every timezone.
+// Legacy links without tz keep UTC date boundaries. New UI filters carry their timezone.
 export function filterCodeRecords(
   records: Attestation[],
   filters: CodeFilters,
 ) {
-  const start =
-    filters.from && validDate(filters.from)
-      ? Date.parse(filters.from + "T00:00:00Z") / 1000
-      : -Infinity;
-  const end =
-    filters.to && validDate(filters.to)
-      ? Date.parse(filters.to + "T00:00:00Z") / 1000 + 86400
-      : Infinity;
-  if (start >= end) throw new Error("시작일은 종료일보다 늦을 수 없습니다.");
+  const start = validDate(filters.from) ? filters.from : "";
+  const end = validDate(filters.to) ? filters.to : "";
+  if (start && end && start > end)
+    throw new Error("시작일은 종료일보다 늦을 수 없습니다.");
+  const localDate = calendarDateFormatter(
+    validTimeZone(filters.timeZone ?? "") ? filters.timeZone! : "UTC",
+  );
   return records.filter(
     (a) =>
       matchesUseCase(codeField(a, "domain"), filters.query) &&
@@ -77,8 +80,8 @@ export function filterCodeRecords(
       (!filters.issuer ||
         a.attester.toLowerCase() === filters.issuer.toLowerCase()) &&
       (filters.status === "all" || a.status === filters.status) &&
-      a.time >= start &&
-      a.time < end,
+      (!start || localDate(a.time) >= start) &&
+      (!end || localDate(a.time) <= end),
   );
 }
 export function codeParams(filters: CodeFilters): Record<string, string> {
@@ -90,6 +93,9 @@ export function codeParams(filters: CodeFilters): Record<string, string> {
     ...(filters.status !== "all" ? { status: filters.status } : {}),
     ...(filters.from ? { from: filters.from } : {}),
     ...(filters.to ? { to: filters.to } : {}),
+    ...((filters.from || filters.to) && validTimeZone(filters.timeZone ?? "")
+      ? { tz: filters.timeZone! }
+      : {}),
   };
 }
 export function codeLink(domain: string, issuer = "") {
