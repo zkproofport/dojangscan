@@ -481,10 +481,10 @@ export default function CodeExplorer({
           <>
             <div className="code-results-heading">
               <div>
-                <h2>{tr("인증 코드 발급 내역")}</h2>
+                <h2>{tr("발급 내역 보기")}</h2>
                 <p className="fine-print">
                   {tr(
-                    "사용처가 같아도 코드 식별값이 다르면 다른 코드입니다. 한 코드가 여러 번 발급될 수 있어 각 발급 기록은 UID로 구분합니다.",
+                    "조회 시점의 발급 기록과 취소·만료 상태입니다. 코드 식별값은 코드를, UID는 개별 발급 기록을 구분합니다.",
                   )}
                 </p>
               </div>
@@ -621,7 +621,7 @@ export default function CodeExplorer({
                                 className="text-button"
                                 onClick={() => selectCode(a)}
                               >
-                                {tr("현재 유효성 확인")}
+                                {tr("현재 상태 다시 확인")}
                               </button>
                             </div>
                           </td>
@@ -691,10 +691,18 @@ export default function CodeExplorer({
             }
           }}
         >
-          <summary>{tr("인증 코드 유효성 확인")}</summary>
+          <summary>
+            {tr(
+              inputKind === "code"
+                ? "전달받은 코드 확인"
+                : "현재 상태 다시 확인",
+            )}
+          </summary>
           <p>
             {tr(
-              "발행자가 해당 사용처에 발급한 코드의 현재 유효성을 확인합니다. 지갑 연결 없이 조회하며 코드를 사용 처리하지 않습니다.",
+              inputKind === "code"
+                ? "실제로 전달받은 코드가 해당 사용처·발행자의 유효한 코드인지 확인합니다. 발급 내역을 보는 데 필수인 단계는 아닙니다."
+                : "공개된 코드 해시로 현재 상태를 다시 조회합니다. 목록 조회 이후 취소·만료되었거나 현재 조회되는 발급 기록이 달라졌을 수 있습니다.",
             )}
           </p>
           <form
@@ -729,7 +737,7 @@ export default function CodeExplorer({
                   resetVerification();
                 }}
               >
-                {tr("공개 코드 해시")}
+                {tr("공개 해시로 다시 확인")}
               </button>
             </div>
             <div className="code-filters">
@@ -815,11 +823,22 @@ export default function CodeExplorer({
                 !(inputKind === "code" ? originalCode : codeHash)
               }
             >
-              {tr(verifyBusy ? "조회 중" : "유효성 확인")}
+              {tr(
+                verifyBusy
+                  ? "조회 중"
+                  : inputKind === "code"
+                    ? "전달받은 코드 확인"
+                    : "현재 상태 다시 확인",
+              )}
             </button>
           </form>
+          <p className="fine-print">
+            {tr(
+              "지갑 연결이나 서명 없이 조회합니다. 코드를 사용 처리하거나 새 인증을 발급하지 않습니다.",
+            )}
+          </p>
           {verifyBusy && (
-            <ChainLoading title="온체인 코드 인증 여부를 확인하고 있습니다." />
+            <ChainLoading title="현재 유효한 발급 기록을 조회하고 있습니다." />
           )}
           {verifyError && (
             <p className="notice danger" role="alert">
