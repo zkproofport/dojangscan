@@ -1,3 +1,4 @@
+import { ZkProofportLogo } from "./zkproofport-logo";
 import { useState } from "react";
 import {
   ArrowRight,
@@ -6,7 +7,6 @@ import {
   CheckCircle2,
   Download,
   ExternalLink,
-  Fingerprint,
   RefreshCw,
   Smartphone,
   Stamp,
@@ -323,7 +323,7 @@ function AttestationPractice({
                 {flow.phase === "requesting" ? (
                   <RefreshCw size={17} className="spinning" />
                 ) : (
-                  <Fingerprint size={18} />
+                  <ZkProofportLogo size={18} />
                 )}
                 {tr(
                   flow.phase === "requesting"
@@ -420,12 +420,7 @@ function AttestationPractice({
         <aside className="studio-aside">
           <section className="studio-app-card">
             <div className="studio-app-brand">
-              <img
-                src={`${import.meta.env.BASE_URL}brand/zkproofport.png`}
-                alt=""
-                width="44"
-                height="44"
-              />
+              <ZkProofportLogo size={44} />
               <div>
                 <strong>ZKProofport</strong>
                 <span>{tr("증명은 내 휴대폰에서")}</span>

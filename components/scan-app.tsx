@@ -39,6 +39,7 @@ import { trackSection } from "@/lib/analytics";
 import { localURL } from "@/lib/navigation";
 import { codeParams, readCodeFilters } from "@/lib/code-records";
 import { DojangWordmark, DojangLogo } from "./dojang-logo";
+import { ZkProofportLogo } from "./zkproofport-logo";
 const OperatorHub = lazy(() => import("./operator-hub"));
 const ProofStudio = lazy(() => import("./proof-studio"));
 const BrandKit = lazy(() => import("./brand-kit"));
@@ -50,7 +51,7 @@ const nav = [
   { id: "codes", label: "사용처별 조회", icon: Fingerprint },
   { id: "issuers", label: "발행자·관리자", icon: ShieldCheck },
   { id: "wallet", label: "내 도장", icon: Wallet },
-  { id: "lab", label: "Proof Studio", icon: Fingerprint },
+  { id: "lab", label: "Proof Studio", icon: ZkProofportLogo },
 ];
 type WalletData = ScanData & { address: string; verifiedBy: Issuer[] };
 export default function ScanApp() {
@@ -910,7 +911,7 @@ export default function ScanApp() {
             </section>
             <section className="studio-banner">
               <div className="banner-icon">
-                <Fingerprint size={34} />
+                <ZkProofportLogo size={34} />
               </div>
               <div>
                 <span className="section-kicker">ZKPROOFPORT</span>
@@ -1076,7 +1077,7 @@ export default function ScanApp() {
                   </p>
                 </div>
                 <aside className="playground-invite">
-                  <Fingerprint size={22} aria-hidden="true" />
+                  <ZkProofportLogo size={22} />
                   <div>
                     <strong>{tr("Proof Studio에서 ZK 실습하기")}</strong>
                     <p>{tr("Playground 도장으로 시작하는 모바일 ZK 실습.")}</p>
