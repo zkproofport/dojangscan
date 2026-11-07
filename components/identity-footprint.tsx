@@ -106,11 +106,9 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                 With ZKProofport
               </button>
             </div>
-            <span className="fine-print">
-              {mode === "direct"
-                ? "GIWA Sepolia · 1 hop"
-                : tr("아키텍처 예시 · 실제 지갑 기록 아님")}
-            </span>
+            {mode === "direct" && (
+              <span className="fine-print">GIWA Sepolia · 1 hop</span>
+            )}
           </div>
           {mode === "direct" ? (
             <>
@@ -245,7 +243,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                       </dl>
                       <p className="fine-print">
                         {tr(
-                          "불러온 근거 {0}건 · 같은 유형·방향의 연결을 묶었습니다.",
+                          "불러온 근거 {0}건 · 동일 유형·방향의 연결을 통합 표시합니다.",
                           [edge.evidence.length],
                         )}
                       </p>
@@ -429,26 +427,9 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                   "ZKProofport는 인증 지갑과 활동 지갑을 분리해 자격을 증명할 수 있도록 합니다. 거래 내역 자체가 비공개로 바뀌는 것은 아닙니다.",
                 )}
               </p>
-              <p className="fine-print">
-                {tr(
-                  "기존 거래는 그대로 남습니다. 공개 입력, nullifier, 지갑 간 전송 등 외부 정보로 활동이 연관될 수 있습니다.",
-                )}
-              </p>
             </div>
           )}
           <div className="footprint-footer">
-            <div>
-              <p className="fine-print">
-                {tr(
-                  "이 화면은 공개된 온체인 기록의 직접적인 연결만 보여줍니다. 주소 간 거래가 동일인 소유를 의미하지는 않습니다.",
-                )}
-              </p>
-              <p className="fine-print">
-                {tr(
-                  "Proof Studio는 Playground·EAS KYC Mock 실습입니다. 공식 Upbit KYC의 프로덕션 검증이나 위 지갑 분리 구조의 구현을 의미하지 않습니다.",
-                )}
-              </p>
-            </div>
             <button className="secondary-button" onClick={onStudio}>
               {tr("비공개 자격 증명 알아보기")}
               <ArrowRight size={15} />

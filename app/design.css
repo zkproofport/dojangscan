@@ -2389,8 +2389,6 @@ a {
 .footprint-content > .fine-print { margin-top: 10px; line-height: 1.65; }
 .footprint-errors { padding: 12px; border-radius: 9px; background: var(--surface-soft); font-size: 12px; line-height: 1.7; }
 .footprint-footer { align-items: flex-start; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
-.footprint-footer > div { flex: 1 1 340px; }
-.footprint-footer p { line-height: 1.7; margin: 0 0 8px; }
 .footprint-footer button { font-size: 12px; }
 .footprint-comparison > p { font-size: 13px; line-height: 1.8; margin: 14px 0; }
 .footprint-architecture { display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr; align-items: center; gap: 16px; padding: 16px 0; }
