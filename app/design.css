@@ -2337,3 +2337,77 @@ a {
 .app .studio-registration span { display: block; font-size: 11px; color: var(--muted); margin-top: 12px; }
 .app .studio-registration > a { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; }
 @media (max-width: 760px) { .app .studio-registration { flex-direction: column; align-items: flex-start; } }
+
+/* Explicitly loaded, one-hop public evidence. */
+.identity-footprint { margin: 20px 0; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.footprint-heading { display: flex; align-items: center; gap: 14px; width: 100%; padding: 22px; text-align: left; color: var(--ink); }
+.footprint-heading > span { display: grid; gap: 5px; flex: 1; }
+.footprint-heading strong { font-size: 17px; letter-spacing: -.04em; }
+.footprint-heading span span { font-size: 13px; color: var(--muted); }
+.footprint-chevron-open { transform: rotate(180deg); }
+.footprint-content { border-top: 1px solid var(--line); padding: 22px; }
+.footprint-toolbar, .footprint-legend, .footprint-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; justify-content: space-between; }
+.footprint-switch { display: inline-flex; padding: 4px; border-radius: 9px; background: var(--surface-soft); gap: 4px; }
+.footprint-switch button { padding: 8px 12px; border-radius: 6px; font-size: 12px; color: var(--muted); }
+.footprint-switch button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.footprint-intro { font-size: 13px; line-height: 1.7; margin: 18px 0; color: var(--muted); }
+.footprint-legend { justify-content: flex-start; font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+.footprint-legend span { display: flex; align-items: center; gap: 7px; }
+.identity-footprint { --footprint-credential: #9d4939; --footprint-transfer: #286b78; }
+:root[data-theme="dark"] .identity-footprint { --footprint-credential: #f4ab98; --footprint-transfer: #8eced9; }
+.footprint-swatch { width: 18px; border-top: 2px solid var(--muted); }
+.footprint-swatch.attestation { border-color: var(--footprint-credential); border-top-width: 4px; }
+.footprint-swatch.transfer { border-color: var(--footprint-transfer); border-top-style: dashed; }
+.footprint-layout { display: grid; grid-template-columns: minmax(0, 1fr) 265px; gap: 20px; margin-bottom: 14px; }
+.footprint-graph { position: relative; display: grid; grid-template-columns: 30% 24% 30%; grid-template-rows: repeat(5, 72px); justify-content: space-between; align-items: center; min-width: 0; }
+.footprint-graph > svg { position: absolute; inset: 0; width: 100%; height: 360px; overflow: visible; }
+.footprint-node { position: relative; width: 100%; min-width: 0; min-height: 54px; padding: 8px 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); display: grid; justify-items: center; align-content: center; gap: 5px; font-size: 11px; line-height: 1.25; }
+.footprint-node code { font-size: 11px; }
+.footprint-node.attestation { border-color: var(--footprint-credential); border-top-width: 3px; }
+.footprint-node.transfer { border-color: var(--footprint-transfer); border-style: dashed; }
+.footprint-node[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.footprint-center { min-height: 84px; background: var(--surface-soft); border-color: var(--ink); }
+.footprint-edge { fill: none; stroke: var(--muted); stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.footprint-edge.attestation { stroke: var(--footprint-credential); stroke-width: 3px; }
+.footprint-edge.transfer { stroke: var(--footprint-transfer); stroke-dasharray: 5 4; }
+.footprint-edge.selected { stroke-width: 4px; }
+.footprint-hit { fill: none; stroke: transparent; stroke-width: 18px; vector-effect: non-scaling-stroke; cursor: pointer; }
+.footprint-arrow { fill: var(--muted); }
+.footprint-arrow.attestation { fill: var(--footprint-credential); }
+.footprint-arrow.transfer { fill: var(--footprint-transfer); }
+.footprint-evidence { min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: var(--surface-soft); font-size: 12px; line-height: 1.6; }
+.footprint-evidence h3 { font-size: 14px; margin: 8px 0 12px; }
+.footprint-evidence p { margin: 8px 0; }
+.footprint-evidence dt { color: var(--muted); font-size: 11px; margin-top: 8px; }
+.footprint-evidence dd { margin: 0; }
+.footprint-address { overflow-wrap: anywhere; font-family: monospace; font-size: 11px; }
+.footprint-evidence a:hover { text-decoration: underline; }
+.footprint-evidence-list { max-height: 210px; overflow-y: auto; }
+.footprint-evidence-item { border-top: 1px solid var(--line); padding: 10px 0; }
+.footprint-evidence-item a, .footprint-evidence-item button { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+.footprint-evidence-item time { display: block; color: var(--muted); font-size: 11px; }
+.footprint-content > .fine-print { margin-top: 10px; line-height: 1.65; }
+.footprint-errors { padding: 12px; border-radius: 9px; background: var(--surface-soft); font-size: 12px; line-height: 1.7; }
+.footprint-footer { align-items: flex-start; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.footprint-footer > div { flex: 1 1 340px; }
+.footprint-footer p { line-height: 1.7; margin: 0 0 8px; }
+.footprint-footer button { font-size: 12px; }
+.footprint-comparison > p { font-size: 13px; line-height: 1.8; margin: 14px 0; }
+.footprint-architecture { display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr; align-items: center; gap: 16px; padding: 16px 0; }
+.footprint-architecture > div { display: grid; justify-items: center; align-content: center; gap: 10px; padding: 18px 12px; min-height: 155px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 12px; text-align: center; }
+.footprint-architecture span { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; font-family: monospace; }
+.footprint-architecture strong { font-size: 13px; }
+.footprint-architecture p { font-size: 12px; color: var(--muted); }
+.footprint-architecture .footprint-proof { border-style: dashed; border-color: var(--footprint-credential); }
+@media (max-width: 1100px) { .footprint-layout { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .footprint-heading, .footprint-content { padding: 16px 12px; }
+  .footprint-heading { gap: 10px; }
+  .footprint-heading span span { font-size: 12px; }
+  .footprint-legend { gap: 8px 12px; }
+  .footprint-node, .footprint-node code { font-size: 10px; }
+  .footprint-architecture { grid-template-columns: 1fr; gap: 10px; }
+  .footprint-architecture > svg { justify-self: center; transform: rotate(90deg); }
+  .footprint-architecture > div { min-height: 100px; }
+  .footprint-footer button { width: 100%; justify-content: center; }
+}

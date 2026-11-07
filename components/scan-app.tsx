@@ -1,3 +1,4 @@
+import { IdentityFootprint } from "./identity-footprint";
 import { AddressHistory } from "./address-history";
 import { invalidateScanCache } from "@/lib/scan-data";
 import { PlaygroundInvite } from "./playground-guide";
@@ -1076,6 +1077,16 @@ export default function ScanApp() {
                     )}
                   </p>
                 </div>
+                <IdentityFootprint
+                  key={walletData.address + walletData.checkedAt}
+                  data={walletData}
+                  onSelect={openRecord}
+                  onStudio={() => {
+                    setStudioAddress(walletData.address);
+                    navigate("lab");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                />
                 <aside className="playground-invite">
                   <ZkProofportLogo size={22} />
                   <div>
