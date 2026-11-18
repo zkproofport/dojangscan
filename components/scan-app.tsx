@@ -1,3 +1,5 @@
+import BackendExplorer from "./backend-explorer";
+import { backendEnabled, backendNetwork } from "@/lib/data-source";
 import { IdentityFootprint } from "./identity-footprint";
 import { AddressHistory } from "./address-history";
 import { invalidateScanCache } from "@/lib/scan-data";
@@ -129,7 +131,13 @@ export default function ScanApp() {
     setDetail(null);
     clearSchema();
     updateURL({ view: v });
-    if (v !== "codes" && !data && !loading) void refresh();
+    if (
+      v !== "codes" &&
+      !(backendEnabled && v === "explore") &&
+      !data &&
+      !loading
+    )
+      void refresh();
   }
   function openIssuer(address: string) {
     navigate("issuer");
@@ -348,7 +356,8 @@ export default function ScanApp() {
     let live = true;
     const q = new URLSearchParams(window.location.search);
     const v = q.get("view");
-    if (v === "codes") setLoading(false);
+    if (v === "codes" || (backendEnabled && (!v || v === "explore")))
+      setLoading(false);
     else
       void getData<ScanData>("overview")
         .then((d) => {
@@ -374,7 +383,7 @@ export default function ScanApp() {
     const query =
       q.get("uid") ?? q.get("schema") ?? q.get("address") ?? q.get("tx");
     if (q.get("issuer")) openIssuer(q.get("issuer")!);
-    if (query) {
+    if (query && !(backendEnabled && (!v || v === "explore") && q.get("uid"))) {
       setSearch(query);
       if (v === "codes" && q.get("uid")) {
         void getData<Attestation>("attestation", { uid: query })
@@ -603,6 +612,30 @@ export default function ScanApp() {
         </a>
       </header>
       <main>
+        <div className="backend-source notice">
+          <strong>
+            {language === "ko" ? "데이터 출처" : "Data source"}:{" "}
+            {backendEnabled && view === "explore"
+              ? "NUC Backend"
+              : "GIWA public RPC / Explorer"}
+          </strong>
+          <span>
+            {language === "ko"
+              ? "각 출처의 수집 범위와 기준 블록은 별개입니다."
+              : "Each source has its own coverage and block reference."}
+          </span>
+          {view === "explore" && backendNetwork && (
+            <a
+              className="text-button"
+              href={localURL({
+                view: "explore",
+                source: backendEnabled ? "public" : "backend",
+              })}
+            >
+              {backendEnabled ? "Public RPC / Explorer ↗" : "NUC Backend ↗"}
+            </a>
+          )}
+        </div>
         <section
           className={
             "intro " + (view === "explore" ? "explore-intro" : "compact")
@@ -624,11 +657,13 @@ export default function ScanApp() {
           </div>
         </section>
         {loading &&
+          !(backendEnabled && view === "explore") &&
           view !== "codes" &&
           view !== "lab" &&
           view !== "guide" &&
           view !== "brand" && <ChainLoading />}
         {error &&
+          !(backendEnabled && view === "explore") &&
           view !== "codes" &&
           view !== "lab" &&
           view !== "guide" &&
@@ -647,7 +682,8 @@ export default function ScanApp() {
               </button>
             </div>
           )}
-        {view !== "lab" &&
+        {!(backendEnabled && view === "explore") &&
+          view !== "lab" &&
           view !== "codes" &&
           view !== "guide" &&
           view !== "brand" &&
@@ -686,7 +722,14 @@ export default function ScanApp() {
             {tr(searchError)}
           </div>
         )}
-        {view === "explore" && (
+        {view === "explore" && backendEnabled && (
+          <BackendExplorer
+            publicSearch={() => {
+              location.href = localURL({ view: "explore", source: "public" });
+            }}
+          />
+        )}
+        {view === "explore" && !backendEnabled && (
           <>
             <PlaygroundInvite
               onStart={() => {

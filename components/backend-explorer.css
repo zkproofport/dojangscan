@@ -1,0 +1,76 @@
+.backend-coverage {
+  padding: 20px;
+  margin: 24px 0;
+}
+.backend-facts {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.backend-facts > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr);
+  gap: 12px;
+}
+.backend-facts dt {
+  opacity: 0.7;
+}
+.backend-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.backend-filters {
+  flex-wrap: wrap;
+}
+.backend-filters label {
+  display: grid;
+  gap: 6px;
+  flex: 1 1 240px;
+}
+.backend-filters input {
+  width: 100%;
+  border: 1px solid var(--border, #7775);
+  border-radius: 8px;
+  padding: 8px;
+  background: transparent;
+  color: inherit;
+}
+.backend-list {
+  display: grid;
+  gap: 12px;
+}
+.backend-list .credential-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.backend-detail {
+  overflow-y: auto;
+  padding: 24px;
+  width: min(100vw, 720px);
+  max-width: 720px !important;
+}
+.backend-detail .notice {
+  display: block;
+}
+.backend-detail .backend-coverage {
+  padding: 0;
+}
+.backend-detail .backend-facts {
+  font-size: 13px;
+}
+.backend-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+@media (max-width: 600px) {
+  .backend-facts > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .backend-list .credential-card {
+    display: block;
+  }
+}

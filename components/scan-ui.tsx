@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { short, type Attestation, type IssuerClass } from "@/lib/giwa";
 import { queryScan } from "@/lib/scan-data";
+import { queryBackend } from "@/lib/data-source";
 import { ISSUER_LABELS, ISSUER_EXPLANATIONS } from "@/lib/trust";
 import { ZeroAddress } from "ethers";
 import { codeField, codeLink } from "@/lib/code-records";
@@ -27,7 +28,11 @@ export async function getData<T = any>(
   kind: string,
   params: Record<string, string> = {},
 ): Promise<T> {
-  return queryScan(kind, params) as Promise<T>;
+  return (
+    kind.startsWith("backend-")
+      ? queryBackend(kind, params)
+      : queryScan(kind, params)
+  ) as Promise<T>;
 }
 export function CopyButton({
   value,
