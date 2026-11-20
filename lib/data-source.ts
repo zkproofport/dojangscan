@@ -1,4 +1,5 @@
 import { createBackendClient, backendPage } from "./backend-api";
+import production from "../deployment/public-explorer.json";
 export function chooseDataSource(
   defaultSource: string | undefined,
   search: string,
@@ -13,10 +14,10 @@ export function chooseDataSource(
 const env = import.meta.env ?? {};
 export const backendEnabled =
   chooseDataSource(
-    env.VITE_DOJANGSCAN_SOURCE,
+    env.VITE_DOJANGSCAN_SOURCE ?? production.defaultSource,
     typeof window === "undefined" ? "" : window.location.search,
   ) === "backend";
-export const backendNetwork = env.VITE_DOJANGSCAN_NETWORK ?? "";
+export const backendNetwork = env.VITE_DOJANGSCAN_NETWORK ?? (env.PROD ? production.network : "");
 export function queryBackend(kind: string, params: Record<string, string>) {
   const client = createBackendClient(backendNetwork);
   if (kind === "backend-status") return client.status();

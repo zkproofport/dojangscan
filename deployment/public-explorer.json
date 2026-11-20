@@ -1,0 +1,7 @@
+{
+  "frontendOrigin": "https://dojangscan.com",
+  "liveAPIBase": "https://api.dojangscan.com/live",
+  "historicalAPIBase": "https://api.dojangscan.com/history",
+  "network": "giwa-sepolia-catchup25-r1",
+  "defaultSource": "public"
+}

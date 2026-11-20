@@ -1,6 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { apiBase } from "../lib/api-endpoints";
+import { apiBase, apiDefaults } from "../lib/api-endpoints";
+import production from "../deployment/public-explorer.json";
+test("Pages uses public HTTPS while development retains its local proxies", () => {
+  assert.deepEqual(apiDefaults(true), {
+    live: "https://api.dojangscan.com/live",
+    history: "https://api.dojangscan.com/history",
+  });
+  assert.deepEqual(apiDefaults(false), { live: "/api/dojangscan", history: "/api/historical" });
+  assert.equal(production.defaultSource, "public");
+  assert.equal(production.network, "giwa-sepolia-catchup25-r1");
+});
 import { createBackendClient } from "../lib/backend-api";
 import { createHistoricalClient } from "../lib/historical-api";
 test("API bases support HTTPS gateway paths and explicit same-origin reverse proxies", () => {

@@ -74,7 +74,11 @@ Powered by **[Masse Labs](https://masselabs.com)**
 
 GitHub Pages serves static assets only. The Vite proxies and SSH tunnel are local development tools. Production requires an independently deployed HTTPS gateway (or an actual same-origin reverse proxy).
 
-Set these public build variables in the release environment before `npm run build`:
+Production defaults are pinned in `deployment/public-explorer.json`: `https://api.dojangscan.com/live` and `https://api.dojangscan.com/history`, instance `giwa-sepolia-catchup25-r1`. Public remains the default source, so an unavailable API does not replace the existing public Explorer. Explicit Backend links show connection errors, never an empty-success result or an automatic source substitution. Development retains its loopback Vite proxies.
+
+`npm run build:public` produces the local `dist-public/` candidate with only these pinned public settings, excluding local env files and inherited `VITE_*` settings. The Pages workflow uses this same command and uploads `dist-public/`; only a `main` push or an explicit workflow dispatch deploys it. This local command does not deploy. Local TLS contract check: `node --import tsx scripts/check-public-https.mts <local-test-CA.pem>` against the isolated Mac harness on `127.0.0.1:18443`; it never connects to the public API hostname.
+
+The Pages build injects only the two public URLs and the public instance ID from that file, and ignores local env files and inherited `VITE_*`. Other development builds may use these settings:
 
 - `VITE_DOJANGSCAN_NETWORK=giwa-sepolia-catchup25-r1`
 - `VITE_DOJANGSCAN_API_BASE=https://<approved-api-host>/live`

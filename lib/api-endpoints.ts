@@ -1,3 +1,4 @@
+import production from "../deployment/public-explorer.json";
 /** Public build settings contain URLs only, never credentials. Pages has no API proxy. */
 export function apiBase(value: string | undefined, fallback: string): string {
   if (!value) return fallback;
@@ -21,11 +22,17 @@ export function apiBase(value: string | undefined, fallback: string): string {
   return url.href.replace(/\/$/, "");
 }
 const env = import.meta.env ?? {};
+export function apiDefaults(isProduction: boolean) {
+  return isProduction
+    ? { live: production.liveAPIBase, history: production.historicalAPIBase }
+    : { live: "/api/dojangscan", history: "/api/historical" };
+}
+const defaults = apiDefaults(env.PROD === true);
 export const liveAPIBase = apiBase(
   env.VITE_DOJANGSCAN_API_BASE,
-  "/api/dojangscan",
+  defaults.live,
 );
 export const historicalAPIBase = apiBase(
   env.VITE_DOJANGSCAN_HISTORY_API_BASE,
-  "/api/historical",
+  defaults.history,
 );

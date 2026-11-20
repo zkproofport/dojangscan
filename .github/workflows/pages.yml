@@ -24,10 +24,10 @@ jobs:
       - uses: actions/configure-pages@v5
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      - run: npm run build:public
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: dist-public
 
   deploy:
     needs: build
