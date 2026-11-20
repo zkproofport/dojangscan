@@ -1,3 +1,4 @@
+import { historicalAPIBase } from "./api-endpoints";
 export type HistoricalEvent = {
   id: string;
   uid: string | null;
@@ -62,8 +63,9 @@ export class HistoricalError extends Error {
 export function createHistoricalClient(
   network: string,
   request: typeof fetch = fetch,
+  base = historicalAPIBase,
 ) {
-  const prefix = `/api/historical/v1/networks/${encodeURIComponent(network)}/historical`;
+  const prefix = `${base}/v1/networks/${encodeURIComponent(network)}/historical`;
   async function get<T>(
     path: string,
     params: Record<string, string | undefined> = {},
@@ -76,6 +78,8 @@ export function createHistoricalClient(
     const timer = setTimeout(() => abort.abort(), 15000);
     try {
       const r = await request(prefix + path + (query.size ? "?" + query : ""), {
+        method: "GET",
+        credentials: "omit",
         signal: abort.signal,
         cache: "no-store",
       });

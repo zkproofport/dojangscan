@@ -1,3 +1,4 @@
+import { liveAPIBase } from "./api-endpoints";
 // Read-only API contract from dojangscan-backend/apps/api/server.ts.
 export type TriState = boolean | null;
 export type BackendMeta = {
@@ -107,10 +108,11 @@ export function backendErrorKind(error: unknown) {
 export function createBackendClient(
   network: string,
   request: typeof fetch = fetch,
+  base = liveAPIBase,
 ) {
   if (!/^[a-zA-Z0-9_-]{1,100}$/.test(network))
     throw new Error("Invalid backend network instance");
-  const prefix = `/api/dojangscan/v1/networks/${encodeURIComponent(network)}`;
+  const prefix = `${base}/v1/networks/${encodeURIComponent(network)}`;
   async function read<T>(
     path: string,
     params: Record<string, string> = {},
@@ -120,7 +122,7 @@ export function createBackendClient(
     let response: Response;
     try {
       response = await request(
-        (audit ? "/api/dojangscan" : prefix) +
+        (audit ? base : prefix) +
           path +
           (query ? "?" + query : ""),
         {

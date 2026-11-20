@@ -69,3 +69,16 @@ Browse without connecting a wallet · Korean & English · Light & dark themes ·
 Powered by **[Masse Labs](https://masselabs.com)**
 
 발급·만료·취소 시각은 기기 시간대에 맞춰 표시합니다(한국: GMT+9). 날짜 조건 공유 링크에는 기준 시간대를 보존하며, CSV의 원본 시각은 UTC입니다.
+
+## Public Backend API configuration
+
+GitHub Pages serves static assets only. The Vite proxies and SSH tunnel are local development tools. Production requires an independently deployed HTTPS gateway (or an actual same-origin reverse proxy).
+
+Set these public build variables in the release environment before `npm run build`:
+
+- `VITE_DOJANGSCAN_NETWORK=giwa-sepolia-catchup25-r1`
+- `VITE_DOJANGSCAN_API_BASE=https://<approved-api-host>/live`
+- `VITE_DOJANGSCAN_HISTORY_API_BASE=https://<approved-api-host>/history`
+- `VITE_DOJANGSCAN_SOURCE=public` (retain Public as the default until public API activation)
+
+The URL settings reject HTTP, embedded credentials, query strings and fragments. Never put tokens, DB URLs or Nodit keys in `VITE_*` variables: they are public build data. Both clients use credential-free GETs and retain explicit API errors without automatic Public fallback. The existing Pages workflow is unchanged; committing to this working branch does not deploy it. Build-environment configuration and any main merge/push remain separate release actions.
