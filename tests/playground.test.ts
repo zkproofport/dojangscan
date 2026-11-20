@@ -108,7 +108,7 @@ test("documented issuer ID follows current registration, never a fixed address o
 test("invalid lookup addresses are rejected before any network access", async () => {
   await assert.rejects(
     checkPlaygroundAttestation("not-a-wallet"),
-    /유효한 지갑/,
+    /지갑 주소 형식 오류/,
   );
 });
 

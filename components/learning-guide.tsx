@@ -44,15 +44,12 @@ export default function LearningGuide({
       <Relationship full />
       <section className="guide-example">
         <div className="guide-example-copy">
-          <span className="section-kicker">{tr("도장에 담긴 정보")}</span>
-          <h2>
-            {tr("누가, 누구에게,")}
-            <br /> {tr("무엇을 확인했는가.")}
-          </h2>
+          <span className="section-kicker">{tr("도장 데이터 구조")}</span>
+          <h2>{tr("발행자·수신자·기록 내용")}</h2>
           <div
             className="pill-buttons"
             role="group"
-            aria-label={tr("도장에 담긴 정보")}
+            aria-label={tr("도장 데이터 구조")}
           >
             <button
               className={example === "address" ? "selected" : ""}
@@ -71,7 +68,7 @@ export default function LearningGuide({
           </div>
           <p>
             {tr(
-              "도장 하나에는 발행자·수신 지갑·내용·만료·취소 정보가 있습니다. 스키마는 그 내용의 형식을 정합니다.",
+              "도장에는 발행자·수신자·내용·만료·철회 정보가 기록됩니다. 스키마는 데이터 형식을 정의합니다.",
             )}
           </p>
         </div>
@@ -81,23 +78,23 @@ export default function LearningGuide({
           <h3>{tr(e.title)}</h3>
           <dl>
             <div>
-              <dt>{tr("누가")}</dt>
+              <dt>{tr("발행자")}</dt>
               <dd>{tr(e.issuer)}</dd>
             </div>
             <div>
-              <dt>{tr("누구에게")}</dt>
+              <dt>{tr("수신자")}</dt>
               <dd>{tr("사용자의 지갑")}</dd>
             </div>
             <div>
-              <dt>{tr("무엇을")}</dt>
+              <dt>{tr("기록 내용")}</dt>
               <dd>{tr(e.fact)}</dd>
             </div>
             <div>
-              <dt>{tr("공개되는 것")}</dt>
+              <dt>{tr("공개 데이터")}</dt>
               <dd>{tr(e.shown)}</dd>
             </div>
             <div>
-              <dt>{tr("함께 구분할 것")}</dt>
+              <dt>{tr("공개 범위 참고")}</dt>
               <dd>{tr(e.hidden)}</dd>
             </div>
           </dl>
@@ -105,13 +102,13 @@ export default function LearningGuide({
       </section>
       <section className="guide-section">
         <span className="section-kicker">{tr("등록과 권한의 차이")}</span>
-        <h2>{tr("등록, 권한, 상태를 따로 봅니다.")}</h2>
+        <h2>{tr("등록·권한·상태 구분")}</h2>
         <div className="trust-legend">
           <div>
             <ShieldCheck size={23} />
             <Badge variant="success">{tr("Dojang 등록")}</Badge>
             <p>
-              {tr("현재 발행자 목록에 있는가?")}
+              {tr("현재 발행자 등록 여부")}
               <br />
               <code>getAttester(id)</code>
               {tr("와 비교합니다.")}
@@ -121,7 +118,7 @@ export default function LearningGuide({
             <KeyRound size={23} />
             <Badge variant="blue">{tr("관리 권한")}</Badge>
             <p>
-              {tr("발행자·스키마를 관리할 권한이 있는가?")}
+              {tr("발행자·스키마 관리 권한")}
               <br />
               <code>hasRole(role, address)</code>
               {tr("로 확인합니다.")}
@@ -129,9 +126,9 @@ export default function LearningGuide({
           </div>
           <div>
             <Stamp size={23} />
-            <Badge>{tr("활성 / 취소 / 만료")}</Badge>
+            <Badge>{tr("활성 / 철회 / 만료")}</Badge>
             <p>
-              {tr("이 기록이 아직 사용 가능한 상태인가?")}
+              {tr("EAS 철회·만료 상태")}
               <br />
               {tr("내용의 진실성까지 보장하지는 않습니다.")}
             </p>
@@ -140,7 +137,7 @@ export default function LearningGuide({
             <FlaskConical size={23} />
             <Badge variant="purple">{tr("테스트용")}</Badge>
             <p>
-              {tr("테스트 발행자나 예제 데이터인가?")}
+              {tr("테스트 발행자·예제 데이터 여부")}
               <br />
               {tr("실제 기관의 자격증명과 구분합니다.")}
             </p>
@@ -164,7 +161,7 @@ export default function LearningGuide({
           </p>
         </details>
         <details className="explain-detail">
-          <summary>{tr("관리자 주소는 어떻게 찾나요?")}</summary>
+          <summary>{tr("관리자 주소 조회 기준")}</summary>
           <p>
             {tr("SchemaBook과 DojangAttesterBook은 AccessControl 방식입니다.")}
             <code>owner()</code>

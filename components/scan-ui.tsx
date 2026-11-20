@@ -48,8 +48,8 @@ export function CopyButton({
       onClick={() =>
         navigator.clipboard
           .writeText(value)
-          .then(() => toast.success(tr("복사했습니다.")))
-          .catch(() => toast.error(tr("복사하지 못했습니다.")))
+          .then(() => toast.success(tr("복사 완료")))
+          .catch(() => toast.error(tr("복사 실패")))
       }
     >
       <Copy size={14} />
@@ -69,7 +69,7 @@ export function Status({ value }: { value: string }) {
   return (
     <span
       title={tr(
-        "활성은 취소·만료되지 않았다는 뜻이며, 내용의 사실성을 보장하지 않습니다.",
+        "활성은 철회·만료되지 않았다는 뜻이며, 내용의 사실성을 보장하지 않습니다.",
       )}
     >
       <Badge
@@ -85,7 +85,7 @@ export function Status({ value }: { value: string }) {
           value === "active"
             ? tr("활성")
             : value === "revoked"
-              ? tr("취소됨")
+              ? tr("철회됨")
               : tr("만료됨"),
         )}
       </Badge>
@@ -187,7 +187,7 @@ export function ScanCards({
                 className="record-issuer-name text-button"
                 onClick={() => onIssuer?.(a.attester)}
                 disabled={!onIssuer}
-                title={tr("발행한 도장 보기")}
+                title={tr("발행 기록 조회")}
               >
                 {tr(a.issuerName)}
               </button>
@@ -256,7 +256,7 @@ export function ScanTable({
                 className="record-issuer-name text-button"
                 onClick={() => onIssuer?.(a.attester)}
                 disabled={!onIssuer}
-                title={tr("발행한 도장 보기")}
+                title={tr("발행 기록 조회")}
               >
                 {tr(a.issuerName)}
               </button>

@@ -169,10 +169,10 @@ export function prepareCodeVerification(
   if (kind === "hash") {
     const codeHash = value.trim();
     if (!isHexString(codeHash, 32))
-      throw new Error("32바이트 코드 해시를 입력하세요.");
+      throw new Error("32바이트 코드 해시 필요");
     return { codeHash, domain };
   }
-  if (!value) throw new Error("전달받은 인증 코드를 입력하세요.");
+  if (!value) throw new Error("원본 인증 코드 입력 필요");
   return {
     codeHash: keccak256(toUtf8Bytes(value)),
     domain: domain.replace(/ /g, "").replace(/[A-Z]/g, (c) => c.toLowerCase()),
@@ -192,11 +192,11 @@ export async function verifyCode(
   request = rpc,
 ) {
   if (!input.domain || input.domain.length > 512)
-    throw new Error("인증 코드 사용처를 입력하세요.");
+    throw new Error("인증 코드 사용처 입력 필요");
   if (!isHexString(input.codeHash, 32))
-    throw new Error("32바이트 코드 해시를 입력하세요.");
+    throw new Error("32바이트 코드 해시 필요");
   if (!isHexString(input.attesterId, 32) || input.attesterId === ZeroHash)
-    throw new Error("등록 발행자를 선택하세요.");
+    throw new Error("등록 발행자 선택 필요");
   const expected = getAddress(input.expectedIssuer);
   const block = await request("eth_blockNumber", []);
   const read = async (
@@ -221,7 +221,7 @@ export async function verifyCode(
     current === ZeroAddress ||
     current.toLowerCase() !== expected.toLowerCase()
   )
-    throw new Error("발행자 등록이 변경되었습니다. 목록을 새로고침하세요.");
+    throw new Error("발행자 등록 변경 감지 · 목록 갱신 필요");
   const args = [input.codeHash, input.domain, input.attesterId];
   const valid = Boolean(
     await read(CONTRACTS.DojangScroll, scroll, "isVerifiedCode", args),

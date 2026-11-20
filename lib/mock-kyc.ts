@@ -23,7 +23,7 @@ export async function checkMockKycAttestation(
   input: string,
 ): Promise<PlaygroundResult> {
   if (!isAddress(input.trim()))
-    throw new Error("유효한 지갑 주소를 입력해 주세요.");
+    throw new Error("지갑 주소 형식 오류");
   const address = getAddress(input.trim());
   const blockTag: string = await rpc("eth_blockNumber", []);
   async function read(target: string, method: string, args: unknown[] = []) {
@@ -39,7 +39,7 @@ export async function checkMockKycAttestation(
     signer.toLowerCase() !== MOCK_KYC_SIGNER.toLowerCase() ||
     schema.toLowerCase() !== MOCK_KYC_SCHEMA
   )
-    throw new Error("목업 발급자 설정이 지원하는 서킷과 일치하지 않습니다.");
+    throw new Error("목업 발행자 설정이 지원하는 서킷과 일치하지 않습니다.");
   const base = {
     address,
     issuer: TEST_ATTESTER,
@@ -55,12 +55,12 @@ export async function checkMockKycAttestation(
     });
     if (!response.ok)
       throw new Error(
-        "목업 등록 기록을 조회하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        "목업 등록 기록 조회 실패 · 재조회 필요",
       );
     const page = await response.json();
     if (!Array.isArray(page.items) || !Object.hasOwn(page, "next_page_params"))
       throw new Error(
-        "목업 등록 기록을 조회하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        "목업 등록 기록 조회 실패 · 재조회 필요",
       );
     const matches = historyEvents(page.items, request.topic, "recipient")
       .filter(
@@ -90,6 +90,6 @@ export async function checkMockKycAttestation(
   }
   // A bounded search must never present an incomplete history as an unregistered wallet.
   throw new Error(
-    "등록 기록 조회 범위를 초과했습니다. 관리자에게 등록 내역을 확인해 주세요.",
+    "등록 기록 조회 한도 초과 · 관리자 확인 필요",
   );
 }

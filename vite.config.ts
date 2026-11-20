@@ -27,6 +27,11 @@ export default defineConfig(({ mode }) => {
       port: 4317,
       strictPort: true,
       proxy: {
+        "/api/historical": {
+          target: "http://127.0.0.1:18096",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/historical/, ""),
+        },
         "/api/dojangscan": {
           target,
           changeOrigin: true,

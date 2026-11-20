@@ -69,8 +69,8 @@ test("language switching translates data labels, dynamic coverage and errors wit
   assert.equal(tr("발행자"), "Issuer");
   assert.equal(tr("조회 블록"), "Checked block");
   assert.equal(
-    tr("공개 데이터 서비스 응답 오류 (429). 잠시 후 다시 시도해 주세요."),
-    "Public data service error (429). Retry shortly.",
+    tr("공개 데이터 서비스 응답 오류 (429) · 재조회 필요"),
+    "Public data service error (429) · retry required",
   );
   assert.equal(tr("블록 {0} · {1}", [123, "12:30"]), "Block 123 · 12:30");
   assert.equal(tr(recipient), recipient);
@@ -78,7 +78,7 @@ test("language switching translates data labels, dynamic coverage and errors wit
   setTheme("light");
   setLanguage("ko");
   assert.equal(tr("Issuer"), "발행자");
-  assert.equal(tr("Enter a nonzero address."), "0이 아닌 주소를 입력하세요.");
+  assert.equal(tr("Enter a nonzero address."), "0이 아닌 주소 필요");
 });
 
 

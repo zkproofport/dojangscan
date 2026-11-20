@@ -28,7 +28,7 @@ const ContractConsole = lazy(() => import("./contract-console"));
 const options: Record<string, string[][]> = {
   issuer: [
     ["attest", "도장 발급"],
-    ["revoke", "도장 취소"],
+    ["revoke", "도장 철회"],
   ],
   admin: [
     ["issuer", "발행자 등록"],
@@ -188,7 +188,7 @@ export default function Workspace({
     const currentRevision = ++revision.current;
     setCall(null);
     if (!connected || chain !== NETWORK.chainId)
-      throw new Error(tr("GIWA Sepolia 지갑을 연결하세요."));
+      throw new Error(tr("GIWA Sepolia 지갑 연결 필요"));
     if (role === "admin") {
       const selectedRole = ["grant", "role-revoke"].includes(operation)
         ? roleId
@@ -216,7 +216,7 @@ export default function Workspace({
         if (record.definition !== definition)
           throw new Error(tr("등록된 스키마 형식을 다시 불러오세요."));
         if (!record.revocable && (viaContract || revocable))
-          throw new Error(tr("취소할 수 없는 스키마입니다."));
+          throw new Error(tr("철회할 수 없는 스키마입니다."));
         setResolver(record.resolver);
       }
     }
@@ -254,7 +254,7 @@ export default function Workspace({
       {busy && (
         <ChainLoading
           title="요청을 처리하고 있습니다."
-          description="지갑 요청 또는 온체인 조회를 처리 중입니다. 지갑에 요청이 표시되면 확인하세요."
+          description="지갑 요청 또는 온체인 조회 처리 중입니다. 지갑 승인이 필요할 수 있습니다."
         />
       )}
       <div className="workspace-wallet">
@@ -263,7 +263,7 @@ export default function Workspace({
             {tr(connected ? "연결됨" : "지갑 미연결")}
           </Badge>
           <code>
-            {connected ? short(connected, 10) : tr("관리할 지갑을 연결하세요.")}
+            {connected ? short(connected, 10) : tr("운영 지갑 연결")}
           </code>
           <small>
             {connected
@@ -302,7 +302,7 @@ export default function Workspace({
       ) : (
         <div className="studio-grid">
           <div className="studio-panel">
-            <h3>{tr(role === "admin" ? "Dojang 관리" : "도장 발급·취소")}</h3>
+            <h3>{tr(role === "admin" ? "Dojang 관리" : "도장 발급·철회")}</h3>
             {role === "issuer" && (
               <>
                 <label className="input-label">
@@ -344,7 +344,7 @@ export default function Workspace({
                         }
                       >
                         <option value="">
-                          {tr("발행자 컨트랙트를 선택하거나 직접 입력하세요.")}
+                          {tr("발행자 컨트랙트 선택 또는 주소 입력")}
                         </option>
                         {data?.issuers.map((i) => (
                           <option key={i.id} value={i.address.toLowerCase()}>
@@ -360,19 +360,19 @@ export default function Workspace({
                     />
                     <p className="notice">
                       {tr(
-                        "운영 지갑으로 연결하세요. 도장은 선택한 컨트랙트 주소로 발급됩니다.",
+                        "운영 지갑 연결이 필요합니다. EAS 발행자는 선택한 컨트랙트 주소입니다.",
                       )}
                     </p>
                     <p className="fine-print">
                       {tr(
-                        "MasseDojangAttester 호환 계약의 네 가지 발급과 취소를 지원합니다. 실행 준비 시 계약 함수와 운영 권한을 확인합니다. 다른 계약은 Contract Console을 사용하세요.",
+                        "MasseDojangAttester 호환 계약의 네 가지 도장 발급과 철회를 지원합니다. 실행 준비 시 함수와 운영 권한을 확인합니다. 그 외 계약은 Contract Console 대상입니다.",
                       )}
                     </p>
                   </>
                 ) : (
                   <p className="fine-print">
                     {tr(
-                      "연결 지갑이 EAS를 직접 호출합니다. 등록 발행자가 컨트랙트라면 ‘컨트랙트로 발급’을 선택하세요.",
+                      "연결 지갑이 EAS를 직접 호출합니다. 등록 발행자가 컨트랙트인 경우 ‘컨트랙트로 발급’을 사용합니다.",
                     )}
                   </p>
                 )}
@@ -524,7 +524,7 @@ export default function Workspace({
                       }
                     }}
                   >
-                    <option value="">{tr("도장 종류를 선택하세요.")}</option>
+                    <option value="">{tr("도장 종류 선택")}</option>
                     {data?.schemas
                       .filter((s) => s.current)
                       .map((s) => (
@@ -633,14 +633,14 @@ export default function Workspace({
                 {viaContract && contractSchema?.key === "code" && (
                   <p className="fine-print">
                     {tr(
-                      "codeHash에는 코드의 keccak256 해시를 입력하세요. 도메인은 계약에서 ASCII 공백 제거와 소문자 변환을 적용합니다.",
+                      "codeHash는 코드의 keccak256 해시입니다. 계약은 도메인의 ASCII 공백을 제거하고 영문자를 소문자로 변환합니다.",
                     )}
                   </p>
                 )}
                 <Expiry value={expiration} setValue={edit(setExpiration)} />
                 {viaContract ? (
                   <p className="fine-print">
-                    {tr("이 컨트랙트가 발급한 도장은 취소할 수 있습니다.")}
+                    {tr("이 컨트랙트가 발급한 도장은 철회할 수 있습니다.")}
                   </p>
                 ) : (
                   <details className="explain-detail">
@@ -659,7 +659,7 @@ export default function Workspace({
                           reset();
                         }}
                       />
-                      {tr("취소 가능")}
+                      {tr("철회 가능")}
                     </label>
                   </details>
                 )}
@@ -718,7 +718,7 @@ export default function Workspace({
                 {operation === "issuer" && (
                   <p className="fine-print">
                     {tr(
-                      "이미 있는 ID의 주소 변경은 먼저 등록 해제가 필요할 수 있습니다. 시뮬레이션으로 확인하세요.",
+                      "기존 ID의 주소 변경은 등록 해제가 선행되어야 할 수 있습니다. 시뮬레이션으로 확인합니다.",
                     )}
                   </p>
                 )}
@@ -730,7 +730,7 @@ export default function Workspace({
               ) &&
               !book.endsWith("Resolver") && (
                 <p className="notice danger">
-                  {tr("이 작업은 resolver 계약을 선택하세요.")}
+                  {tr("resolver 계약 선택 필요")}
                 </p>
               )}
             <button
@@ -813,7 +813,7 @@ export default function Workspace({
             {role === "issuer" && (
               <p className="fine-print">
                 {tr(
-                  "지갑 직접 발급은 연결 지갑이, 컨트랙트 발급은 선택한 계약이 EAS 발행자로 기록됩니다. 전송 전에 대상 계약과 함수를 확인하세요.",
+                  "직접 발급의 EAS 발행자는 연결 지갑이며, 컨트랙트 발급의 발행자는 선택한 계약입니다. 전송 검토에 대상 계약과 함수가 표시됩니다.",
                 )}
               </p>
             )}
@@ -949,7 +949,7 @@ function SchemaFields({
             try {
               return encodeFields(definition, values);
             } catch {
-              return tr("필드 형식과 값을 확인하세요.");
+              return tr("필드 형식 또는 값 오류");
             }
           })()}
         </pre>

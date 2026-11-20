@@ -63,7 +63,7 @@ test("a matching proof is prepared for a pinned verifier, not marked cryptograph
 });
 test("a prior practice proof cannot answer a fresh session, even with rewritten relay metadata", () => {
   const next = practiceAction("0x" + "22".repeat(32));
-  assert.throws(() => prepare(result(), address, next), /이번 실습 요청/);
+  assert.throws(() => prepare(result(), address, next), /현재 요청과 증명 불일치/);
   assert.throws(
     () => prepare({ ...result(), requestId: "other" }),
     /다른 요청/,

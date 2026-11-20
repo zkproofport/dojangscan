@@ -230,7 +230,7 @@ export default function ScanApp() {
   async function runSearch(value: string) {
     value = value.trim();
     if (!value) {
-      setSearchError(tr("지갑 주소·도장 UID·트랜잭션 해시를 입력하세요."));
+      setSearchError(tr("검색에 지갑 주소, 도장 UID 또는 트랜잭션 해시가 필요합니다."));
       return;
     }
     const seq = ++sequence.current;
@@ -248,7 +248,7 @@ export default function ScanApp() {
         if (found) return await openSchema(found.uid);
         if (/^0x/i.test(value))
           throw new Error(
-            tr("주소, UID, 트랜잭션 해시 또는 도장 종류 이름을 입력하세요."),
+            tr("지원 검색: 주소, UID, 트랜잭션 해시, 스키마 이름"),
           );
         navigate("codes");
         setCodeSearchRequested(true);
@@ -471,45 +471,45 @@ export default function ScanApp() {
   const titles: Record<string, { title: string; text: string }> = {
     explore: {
       title: "Dojangscan",
-      text: tr("GIWA 도장을 검색하고 발행자와 상태를 확인하세요."),
+      text: tr("발급·철회·Indexer 이력 및 상태 조회"),
     },
     schemas: {
       title: tr("도장 종류"),
       text: tr(
-        "스키마는 도장 내용의 형식입니다. 발급 권한과 데이터의 공개 범위도 함께 봅니다.",
+        "스키마 형식, 발급 권한 및 데이터 공개 범위",
       ),
     },
     codes: {
       title: "사용처별 조회",
-      text: "인증 코드의 사용처를 찾아 발급된 도장을 확인하세요.",
+      text: "사용처별 코드 인증 발급 기록 조회",
     },
     issuer: {
       title: "발행한 도장",
-      text: "발행 주소별로 도장과 이전 발급 기록을 확인하세요.",
+      text: "발행자별 도장 및 발급 이력 조회",
     },
     issuers: {
       title: tr("발행자와 관리자"),
-      text: tr("등록 현황 확인부터 도장 발급과 권한 관리까지."),
+      text: tr("발행자 등록 현황, 도장 발급 및 권한 관리"),
     },
     wallet: {
       title: tr("내 도장"),
       text: tr(
-        "주소만 입력해 공개된 기록을 확인하세요. 지갑 연결은 선택입니다.",
+        "지갑 주소별 공개 기록 조회 · 지갑 연결 선택 사항",
       ),
     },
     lab: {
       title: "Proof Studio",
       text: tr(
-        "메인넷 도장을 이용하기 전, 테스트넷에서 ZK 증명을 생성하고 검증합니다.",
+        "테스트넷 도장 기반 ZK 증명 생성 및 검증",
       ),
     },
     brand: {
       title: "브랜드 킷",
-      text: "Dojangscan 로고와 소개 이미지를 내려받으세요.",
+      text: "Dojangscan 로고 및 브랜드 이미지 다운로드",
     },
     guide: {
       title: tr("가이드"),
-      text: tr("도장의 구조와 배지의 의미를 몇 가지 예로 살펴봅니다."),
+      text: tr("도장 데이터 구조 및 상태 배지 기준"),
     },
   };
   const heading = titles[view] ?? titles.explore;
@@ -612,11 +612,14 @@ export default function ScanApp() {
         </a>
       </header>
       <main>
-        <div className="backend-source notice">
+        <div className="backend-source explorer-source-strip">
           <strong>
             {language === "ko" ? "데이터 출처" : "Data source"}:{" "}
             {backendEnabled && view === "explore"
-              ? "NUC Backend"
+              ? new URLSearchParams(location.search).get("history") ===
+                "backfill"
+                ? "Historical Backfill · local"
+                : "NUC Backend"
               : "GIWA public RPC / Explorer"}
           </strong>
           <span>
@@ -650,10 +653,9 @@ export default function ScanApp() {
               )}
             </span>
             <h1>
-              {tr(heading.title)}
-              {view === "explore" && <span className="title-period">.</span>}
+              {view === "explore" ? tr("GIWA 도장·EAS 기록 조회") : tr(heading.title)}
             </h1>
-            <p>{tr(heading.text)}</p>
+            <p>{view === "explore" ? tr("발급·철회·Indexer 이력 및 상태 조회") : tr(heading.text)}</p>
           </div>
         </section>
         {loading &&
@@ -670,9 +672,9 @@ export default function ScanApp() {
           view !== "brand" && (
             <div className="notice danger" role="alert">
               <p>
-                {tr("온체인 정보를 불러오지 못했습니다.")} {tr(error)}
+                {tr("온체인 데이터 조회 실패")} {tr(error)}
               </p>
-              {data && <p>{tr("마지막으로 불러온 정보를 표시합니다.")}</p>}
+              {data && <p>{tr("마지막 조회 결과 표시 중")}</p>}
               <button
                 className="secondary-button"
                 disabled={loading}
@@ -713,8 +715,8 @@ export default function ScanApp() {
           )}
         {searching && (
           <ChainLoading
-            title="검색 중입니다."
-            description="입력한 주소나 식별자를 확인하고 있습니다."
+            title="검색 중"
+            description="주소·식별자 조회 중"
           />
         )}
         {searchError && (
@@ -739,7 +741,7 @@ export default function ScanApp() {
             />
             <button className="explore-help" onClick={() => navigate("guide")}>
               <CircleHelp size={16} />
-              <span>{tr("EAS와 Dojang, 어떤 관계일까요?")}</span>
+              <span>{tr("EAS·Dojang 구조")}</span>
               <ArrowRight size={15} />
             </button>
             <div className="overview-line">
@@ -815,7 +817,7 @@ export default function ScanApp() {
             <section className="records-workspace">
               <div className="section-heading bare">
                 <div>
-                  <h2>{tr("최근 기록")}</h2>
+                  <h2>{tr("최근 발급 기록")}</h2>
                 </div>
                 <div className="display-toggle" aria-label={tr("보기 방식")}>
                   <button
@@ -839,7 +841,7 @@ export default function ScanApp() {
                   {[
                     { id: "dojang", name: tr("Dojang 스키마") },
                     { id: "all", name: tr("전체 EAS") },
-                    { id: "inactive", name: tr("취소·만료") },
+                    { id: "inactive", name: tr("철회·만료") },
                   ].map((f) => (
                     <button
                       key={f.id}
@@ -892,7 +894,7 @@ export default function ScanApp() {
               ) : !items.length ? (
                 <Empty
                   title={tr("이 범위에는 해당 도장이 없습니다.")}
-                  text={tr("전체 EAS를 선택하거나 이전 기록을 불러오세요.")}
+                  text={tr("전체 EAS 필터 또는 이전 기록 조회로 검색 범위를 확대할 수 있습니다.")}
                 />
               ) : display === "cards" ? (
                 <ScanCards
@@ -950,7 +952,7 @@ export default function ScanApp() {
               )}
               <p className="fine-print coverage">
                 {tr(data?.coverage)}
-                {tr("등록 여부와 유효 상태는 도장 상세에서 확인하세요.")}
+                {tr("등록 여부와 철회·만료 상태는 도장 상세에 표시됩니다.")}
               </p>
             </section>
             <section className="studio-banner">
@@ -998,8 +1000,8 @@ export default function ScanApp() {
                     <span>
                       {tr(
                         s.revocable
-                          ? tr("발행자가 취소 가능")
-                          : tr("취소 불가"),
+                          ? tr("발행자가 철회 가능")
+                          : tr("철회 불가"),
                       )}
                     </span>
                     <span>{tr("구조와 규칙 보기 ↗")}</span>
@@ -1057,7 +1059,7 @@ export default function ScanApp() {
               >
                 {tr(
                   connecting
-                    ? "지갑에서 연결을 승인해 주세요."
+                    ? "지갑 연결 승인 대기 중"
                     : connected
                       ? short(connected)
                       : "내 지갑 연결",
@@ -1067,7 +1069,7 @@ export default function ScanApp() {
             {connecting && (
               <ChainLoading
                 title="지갑 연결을 기다리고 있습니다."
-                description="지갑 앱이나 확장 프로그램에서 연결 요청을 확인하세요."
+                description="지갑 앱 또는 확장 프로그램의 연결 승인 대기 중"
               />
             )}
             <form
@@ -1133,8 +1135,8 @@ export default function ScanApp() {
                 <aside className="playground-invite">
                   <ZkProofportLogo size={22} />
                   <div>
-                    <strong>{tr("Proof Studio에서 ZK 실습하기")}</strong>
-                    <p>{tr("Playground 도장으로 시작하는 모바일 ZK 실습.")}</p>
+                    <strong>{tr("Proof Studio 열기")}</strong>
+                    <p>{tr("Playground 도장 기반 모바일 ZK 증명")}</p>
                   </div>
                   <button
                     className="secondary-button"
@@ -1144,7 +1146,7 @@ export default function ScanApp() {
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                   >
-                    {tr("시작하기")}
+                    {tr("발급 절차")}
                     <ArrowRight size={16} />
                   </button>
                 </aside>
@@ -1163,8 +1165,8 @@ export default function ScanApp() {
               </>
             ) : (
               <Empty
-                title={tr("누구의 도장이 궁금한가요?")}
-                text={tr("지갑 주소를 입력하거나 내 지갑을 연결하세요.")}
+                title={tr("지갑별 도장 조회")}
+                text={tr("조회할 지갑 주소 입력 또는 지갑 연결")}
               />
             )}
           </section>

@@ -262,7 +262,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                                     e.attestation.status === "active"
                                       ? "활성"
                                       : e.attestation.status === "revoked"
-                                        ? "취소됨"
+                                        ? "철회됨"
                                         : "만료됨",
                                   )}
                                 </p>
@@ -327,7 +327,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                       </p>
                       <p className="fine-print">
                         {tr(
-                          "EAS 발급 기록과 현재 인증 상태는 다릅니다. 발급자·내용·취소·만료 여부를 상세에서 확인하세요.",
+                          "EAS 발급 기록과 현재 인증 상태는 별개입니다. 상세에 발행자·내용·철회·만료 상태가 표시됩니다.",
                         )}
                       </p>
                     </>
@@ -353,7 +353,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                       :{" "}
                       {tr(
                         issue === "rate-limit"
-                          ? "조회 한도에 도달했습니다. 잠시 후 다시 시도하세요."
+                          ? "조회 한도 도달 · 잠시 후 재조회 가능"
                           : "활동을 불러오지 못했습니다. 확인된 다른 근거만 표시합니다.",
                       )}
                     </p>
@@ -431,7 +431,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
           )}
           <div className="footprint-footer">
             <button className="secondary-button" onClick={onStudio}>
-              {tr("비공개 자격 증명 알아보기")}
+              {tr("비공개 자격 증명")}
               <ArrowRight size={15} />
             </button>
           </div>

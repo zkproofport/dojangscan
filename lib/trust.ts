@@ -17,6 +17,6 @@ export const ISSUER_EXPLANATIONS: Record<IssuerClass, string> = {
  registered: 'DojangAttesterBook의 현재 발행자 주소와 일치합니다. GIWA가 직접 발급했다는 뜻은 아닙니다.',
  manager: '공식 관리 컨트랙트의 현재 관리자 권한을 가진 주소입니다. 발행자 등록과는 별개입니다.',
  test: 'ZKProofport의 CIP-4에 명시된 MockGiwaAttester입니다. 실제 고객확인이나 금융기관 자격을 뜻하지 않습니다.',
- external: '발견한 현재 Dojang 발행자 목록에 없는 EAS 발행자입니다. 신뢰 여부는 별도로 판단하세요.',
+ external: '현재 조회된 Dojang 발행자 목록에 없는 EAS 발행자입니다. 신뢰 여부는 별도 판단 대상입니다.',
  unknown: '발행자 목록 조회가 불완전해 등록 여부를 판정할 수 없습니다.',
 };

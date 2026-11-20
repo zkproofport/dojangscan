@@ -36,7 +36,7 @@ function bounded<T>(work: Promise<T>, ms = 25_000): Promise<T> {
       () =>
         reject(
           new Error(
-            "응답이 늦어지고 있습니다. 연결을 확인한 뒤 다시 시도해 주세요.",
+            "응답 지연 · 연결 확인 후 재요청 가능",
           ),
         ),
       ms,
@@ -185,8 +185,8 @@ export function useProofStudio(
       ) {
         setNotice(
           result?.status === "cancelled"
-            ? "앱에서 요청을 취소했습니다. 준비되면 다시 시작하세요."
-            : "요청 시간이 지났습니다. 앱을 준비한 뒤 새 QR을 만들어 주세요.",
+            ? "앱에서 요청 취소됨 · 새 요청 가능"
+            : "요청 만료 · 새 QR 생성 필요",
         );
         setPhase("ended");
         return;
@@ -194,7 +194,7 @@ export function useProofStudio(
       if (result.status !== "completed")
         throw new Error(
           result.error ||
-            "앱에서 증명을 완료하지 못했습니다. 발급에 사용한 지갑을 선택한 뒤 다시 시도해 주세요.",
+            "앱의 증명 생성 실패 · 발급 지갑 확인 후 재요청 가능",
         );
       setProof(
         prepareStudioProof(result, pending.requestId, wallet, action, circuit),
@@ -206,7 +206,7 @@ export function useProofStudio(
         setDeepLink("");
         setError(
           e instanceof TypeError
-            ? "증명 연결에 실패했습니다. 네트워크를 확인한 뒤 다시 시도해 주세요."
+            ? "증명 서비스 연결 실패 · 네트워크 확인 후 재요청 가능"
             : (e as Error).message,
         );
         setPhase("error");
@@ -228,7 +228,7 @@ export function useProofStudio(
       if (current !== version.current) return;
       if (!valid)
         throw new Error(
-          "증명이 검증을 통과하지 못했습니다. 새로 생성해 주세요.",
+          "증명 검증 실패 · 증명 재생성 필요",
         );
       setPhase("verified");
     } catch (e) {

@@ -136,7 +136,7 @@ export default function ScanDetail({
             {tr(
               schemaUid
                 ? tr(
-                    "이 도장에 어떤 내용을 넣고 누가 발급할 수 있는지 확인합니다.",
+                    "도장 데이터 필드 및 발급 권한",
                   )
                 : tr("EAS의 현재 기록과 발행자 등록 근거를 함께 읽습니다."),
             )}
@@ -160,7 +160,7 @@ export default function ScanDetail({
             <div className="notice danger read-feedback" role="alert">
               <strong>{tr("최신 상태를 확인하지 못했습니다.")}</strong>
               {(schema || record) && (
-                <p>{tr("마지막으로 불러온 정보를 표시합니다.")}</p>
+                <p>{tr("마지막 조회 결과 표시 중")}</p>
               )}
               <p>{tr(schemaUid ? schemaError : error)}</p>
               <button
@@ -232,7 +232,7 @@ export default function ScanDetail({
                             "이 스키마에는 별도의 발행자 제한 규칙이 연결되어 있지 않습니다.",
                           )
                         : tr(
-                            "Dojang의 알려진 resolver는 발행자 허용 목록 등 발급 규칙을 사용합니다. 같은 형식의 일반 EAS 스키마와 구분하세요.",
+                            "알려진 Dojang resolver는 발행자 허용 목록 등 발급 규칙을 적용합니다. 데이터 형식이 같은 일반 EAS 스키마와는 별개입니다.",
                           ),
                     )}
                   </p>
@@ -243,9 +243,9 @@ export default function ScanDetail({
                 value={schema.resolver}
               />
               <Info
-                label={tr("발행 후 취소")}
+                label={tr("발행 후 철회")}
                 value={
-                  schema.revocable ? tr("발행자가 취소 가능") : tr("취소 불가")
+                  schema.revocable ? tr("발행자가 철회 가능") : tr("철회 불가")
                 }
               />
               <details className="explain-detail">
@@ -304,7 +304,7 @@ export default function ScanDetail({
                 <TabsList variant="line">
                   <TabsTrigger value="read">{tr("도장 내용")}</TabsTrigger>
                   <TabsTrigger value="verify">
-                    {tr("등록·유효 상태")}
+                    {tr("등록·EAS 상태")}
                   </TabsTrigger>
                   <TabsTrigger value="raw">{tr("기술 정보")}</TabsTrigger>
                 </TabsList>
@@ -377,7 +377,7 @@ export default function ScanDetail({
                   ) : (
                     <p className="notice">
                       {tr(
-                        "데이터 형식을 자동 해석하지 못했습니다. 기술 정보에서 원문을 확인하세요.",
+                        "데이터 형식을 해석하지 못했습니다. 원문은 기술 정보에 제공됩니다.",
                       )}
                     </p>
                   )}
@@ -392,14 +392,14 @@ export default function ScanDetail({
                   />
                   {a.revocationTime > 0 && (
                     <Info
-                      label={tr("취소 시각")}
+                      label={tr("철회 시각")}
                       value={date(a.revocationTime)}
                     />
                   )}
                   <Info
-                    label={tr("취소 설정")}
+                    label={tr("철회 설정")}
                     value={
-                      a.revocable ? tr("발행자가 취소 가능") : tr("취소 불가")
+                      a.revocable ? tr("발행자가 철회 가능") : tr("철회 불가")
                     }
                   />
                   {a.refUID !== ZERO && (
@@ -426,7 +426,7 @@ export default function ScanDetail({
                   <div className="checks">
                     <Check label={tr("EAS에 실제 레코드 존재")} pass />
                     <Check
-                      label={tr("현재 취소되지 않음")}
+                      label={tr("현재 철회되지 않음")}
                       pass={a.revocationTime === 0}
                     />
                     <Check
@@ -474,7 +474,7 @@ export default function ScanDetail({
                     <summary>{tr("활성이면 신뢰할 수 있나요?")}</summary>
                     <p>
                       {tr(
-                        "활성은 취소·만료되지 않았다는 상태입니다. 기록 내용의 사실성, 기관의 신원, 잔액 Merkle 경로는 발행자와 서비스 정책에 따라 추가 확인해야 합니다. 현재 발행자 목록에서 빠진 과거 발행 이력도 있을 수 있습니다.",
+                        "활성은 철회·만료되지 않았다는 상태입니다. 기록 내용의 사실성, 기관의 신원, 잔액 Merkle 경로는 발행자와 서비스 정책에 따라 추가 확인해야 합니다. 현재 발행자 목록에서 빠진 과거 발행 이력도 있을 수 있습니다.",
                       )}
                     </p>
                   </details>

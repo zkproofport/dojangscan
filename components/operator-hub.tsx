@@ -124,8 +124,8 @@ export default function OperatorHub({
               <p>
                 {tr(
                   role === "issuer"
-                    ? "등록 주소를 확인하거나, 권한이 있는 지갑으로 도장을 발급하세요."
-                    : "현재 역할을 확인하고, 권한이 있는 지갑으로 등록과 설정을 관리하세요.",
+                    ? "등록 발행자 조회 및 권한 보유 지갑의 도장 발급"
+                    : "현재 역할 조회 및 권한에 따른 등록·설정 관리",
                 )}
               </p>
             </div>
@@ -134,7 +134,7 @@ export default function OperatorHub({
                 {tr("목록")}
               </button>
               <button aria-pressed={manage} onClick={() => setManage(true)}>
-                {tr(role === "issuer" ? "발급·취소" : "권한·등록 관리")}
+                {tr(role === "issuer" ? "발급·철회" : "권한·등록 관리")}
               </button>
             </div>
           </div>

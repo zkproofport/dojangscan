@@ -184,7 +184,7 @@ test("wallet history includes keyed balances, codes and old records from an unre
     fail = true;
     await assert.rejects(
       addressHistory(recipient, "recipient", first.next),
-      /다시 조회/,
+      /재조회 필요/,
     );
     fail = false;
     assert.equal(

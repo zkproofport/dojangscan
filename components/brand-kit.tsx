@@ -94,7 +94,7 @@ export default function BrandKit() {
         />
         <div>
           <h2>{tr("소개 이미지")}</h2>
-          <p>{tr("프로젝트 소개, 제품 목록, 발표 자료에 사용하세요.")}</p>
+          <p>{tr("프로젝트 소개·제품 목록·발표 자료용 브랜드 자산")}</p>
           <p className="fine-print">1280 × 720 · PNG</p>
           <a
             className="secondary-button"
@@ -111,12 +111,12 @@ export default function BrandKit() {
           <h2>{tr("이름과 표기")}</h2>
           <p>
             {tr(
-              "Dojangscan으로 붙여 씁니다. D만 대문자로 표기합니다. 심볼과 글자의 비율, 색상, 간격을 유지해 주세요.",
+              "브랜드명은 Dojangscan이며 D만 대문자로 표기합니다. 제공된 심볼·글자의 비율, 색상, 간격을 유지합니다.",
             )}
           </p>
           <p>
             {tr(
-              "로고 주변에는 심볼 너비의 ¼ 이상 여백을 두고, 사진 위에서는 단색 로고와 충분한 대비를 사용하세요.",
+              "로고 여백은 심볼 너비의 ¼ 이상입니다. 사진 위에서는 단색 로고와 충분한 대비가 필요합니다.",
             )}
           </p>
           <a href={`${base}brand-guidelines.txt`} download>

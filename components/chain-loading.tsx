@@ -3,8 +3,8 @@ import { RefreshCw } from "lucide-react";
 import { tr } from "@/lib/i18n";
 
 export function ChainLoading({
-  title = "온체인 정보를 불러오고 있습니다.",
-  description = "공개 RPC 응답을 기다리고 있습니다. 완료되면 자동으로 표시됩니다.",
+  title = "온체인 데이터 조회 중",
+  description = "공개 RPC 응답 대기 중 · 완료 시 자동 표시",
 }: {
   title?: string;
   description?: string;
@@ -26,7 +26,7 @@ export function ChainLoading({
         <p>
           {tr(
             seconds >= 30
-              ? "응답이 지연되고 있습니다. 아직 조회 중이며, 완료되면 자동으로 표시됩니다."
+              ? "응답 지연 · 조회 진행 중"
               : description,
           )}
         </p>

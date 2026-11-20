@@ -6,7 +6,6 @@ import {
   LayoutGrid,
   List,
   RefreshCw,
-  Search,
 } from "lucide-react";
 import {
   Sheet,
@@ -35,7 +34,17 @@ import {
   type IndexedAttestation,
 } from "@/lib/backend-adapter";
 import { backendNetwork } from "@/lib/data-source";
-import "./backend-explorer.css";
+import HistoricalExplorer from "./historical-explorer";
+import {
+  ExplorerSearch,
+  AddressIdentity,
+  LoadingRecords,
+} from "./explorer-presentation";
+import {
+  schemaTitle,
+  displayDate,
+  observationIsOld,
+} from "@/lib/explorer-presentation";
 
 function useText() {
   const [language] = usePreferences();
@@ -73,25 +82,37 @@ function ErrorNotice({ error }: { error: unknown }) {
             "UNKNOWN · 수집·평가 범위에서 확인할 수 없습니다. 발급되지 않았다는 뜻이 아닙니다.",
             "UNKNOWN · Not available within indexed/evaluated coverage. This does not prove non-issuance.",
           )
-        : kind === "absent"
+        : kind === "snapshot"
           ? t(
-              "검증된 조회 범위에서 이 UID를 찾지 못했습니다.",
-              "UID absent within the verified query coverage.",
+              "조회 기준 변경 · 첫 페이지 재조회 필요",
+              "Snapshot changed · reload the first page",
             )
-          : kind === "query"
+          : error instanceof BackendError && error.status === 503
             ? t(
-                "검색 형식을 확인하세요. UID/스키마는 32바이트, 발행자는 20바이트 주소입니다.",
-                "Check the query: UID/schema is 32 bytes; issuer is a 20-byte address.",
+                "수집 데이터 조회 준비 중 · 잠시 후 재조회 가능",
+                "Indexed data is not ready · retry shortly",
               )
-            : t(
-                "Backend 연결 또는 조회 실패 · 데이터 부재로 판단하지 않습니다. SSH 터널과 대상 instance를 확인하세요.",
-                "Backend connection/query failed · This does not indicate missing data. Check the SSH tunnel and target instance.",
-              )}
+            : kind === "absent"
+              ? t(
+                  "검증된 조회 범위에서 이 UID를 찾지 못했습니다.",
+                  "UID absent within the verified query coverage.",
+                )
+              : kind === "query"
+                ? t(
+                    "검색 형식 오류 · UID/스키마 32바이트, 발행자 주소 20바이트",
+                    "Invalid query · UID/schema: 32 bytes; issuer address: 20 bytes",
+                  )
+                : t(
+                    "도장 기록 조회 실패 · 재조회 필요. 조회 실패는 기록 부재를 의미하지 않습니다.",
+                    "Record lookup failed · retry required. Query failure does not establish record absence.",
+                  )}
       {error instanceof BackendError && (
-        <small>
-          {" "}
-          HTTP {error.status || "—"} · {error.code}
-        </small>
+        <details className="explorer-technical">
+          <summary>{t("오류 정보", "Error details")}</summary>
+          <code>
+            HTTP {error.status || "—"} · {error.code}
+          </code>
+        </details>
       )}
     </div>
   );
@@ -123,73 +144,119 @@ export function BackendCoverage({
         <h2>{t("수집 범위", "Coverage")}</h2>
         <Badge>Current Decision UNKNOWN</Badge>
       </div>
-      <p>
-        GIWA Sepolia · <code>{meta.network}</code>
-      </p>
-      <Facts
-        rows={[
-          [
-            "Indexed / Evaluated",
-            `${number(meta.asOfBlock)} / ${number(meta.evaluatedBlock)}`,
-          ],
-          [
-            t("조회 범위", "Query range"),
-            `${number(meta.range.from)} – ${number(meta.range.through)}`,
-          ],
-          [
-            t("검증된 수집 블록 수", "Certified indexed blocks"),
-            number(meta.coverage.certifiedBlocks),
-          ],
-          [
-            t("수집 관측 시각", "Indexed observation time"),
-            time(meta.observedAt),
-          ],
-          [
-            t("관측 finalized head", "Recorded finalized head"),
-            number(head?.number),
-          ],
-          [t("Head 관측 시각", "Head observation time"), time(headAt)],
-          [
-            t("미분류 UID 존재", "Unclassified UIDs present"),
-            meta.coverage.classificationUnknown == null
-              ? "UNKNOWN"
-              : String(meta.coverage.classificationUnknown),
-          ],
-          [
-            t("API 응답 확인 시각", "API verification time"),
-            time(meta.verifiedAt),
-          ],
-          [
-            t("최신성", "Freshness"),
-            t(
-              "저장된 관측값 · 실시간 head 조회 아님",
-              "Stored observation · not a live head query",
-            ) + ` (${meta.freshness})`,
-          ],
-          [
-            "Raw / Hydration / Evaluation",
-            `${meta.range.requestedRangeComplete ? "✓" : "UNKNOWN"} / ${meta.coverage.hydration_complete ? "✓" : "UNKNOWN"} / ${meta.coverage.range_evaluation_ready ? "✓" : "UNKNOWN"}`,
-          ],
-          [
-            t("대기 / 소진 작업", "Pending / exhausted jobs"),
-            `${meta.coverage.pending} / ${meta.coverage.exhausted}`,
-          ],
-        ]}
-      />
-      <p className="notice">
-        {t("전체 이력", "Full history")}:{" "}
-        {meta.coverage.raw_complete
-          ? t("Raw 완료", "Raw complete")
-          : t("부분 이력", "Partial history")}{" "}
-        · {t("초기 상태", "Initial state")}:{" "}
-        {meta.coverage.initialStateComplete ? t("확인됨", "Known") : "UNKNOWN"}{" "}
-        · {t("전역 평가 준비", "Global evaluation ready")}:{" "}
-        {String(meta.stateEvaluationReady)}.{" "}
+      <p className="explorer-hint">
         {t(
-          "수집 범위의 평가 완료와 현재 서비스 접근 허가는 별개입니다. ALLOW는 비활성화되어 있습니다.",
-          "Range evaluation does not authorize service access. ALLOW remains disabled.",
+          "수집된 범위에서 확인한 기록입니다. 전체 발급 이력이나 현재 접근 권한을 보장하지 않습니다.",
+          "These records cover an indexed range, not the full issuance history or current access eligibility.",
         )}
       </p>
+      <div className="explorer-metrics">
+        <div>
+          <span>{t("수집한 마지막 블록", "Last indexed block")}</span>
+          <strong>{number(meta.asOfBlock)}</strong>
+        </div>
+        <div>
+          <span>{t("평가한 마지막 블록", "Last evaluated block")}</span>
+          <strong>{number(meta.evaluatedBlock)}</strong>
+        </div>
+        <div>
+          <span>{t("이력 범위", "History scope")}</span>
+          <strong>
+            {meta.coverage.raw_complete
+              ? t("Raw 수집 완료", "Raw complete")
+              : t("부분 수집", "Partial")}
+          </strong>
+        </div>
+      </div>
+      <p className="explorer-observation">
+        {t("저장 관측", "Stored observation")}:{" "}
+        {displayDate(meta.observedAt, t("ko", "en") === "ko")}
+        {observationIsOld(meta.observedAt) && (
+          <span className="explorer-age">
+            {t(
+              "최신성 확인 필요 · 15분 초과 또는 시각 미확인",
+              "Check freshness · over 15 min or time unknown",
+            )}
+          </span>
+        )}
+      </p>
+      <details className="explorer-technical">
+        <summary>
+          {t(
+            "수집 범위·검증 기준",
+            "Collection scope and verification details",
+          )}
+        </summary>
+        <p>
+          GIWA Sepolia · <code>{meta.network}</code>
+        </p>
+        <Facts
+          rows={[
+            [
+              "Indexed / Evaluated",
+              `${number(meta.asOfBlock)} / ${number(meta.evaluatedBlock)}`,
+            ],
+            [
+              t("조회 범위", "Query range"),
+              `${number(meta.range.from)} – ${number(meta.range.through)}`,
+            ],
+            [
+              t("검증된 수집 블록 수", "Certified indexed blocks"),
+              number(meta.coverage.certifiedBlocks),
+            ],
+            [
+              t("수집 관측 시각", "Indexed observation time"),
+              time(meta.observedAt),
+            ],
+            [
+              t("관측 finalized head", "Recorded finalized head"),
+              number(head?.number),
+            ],
+            [t("Head 관측 시각", "Head observation time"), time(headAt)],
+            [
+              t("미분류 UID 존재", "Unclassified UIDs present"),
+              meta.coverage.classificationUnknown == null
+                ? "UNKNOWN"
+                : String(meta.coverage.classificationUnknown),
+            ],
+            [
+              t("API 응답 확인 시각", "API verification time"),
+              time(meta.verifiedAt),
+            ],
+            [
+              t("최신성", "Freshness"),
+              t(
+                "저장된 관측값 · 실시간 head 조회 아님",
+                "Stored observation · not a live head query",
+              ) + ` (${meta.freshness})`,
+            ],
+            [
+              "Raw / Hydration / Evaluation",
+              `${meta.range.requestedRangeComplete ? "✓" : "UNKNOWN"} / ${meta.coverage.hydration_complete ? "✓" : "UNKNOWN"} / ${meta.coverage.range_evaluation_ready ? "✓" : "UNKNOWN"}`,
+            ],
+            [
+              t("대기 / 소진 작업", "Pending / exhausted jobs"),
+              `${meta.coverage.pending} / ${meta.coverage.exhausted}`,
+            ],
+          ]}
+        />
+        <p className="notice">
+          {t("전체 이력", "Full history")}:{" "}
+          {meta.coverage.raw_complete
+            ? t("Raw 완료", "Raw complete")
+            : t("부분 이력", "Partial history")}{" "}
+          · {t("초기 상태", "Initial state")}:{" "}
+          {meta.coverage.initialStateComplete
+            ? t("확인됨", "Known")
+            : "UNKNOWN"}{" "}
+          · {t("전역 평가 준비", "Global evaluation ready")}:{" "}
+          {String(meta.stateEvaluationReady)}.{" "}
+          {t(
+            "수집 범위의 평가 완료와 현재 서비스 접근 허가는 별개입니다. ALLOW는 비활성화되어 있습니다.",
+            "Range evaluation does not authorize service access. ALLOW remains disabled.",
+          )}
+        </p>
+      </details>
     </section>
   );
 }
@@ -199,7 +266,7 @@ function RecordStatus({ record }: { record: IndexedAttestation }) {
     active: t("EAS 활성", "EAS active"),
     revoked: t("철회됨", "Revoked"),
     expired: t("만료됨", "Expired"),
-    unknown: "UNKNOWN",
+    unknown: t("미확인 · UNKNOWN", "UNKNOWN"),
   };
   return (
     <Badge variant={record.status === "revoked" ? "danger" : "neutral"}>
@@ -207,11 +274,52 @@ function RecordStatus({ record }: { record: IndexedAttestation }) {
     </Badge>
   );
 }
-export default function BackendExplorer({
-  publicSearch,
-}: {
-  publicSearch: () => void;
-}) {
+export default function BackendExplorer(props: { publicSearch: () => void }) {
+  const t = useText();
+  const historical =
+    new URLSearchParams(location.search).get("history") === "backfill";
+  return (
+    <div className="explorer-shell">
+      <nav
+        className="explorer-datasets"
+        aria-label={t("데이터 출처 선택", "Choose a data source")}
+      >
+        <a
+          className="text-button"
+          aria-current={!historical ? "page" : undefined}
+          href="?view=explore&source=backend"
+        >
+          {t("수집된 도장", "Indexed attestations")}
+          <small>
+            {t(
+              "Live Backend · 저장된 관측 기준",
+              "Live Backend · stored observations",
+            )}
+          </small>
+        </a>
+        <a
+          className="text-button"
+          aria-current={historical ? "page" : undefined}
+          href="?view=explore&source=backend&history=backfill"
+        >
+          {t("과거 이력", "Historical events")}
+          <small>
+            {t(
+              "Historical · 발급과 철회 기록",
+              "Historical · issuance and revocation",
+            )}
+          </small>
+        </a>
+        <a href="?view=explore&source=public">
+          {t("직접 조회", "Direct lookup")}
+          <small>Public RPC / Explorer ↗</small>
+        </a>
+      </nav>
+      {historical ? <HistoricalExplorer /> : <BackendRecords {...props} />}
+    </div>
+  );
+}
+function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
   const t = useText();
   const [page, setPage] = useState<BackendPage | null>(null);
   const [status, setStatus] = useState<BackendStatus>();
@@ -295,9 +403,6 @@ export default function BackendExplorer({
     };
   }, []);
   const items = page?.data.map(adaptProjection) ?? [];
-  const schemaName = (schema: string) =>
-    SCHEMAS.find((s) => s.uid.toLowerCase() === schema.toLowerCase())?.name ??
-    short(schema);
   function close() {
     detailSequence.current++;
     setDetail(null);
@@ -309,53 +414,73 @@ export default function BackendExplorer({
   }
   return (
     <>
-      <p className="notice">
-        {t(
-          "NUC Backend · 지정된 instance의 저장 데이터입니다. 수집 범위 밖의 전체 이력은 아직 확인되지 않았습니다.",
-          "NUC Backend · Stored data from the configured instance. Full history beyond the indexed range remains unverified.",
-        )}{" "}
-        <code>{backendNetwork}</code>
-      </p>
-      <form
-        className="searchbar"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void lookup(uid);
+      <ExplorerSearch
+        busy={busy || detailBusy}
+        onSearch={(kind, value) => {
+          if (kind === "uid") void lookup(value);
+          else {
+            const f = { [kind]: value };
+            setDraft(f);
+            void load(f);
+          }
         }}
-      >
-        <Search size={20} />
-        <input
-          aria-label="Backend UID"
-          placeholder={t("Backend UID 검색", "Search Backend UID")}
-          value={uid}
-          onChange={(e) => setUid(e.target.value)}
-        />
-        <button disabled={detailBusy}>{t("검색", "Search")}</button>
-      </form>
-      <button className="text-button" onClick={publicSearch}>
-        {t(
-          "트랜잭션·지갑 검색은 공개 RPC/Explorer에서 열기 ↗",
-          "Open transaction / wallet search with public RPC/Explorer ↗",
-        )}
-      </button>
-      {error != null && <ErrorNotice error={error} />}
+      />
+      <div className="explorer-context">
+        <span>
+          {t("Live Backend · 수집된 기록", "Live Backend · stored records")}
+        </span>
+        <button className="text-button" onClick={publicSearch}>
+          {t(
+            "지갑·트랜잭션 직접 조회 ↗",
+            "Look up a wallet or transaction ↗",
+          )}
+        </button>
+      </div>
+      {error != null && (
+        <div className="explorer-empty">
+          <ErrorNotice error={error} />
+          <button
+            className="secondary-button"
+            disabled={busy}
+            onClick={() => void load()}
+          >
+            {t("재조회", "New proof request")}
+          </button>
+        </div>
+      )}
       {notice && (
         <p className="notice" role="status">
           {notice}
         </p>
       )}
-      {busy && <p role="status">{t("Backend 조회 중…", "Reading Backend…")}</p>}
+      {busy && <LoadingRecords ko={t("ko", "en") === "ko"} />}
+      {page && (
+        <p className="explorer-observation" role="status">
+          {t("목록 관측", "List observed")}:{" "}
+          {displayDate(page.meta.observedAt, t("ko", "en") === "ko")} ·{" "}
+          {page.meta.coverage.raw_complete
+            ? t("Raw 수집 완료", "Raw complete")
+            : t("부분 수집", "Partial history")}{" "}
+          ·{" "}
+          {t(
+            "EAS 상태는 이용 허가가 아닙니다",
+            "EAS status is not access approval",
+          )}
+        </p>
+      )}
       <section className="records-workspace">
         <div className="section-heading bare">
           <h2>{t("수집된 도장", "Indexed attestations")}</h2>
           <div className="display-toggle">
             <button
+              aria-pressed={display === "cards"}
               aria-label={t("카드 보기", "Card view")}
               onClick={() => setDisplay("cards")}
             >
               <LayoutGrid size={17} />
             </button>
             <button
+              aria-pressed={display === "list"}
               aria-label={t("목록 보기", "List view")}
               onClick={() => setDisplay("list")}
             >
@@ -385,8 +510,13 @@ export default function BackendExplorer({
           }}
         >
           <label>
-            {t("스키마 UID", "Schema UID")}
+            {t("도장 종류", "Attestation type")}
             <input
+              list="explorer-schemas"
+              placeholder={t(
+                "전체 종류 · 스키마 UID",
+                "All types · schema UID",
+              )}
               aria-label="Backend schema filter"
               value={draft.schema ?? ""}
               onChange={(e) =>
@@ -397,9 +527,17 @@ export default function BackendExplorer({
               }
             />
           </label>
+          <datalist id="explorer-schemas">
+            {SCHEMAS.map((s) => (
+              <option key={s.uid} value={s.uid}>
+                {t(s.label, s.name)}
+              </option>
+            ))}
+          </datalist>
           <label>
             {t("발행자 주소", "Issuer address")}
             <input
+              placeholder={t("전체 발행자 · 0x…", "All issuers · 0x…")}
               aria-label="Backend issuer filter"
               value={draft.issuer ?? ""}
               onChange={(e) =>
@@ -410,7 +548,9 @@ export default function BackendExplorer({
               }
             />
           </label>
-          <button disabled={busy}>{t("필터 적용", "Apply filters")}</button>
+          <button type="submit" disabled={busy}>
+            {t("필터 적용", "Apply filters")}
+          </button>
           <button
             type="button"
             disabled={busy}
@@ -422,62 +562,95 @@ export default function BackendExplorer({
             {t("초기화", "Reset")}
           </button>
         </form>
-        <p className="fine-print">
-          {t("현재 서버 페이지의 기록 수", "Records on this server page")}:{" "}
-          {items.length} ·{" "}
-          {t(
-            "전체 GIWA 발급량이 아닙니다. 수신자 필터는 API 미지원입니다.",
-            "Not the total GIWA issuance count. Recipient filtering is not supported by this API.",
-          )}
-        </p>
-        {page && !items.length && (
-          <p className="notice">
+        {page && (
+          <p className="fine-print">
+            {t("현재 서버 페이지의 기록 수", "Records on this server page")}:{" "}
+            {items.length} ·{" "}
             {t(
-              "이 조회 범위와 필터에서 반환된 기록이 없습니다. 전체 체인의 부재를 뜻하지 않습니다.",
-              "No returned records for this coverage and filter. This is not proof of absence across the chain.",
+              "현재 페이지의 기록입니다. 전체 발급량이 아닙니다.",
+              "Records on this page, not the total issuance count.",
             )}
           </p>
+        )}
+        {page && !items.length && (
+          <div className="explorer-empty">
+            <h3>
+              {t(
+                "조건에 맞는 도장을 찾지 못했습니다",
+                "No matching attestations",
+              )}
+            </h3>
+            <p>
+              {t(
+                "현재 필터와 수집 범위 내 일치 기록이 없습니다. 전체 체인의 기록 부재를 의미하지 않습니다.",
+                "No matching records within the filters and indexed range. This does not establish absence across the chain.",
+              )}
+            </p>
+            <button
+              className="secondary-button"
+              onClick={() => {
+                setDraft({});
+                void load({});
+              }}
+            >
+              {t("필터 지우기", "Clear filters")}
+            </button>
+          </div>
         )}
         <div
           className={display === "cards" ? "credential-grid" : "backend-list"}
         >
           {items.map((record) => (
-            <article className="credential-card" key={record.uid}>
-              <div className="credential-top">
-                <span className="record-origin">
-                  <Fingerprint size={18} />
-                  {record.projection.classification ?? "UNKNOWN"}
+            <article className="explorer-attestation" key={record.uid}>
+              <div className="explorer-card-heading">
+                <span className="explorer-seal">
+                  <Fingerprint size={22} aria-hidden="true" />
                 </span>
                 <RecordStatus record={record} />
               </div>
-              <div className="credential-body">
-                <h3>{schemaName(record.schema)}</h3>
-                <code title={record.uid}>{short(record.uid)}</code>
-                <CopyButton value={record.uid} />
-              </div>
-              <div className="credential-issuer">
-                <span>{t("발행자", "Issuer")}</span>
-                <code title={record.attester}>{short(record.attester)}</code>
-              </div>
-              <div className="credential-recipient">
-                <span>{t("수신자", "Recipient")}</span>
-                <code title={record.recipient}>{short(record.recipient)}</code>
-              </div>
-              <div className="credential-bottom">
-                <span>#{number(page?.meta.asOfBlock)}</span>
+              <h3>
+                <button onClick={() => void lookup(record.uid)}>
+                  {schemaTitle(record.schema, t("ko", "en") === "ko")}
+                </button>
+              </h3>
+              <dl className="explorer-card-facts">
+                <div>
+                  <dt>{t("발행자", "Issued by")}</dt>
+                  <dd>
+                    <AddressIdentity value={record.attester} />
+                  </dd>
+                </div>
+                <div>
+                  <dt>{t("수신자", "Issued to")}</dt>
+                  <dd>
+                    <AddressIdentity value={record.recipient} />
+                  </dd>
+                </div>
+                <div>
+                  <dt>{t("발급일", "Issued at")}</dt>
+                  <dd>
+                    {displayDate(
+                      record.projection.issuedAt,
+                      t("ko", "en") === "ko",
+                    )}
+                  </dd>
+                </div>
+              </dl>
+              <div className="explorer-card-footer">
+                <span title={record.uid}>UID {short(record.uid, 4)}</span>
                 <button
-                  className="record-open"
-                  aria-label={`UID ${record.uid}`}
                   onClick={() => void lookup(record.uid)}
+                  aria-label={`${t("도장 상세", "Attestation detail")} ${record.uid}`}
                 >
-                  <ArrowUpRight size={19} />
+                  {t("상세 보기", "View details")}
+                  <ArrowUpRight size={16} />
                 </button>
               </div>
             </article>
           ))}
         </div>
         <div className="record-pagination">
-          <button disabled={busy} onClick={() => void load()}>
+          <button disabled={busy || !page} onClick={() => void load()}>
             {t("첫 페이지", "First page")}
           </button>
           <button
@@ -553,103 +726,179 @@ function BackendRecordDetail({ detail }: { detail: BackendDetail }) {
   );
   return (
     <>
-      <div className="filters-row">
-        <RecordStatus record={record} />
-        <Badge>Current Decision UNKNOWN</Badge>
-        <CopyButton value={location.href} label="링크 복사" />
-        <button onClick={() => downloadJSON(detail, `${p.uid}.json`)}>
-          <Download size={16} /> JSON
+      <section className="explorer-detail-hero">
+        <span className="explorer-seal">
+          <Fingerprint size={28} aria-hidden="true" />
+        </span>
+        <h2>{schemaTitle(p.schema, t("ko", "en") === "ko")}</h2>
+        <div className="explorer-detail-actions">
+          <RecordStatus record={record} />
+          <span className="explorer-unknown">
+            {t(
+              "이용 자격 미확인 · UNKNOWN",
+              "Eligibility unconfirmed · UNKNOWN",
+            )}
+          </span>
+        </div>
+        <p>
+          {t(
+            "발급·철회·만료 상태와 서비스 이용 자격은 별개입니다. EAS 활성 상태도 접근 허가(ALLOW)를 뜻하지 않습니다.",
+            "Issuance, revocation and expiry are separate from eligibility. Even EAS active does not grant access (ALLOW).",
+          )}
+        </p>
+        <div className="explorer-detail-actions">
+          <span>
+            UID {short(p.uid)}{" "}
+            <CopyButton
+              value={p.uid}
+              label={t("도장 UID 복사", "Copy attestation UID")}
+            />
+          </span>
+          <span>
+            {t("공유 링크", "Share link")}
+            <CopyButton
+              value={location.href}
+              label={t("링크 복사", "Copy link")}
+            />
+          </span>
+        </div>
+      </section>
+      <section className="explorer-detail-section">
+        <h3>{t("발급 정보", "Issuance details")}</h3>
+        <Facts
+          rows={[
+            [
+              t("발행자", "Issued by"),
+              <AddressIdentity value={p.issuer} full />,
+            ],
+            [
+              t("수신자", "Issued to"),
+              <AddressIdentity value={p.recipient} full />,
+            ],
+            [
+              t("발급 시각", "Issued at"),
+              displayDate(p.issuedAt, t("ko", "en") === "ko"),
+            ],
+            [
+              t("철회 여부", "Revoked"),
+              p.notRevoked == null
+                ? t("확인되지 않음", "Unconfirmed")
+                : tri(!p.notRevoked),
+            ],
+            [
+              t("만료 시각", "Expires at"),
+              p.expiresAt === "0"
+                ? t("만료 시각 없음", "No expiration time")
+                : displayDate(p.expiresAt, t("ko", "en") === "ko"),
+            ],
+          ]}
+        />
+        <p className="explorer-hint">
+          {t("상태 기준", "Status reference")}:{" "}
+          {displayDate(detail.meta.observedAt, t("ko", "en") === "ko")} ·{" "}
+          {t("저장된 평가", "Stored evaluation")} #
+          {number(p.evaluatedBlock ?? detail.meta.evaluatedBlock)}
+        </p>
+      </section>
+      <section className="explorer-detail-section">
+        <h3>{t("도장 데이터", "Attestation data")}</h3>
+        {record.fields.length ? (
+          <Facts rows={record.fields.map((f) => [f.name, f.value])} />
+        ) : (
+          <p>
+            {t(
+              "현재 API에서 해석된 내용을 제공하지 않습니다.",
+              "Decoded content is not available from this API.",
+            )}
+          </p>
+        )}
+        <p className="explorer-hint">
+          {t(
+            "발행자가 기록한 내용입니다. 이 화면은 내용의 사실성이나 잔액 Merkle proof를 독립 검증하지 않습니다.",
+            "These are issuer assertions. This view does not independently verify their truth or Balance Merkle proofs.",
+          )}
+        </p>
+      </section>
+      <section className="explorer-detail-section">
+        <h3>
+          {t("선택 상태와 과거 기록", "Selection and historical records")}
+        </h3>
+        <p>
+          {record.indexStatus === "selected"
+            ? t(
+                "Indexer 관측에서 선택된 도장입니다.",
+                "Selected in the Indexer observation.",
+              )
+            : record.indexStatus === "not-selected"
+              ? t(
+                  "Indexer 관측에서 선택되지 않았습니다. 다른 도장으로 대체될 수 있으며, 철회를 뜻하지 않습니다.",
+                  "Not selected in the Indexer observation. Another attestation may replace it; this does not mean revocation.",
+                )
+              : t(
+                  "Indexer 선택 여부를 아직 확인할 수 없습니다.",
+                  "Indexer selection has not been established.",
+                )}
+        </p>
+        <HistoricalSnapshots uid={p.uid} />
+        <a
+          className="text-button"
+          href={`?view=explore&source=backend&history=backfill&uid=${encodeURIComponent(p.uid)}`}
+        >
+          {t(
+            "이 UID의 Backfill 발급·철회·Indexer 이력 보기",
+            "View this UID's Backfill issuance, revocation and Indexer events",
+          )}
+        </a>
+        <p>
+          {t(
+            "Indexer 선택 변경 이벤트의 전체 이력과 refUID는 API 미제공입니다. Snapshot의 미선택 상태를 철회로 해석하지 않습니다.",
+            "Full Indexer selection event history and refUID are not exposed. A snapshot that is not selected is not treated as revoked.",
+          )}
+        </p>
+      </section>
+      <details className="explorer-technical">
+        <summary>
+          {t(
+            "기술 정보·평가 근거",
+            "Technical details and evaluation evidence",
+          )}
+        </summary>
+        <Facts
+          rows={[
+            ["UID", p.uid],
+            [t("스키마 UID", "Schema UID"), p.schema],
+            [t("발급 기록 존재", "Issuance record exists"), tri(p.issued)],
+            [
+              t("발급 이벤트 직접 수집", "Issuance event observed"),
+              tri(p.issuanceEventObserved),
+            ],
+            [
+              t("발급 당시 등록 발행자", "Registered issuer at issuance"),
+              tri(p.issuerRegisteredAtIssuance),
+            ],
+            [
+              t("관측 시 미만료", "Not expired at snapshot"),
+              tri(p.snapshotNotExpired),
+            ],
+            [t("철회 시각 / refUID", "Revocation time / refUID"), unavailable],
+            [t("분류", "Classification"), p.classification ?? "UNKNOWN"],
+            ["Current Decision", "UNKNOWN · ALLOW disabled"],
+          ]}
+        />
+        <ul>
+          {p.reasons.map((r, i) => (
+            <li key={i}>
+              <code>{r}</code>
+            </li>
+          ))}
+        </ul>
+        <button
+          className="secondary-button"
+          onClick={() => downloadJSON(detail, `${p.uid}.json`)}
+        >
+          <Download size={16} /> {t("원본 JSON 저장", "Download source JSON")}
         </button>
-      </div>
-      <p className="notice">
-        {t(
-          "EAS 활성은 인증·접근 허가를 뜻하지 않습니다. 이 화면은 ALLOW를 발행하지 않습니다.",
-          "EAS active does not authorize access or certify identity. This screen never issues ALLOW.",
-        )}
-      </p>
-      <Facts
-        rows={[
-          [
-            "UID",
-            <>
-              {p.uid}
-              <CopyButton value={p.uid} />
-            </>,
-          ],
-          [t("스키마", "Schema"), p.schema],
-          [t("발행자", "Issuer"), p.issuer],
-          [t("수신자", "Recipient"), p.recipient],
-          [t("발급 기록 존재", "Issuance record exists"), tri(p.issued)],
-          [
-            t("발급 이벤트 직접 수집", "Issuance event directly indexed"),
-            tri(p.issuanceEventObserved),
-          ],
-          [t("발급 시각", "Issued at"), time(p.issuedAt)],
-          [
-            t("철회됨", "Revoked"),
-            p.notRevoked == null ? "UNKNOWN" : tri(!p.notRevoked),
-          ],
-          [t("철회 시각", "Revoked at"), unavailable],
-          [
-            t("만료 시각", "Expires at"),
-            p.expiresAt === "0"
-              ? t("만료 시각 없음", "No expiration time")
-              : time(p.expiresAt),
-          ],
-          ["refUID", unavailable],
-          [
-            "Indexer",
-            record.indexStatus === "selected"
-              ? t("관측 시 선택됨", "Selected at observation")
-              : record.indexStatus === "not-selected"
-                ? t(
-                    "관측 시 미선택 · 철회와 별개",
-                    "Not selected at observation · independent of revocation",
-                  )
-                : "UNKNOWN",
-          ],
-          [
-            t("과거 평가 블록", "Historical evaluation block"),
-            number(p.evaluatedBlock ?? detail.meta.evaluatedBlock),
-          ],
-          [
-            t("관측 시 미만료", "Not expired at snapshot"),
-            tri(p.snapshotNotExpired),
-          ],
-          [
-            t("발급 당시 등록 발행자", "Registered issuer at issuance"),
-            tri(p.issuerRegisteredAtIssuance),
-          ],
-          [
-            t("현재 권한 승인", "Current authorization"),
-            "UNKNOWN · ALLOW disabled",
-          ],
-          [t("분류", "Classification"), p.classification ?? "UNKNOWN"],
-        ]}
-      />
-      <h3>{t("저장된 해석 필드", "Stored decoded fields")}</h3>
-      <Facts rows={record.fields.map((f) => [f.name, f.value])} />
-      <p className="notice">
-        {t(
-          "필드 값은 발행자의 기록입니다. Balance Merkle proof는 이 화면에서 독립 검증하지 않았습니다.",
-          "Fields are issuer assertions. Balance Merkle proofs are not independently verified in this view.",
-        )}
-      </p>
-      <h3>{t("평가 이유", "Evaluation reasons")}</h3>
-      <ul>
-        {p.reasons.map((reason, i) => (
-          <li key={i}>
-            <code>{reason}</code>
-          </li>
-        ))}
-      </ul>
-      <HistoricalSnapshots uid={p.uid} />
-      <p>
-        {t(
-          "Indexer 선택 변경 이벤트의 전체 이력과 refUID는 API 미제공입니다. Snapshot의 미선택 상태를 철회로 해석하지 않습니다.",
-          "Full Indexer selection event history and refUID are not exposed. A snapshot that is not selected is not treated as revoked.",
-        )}
-      </p>
+      </details>
       <BackendCoverage meta={detail.meta} />
     </>
   );
@@ -683,8 +932,8 @@ function HistoricalSnapshots({ uid }: { uid: string }) {
         <h3>{t("과거 평가 이력", "Historical evaluation history")}</h3>
         <p>
           {t(
-            "현재 Live API는 반환된 projection의 평가 기준만 제공합니다. 전체 과거 전환 이력 endpoint는 아직 없습니다.",
-            "The Live API exposes the returned projection and its evaluation reference. A full historical transition endpoint is not yet available.",
+            "이 도장의 전체 평가 변화는 아직 제공되지 않습니다. 아래 링크에서 별도로 수집된 발급·철회 이벤트를 확인할 수 있습니다.",
+            "The full evaluation timeline is not available yet. The link below opens issuance and revocation events collected separately.",
           )}
         </p>
       </section>

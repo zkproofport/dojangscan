@@ -70,7 +70,7 @@ test("mock registration lookup pins its issuer/schema and checks current EAS sta
     });
   }) as typeof fetch;
   try {
-    await assert.rejects(checkMockKycAttestation("not-an-address"), /유효한/);
+    await assert.rejects(checkMockKycAttestation("not-an-address"), /지갑 주소 형식 오류/);
     assert.equal(pages, 0);
     for (state of ["confirmed", "revoked", "expired", "missing"]) {
       const found = await checkMockKycAttestation(address);

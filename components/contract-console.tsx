@@ -145,7 +145,7 @@ export default function ContractConsole({
               />
             </details>
             {!parsed && (
-              <p className="notice danger">{tr("ABI JSON을 확인하세요.")}</p>
+              <p className="notice danger">{tr("ABI JSON 형식 오류")}</p>
             )}
             <label className="input-label">
               {tr("함수")}
