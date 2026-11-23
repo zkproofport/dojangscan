@@ -1,0 +1,866 @@
+/* Purpose, observation, and evidence remain separate at every viewport size. */
+.app .product-home {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 64px 0 44px;
+}
+.product-intro {
+  max-width: 760px;
+  margin-bottom: 32px;
+}
+.app .product-intro h1 {
+  font-size: clamp(28px, 3.2vw, 42px);
+  line-height: 1.25;
+  letter-spacing: -0.04em;
+  margin: 12px 0 16px;
+}
+.product-intro p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.app .product-lookup {
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface, var(--paper));
+}
+.product-lookup form > label {
+  display: block;
+  font-weight: 650;
+  margin-bottom: 12px;
+}
+.app .product-search-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 10px 8px 16px;
+  background: var(--paper);
+}
+.product-search-row:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.app .product-search-row input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  color: var(--ink);
+  border: none;
+  padding: 14px 0;
+  font: inherit;
+  outline: none;
+}
+.app .product-search-row button {
+  min-height: 44px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.product-search-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.product-search-options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app .product-search-options select {
+  max-width: 270px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 9px;
+  font: inherit;
+}
+.product-search-context {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 18px 0 0;
+  max-width: 850px;
+}
+.product-tasks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 28px 0 32px;
+}
+.app .product-tasks > a {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 26px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+.product-tasks > a:hover {
+  border-color: var(--accent);
+}
+.product-tasks > a > svg {
+  color: var(--accent);
+}
+.product-tasks h2 {
+  font-size: 19px;
+  margin: 22px 0 10px;
+}
+.product-tasks p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 0 0 24px;
+}
+.product-tasks a > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: auto;
+  font-size: 12px;
+  font-weight: 600;
+}
+.product-home-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 26px;
+  font-size: 13px;
+}
+.product-home-footer p,
+.product-source-control p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.app .product-source-control {
+  border: 1px solid var(--line);
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin: 16px 0;
+  font-size: 12px;
+}
+.product-source-control summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 3px 0;
+}
+.product-source-control nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 14px;
+}
+.product-home-footer .product-source-control {
+  margin: 0;
+}
+.app .app-source-control {
+  margin: 22px 0 8px;
+  max-width: 850px;
+}
+.app .nav-secondary-start {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  border-radius: 0;
+  padding-top: 18px;
+}
+.app .issuer-lookup {
+  margin: 28px 0;
+}
+.issuer-lookup h1 {
+  font-size: 24px;
+  margin: 0 0 14px;
+}
+.issuer-lookup > p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.issuer-lookup a {
+  display: inline-block;
+  font-size: 13px;
+  margin-top: 14px;
+}
+.record-overview {
+  padding: 24px 0 18px;
+}
+.record-source {
+  color: var(--muted);
+  font-size: 12px;
+}
+.record-overview h2 {
+  font-size: 29px;
+  letter-spacing: -0.035em;
+  margin: 12px 0 24px;
+}
+.record-parties {
+  display: grid;
+  gap: 17px;
+}
+.record-parties > div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 16px;
+}
+.record-parties dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.record-parties dd {
+  margin: 0;
+  font-size: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.record-parties .explorer-address,
+.record-parties .explorer-address a {
+  white-space: normal;
+  min-width: 0;
+}
+.record-parties code {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.record-content {
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  margin: 24px 0 18px;
+}
+.record-content h3,
+.record-section h3 {
+  font-size: 16px;
+  margin: 0 0 18px;
+}
+.record-content dl,
+.record-evidence dl {
+  display: grid;
+  gap: 14px;
+}
+.record-content dl > div,
+.record-evidence dl > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 1.3fr);
+  gap: 16px;
+  font-size: 13px;
+}
+.record-content dt,
+.record-evidence dt {
+  color: var(--muted);
+}
+.record-content dd,
+.record-evidence dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.record-content p {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+}
+.record-actions > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.record-section {
+  padding: 26px 0;
+  border-top: 1px solid var(--line);
+}
+.record-section > p {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 13px;
+}
+.record-section > .text-button {
+  display: block;
+  margin-top: 20px;
+}
+.record-state-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.record-state-grid > div {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.record-state-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.record-state-grid strong {
+  font-size: 14px;
+}
+.record-state-grid p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+.record-limit {
+  padding: 16px;
+  border-left: 3px solid var(--accent);
+  background: var(--paper);
+  margin: 22px 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.record-limit p {
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+.record-section details {
+  margin-top: 18px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.record-section summary,
+.record-timeline summary {
+  cursor: pointer;
+}
+.record-section pre,
+.record-timeline pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.record-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.record-timeline > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 12px;
+  padding-bottom: 26px;
+}
+.record-timeline > li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 12px;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.timeline-marker {
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 100%;
+  background: var(--accent);
+}
+.record-timeline strong {
+  font-size: 14px;
+}
+.timeline-reference {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.record-timeline p,
+.record-timeline a {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.record-timeline details {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.app .product-home a:focus-visible,
+.app .product-home button:focus-visible,
+.app .product-source-control summary:focus-visible,
+.record-section summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+@media (max-width: 900px) {
+  .app .nav-secondary-start {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 9px;
+    border-left: 1px solid var(--line);
+  }
+  .app .topbar nav {
+    justify-content: flex-start;
+  }
+  .app .nav-link {
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 760px) {
+  .app .product-home {
+    padding-top: 32px;
+  }
+  .product-tasks,
+  .product-home-footer {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .app .product-tasks > a {
+    padding: 22px;
+  }
+  .product-tasks h2 {
+    margin-top: 14px;
+  }
+  .product-tasks p {
+    margin-bottom: 18px;
+  }
+  .app .product-lookup {
+    padding: 18px;
+  }
+  .product-search-row {
+    flex-wrap: wrap;
+  }
+  .product-search-row > svg {
+    display: none;
+  }
+  .app .product-search-row input {
+    flex-basis: 100%;
+    font-size: 16px;
+  }
+  .app .product-search-row button {
+    width: 100%;
+    justify-content: center;
+  }
+  .product-search-options label {
+    flex-wrap: wrap;
+  }
+  .product-state-grid,
+  .record-state-grid {
+    grid-template-columns: 1fr;
+  }
+  .record-parties > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .record-content dl > div,
+  .record-evidence dl > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* Snapshot context is part of the result, not a claim about current Worker health. */
+.app .stored-record-context {
+  border-left: 3px solid var(--accent);
+  background: var(--paper);
+  padding: 18px 20px;
+  margin: 20px 0 26px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.stored-record-context strong {
+  font-size: 14px;
+}
+.stored-record-context p {
+  margin: 8px 0;
+  color: var(--muted);
+}
+.stored-record-context > span {
+  font-size: 12px;
+}
+.queried-address {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 22px 0;
+  font-size: 13px;
+}
+.queried-address > span:first-child {
+  color: var(--muted);
+}
+.app[data-view="recipient-records"] .records-workspace,
+.app[data-view="issuer-records"] .records-workspace {
+  margin-top: 30px;
+}
+.app .issuer-lookup form > label {
+  display: block;
+  font-size: 13px;
+  margin: 18px 0 10px;
+}
+@media (max-width: 760px) {
+  .app .stored-record-context {
+    padding: 16px;
+  }
+  .app .issuer-lookup {
+    padding: 18px;
+  }
+  .record-overview h2 {
+    font-size: 25px;
+  }
+  .record-actions a {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Second pass: one search, explicit address roles, results before technical detail. */
+.app .product-home-focused {
+  max-width: 960px;
+  padding: 48px 0 32px;
+}
+.product-home-focused .product-intro {
+  max-width: 760px;
+  margin-bottom: 28px;
+}
+.product-home-focused .product-intro p {
+  font-size: 17px;
+  line-height: 1.7;
+}
+.product-home-focused .product-lookup {
+  padding: 24px;
+}
+.product-home-focused .product-lookup form > label {
+  font-size: 16px;
+}
+.product-home-focused .product-search-row input {
+  font-size: 17px;
+}
+.home-address-role {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 20px;
+  font-size: 14px;
+}
+.home-address-role > span:last-child {
+  color: var(--muted);
+}
+.app .record-role-control {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 10px;
+  margin: 0;
+}
+.app .record-role-control > a,
+.app .record-role-control > button {
+  margin: 0;
+  padding: 11px 22px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  text-decoration: none;
+  background: transparent;
+  min-height: 44px;
+}
+.app .record-role-control [aria-current="page"],
+.app .record-role-control [aria-pressed="true"] {
+  color: var(--ink);
+  background: var(--surface, var(--paper));
+  border-color: var(--line);
+  box-shadow: 0 1px 3px #0000000d;
+}
+.app .record-role-control a:focus-visible,
+.app .record-role-control button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.product-home-focused .product-search-context,
+.home-source-note {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.home-source-note {
+  margin: 20px 0 28px;
+}
+.app .home-secondary {
+  padding: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  font-size: 14px;
+}
+.app .address-lookup {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0 0 24px;
+  margin: 28px 0 20px;
+}
+.app .address-lookup h1 {
+  font-size: clamp(26px, 3vw, 32px);
+  letter-spacing: -0.035em;
+}
+.app .address-lookup > p {
+  font-size: 16px;
+  max-width: 780px;
+  margin-bottom: 24px;
+}
+.app .address-lookup form > label {
+  font-size: 15px;
+}
+.app .address-lookup .record-role-control {
+  margin-top: 20px;
+}
+.app .address-lookup .management-shortcut {
+  margin-left: 20px;
+  font-size: 14px;
+}
+.app .address-lookup input {
+  font-size: 17px;
+}
+.app .queried-address {
+  font-size: 14px;
+  margin: 16px 0;
+}
+.app .stored-record-context {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin: 12px 0 24px;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.stored-record-context .observation-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 6px;
+}
+.stored-record-context strong {
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 14px;
+}
+.stored-record-context p {
+  margin: 6px 0;
+}
+.stored-record-context details {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.stored-record-context summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 4px 0;
+}
+.stored-record-context dl {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+.stored-record-context dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.stored-record-context dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.app .records-workspace > .section-heading {
+  margin-bottom: 8px;
+  align-items: center;
+}
+.result-page-count {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 14px;
+  white-space: nowrap;
+}
+.app .result-filters {
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+  margin: 0 0 20px;
+}
+.result-filters > summary {
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 0;
+}
+.app .result-filters .filters-row {
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+}
+.app .record-content-preview {
+  margin: 0 0 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+  line-height: 1.65;
+}
+.record-content-preview > div {
+  margin: 0 0 8px;
+}
+.record-content-preview dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+.record-content-preview dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+.app .record-content-missing {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+@media (min-width: 761px) {
+  .app .explorer-shell .backend-list .explorer-card-heading,
+  .app .explorer-shell .backend-list .record-content-preview,
+  .app .explorer-shell .backend-list .record-content-missing {
+    grid-column: 1;
+  }
+  .app .explorer-shell .backend-list .explorer-card-facts {
+    grid-row: 1 / 4;
+    align-content: center;
+  }
+}
+.app .explorer-card-facts dt {
+  font-size: 13px;
+}
+.app .explorer-card-facts dd {
+  font-size: 15px;
+}
+.app .explorer-card-footer button {
+  font-size: 14px;
+  min-height: 44px;
+}
+.app .empty-stored-records {
+  padding: 24px 0 16px;
+  max-width: 850px;
+}
+.empty-stored-records h2 {
+  font-size: 23px;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+.empty-stored-records > p {
+  font-size: 16px;
+  line-height: 1.7;
+  margin: 0 0 22px;
+  color: var(--muted);
+}
+.empty-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 22px;
+  padding-top: 12px;
+}
+.empty-record-actions > button,
+.empty-record-actions > a {
+  font-size: 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.app .result-sources {
+  font-size: 14px;
+}
+@media (max-width: 760px) {
+  .app .product-home-focused {
+    padding: 24px 0;
+  }
+  .product-home-focused .product-intro p {
+    font-size: 16px;
+  }
+  .app .product-home-focused .product-lookup {
+    padding: 18px;
+  }
+  .home-address-role {
+    gap: 10px;
+  }
+  .home-address-role > span {
+    width: 100%;
+  }
+  .app .record-role-control {
+    display: flex;
+    width: 100%;
+  }
+  .app .record-role-control > a,
+  .app .record-role-control > button {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px;
+  }
+  .app .address-lookup {
+    margin-top: 18px;
+    padding: 0 0 20px;
+  }
+  .app .address-lookup > p {
+    margin-bottom: 20px;
+    font-size: 15px;
+  }
+  .app .address-lookup .management-shortcut {
+    margin-left: 0;
+  }
+  .result-page-count {
+    display: block;
+    margin: 6px 0 0;
+  }
+  .empty-stored-records h2 {
+    font-size: 21px;
+  }
+  .empty-record-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .app .stored-record-context {
+    font-size: 14px;
+  }
+}
+@media (max-width: 760px) {
+  .app .address-lookup .product-search-row {
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding-left: 12px;
+  }
+  .app .address-lookup .product-search-row input {
+    flex: 1;
+    width: 0;
+    padding: 12px 0;
+  }
+  .app .address-lookup .product-search-row button {
+    width: auto;
+    padding: 0 16px;
+  }
+  .app .address-lookup > p {
+    margin: 12px 0 16px;
+  }
+}

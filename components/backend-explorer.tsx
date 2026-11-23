@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  AddressRecordSearch,
+  StoredRecordContext,
+  EmptyStoredRecords,
+} from "./stored-record-context";
+import {
   ArrowUpRight,
   Download,
   Fingerprint,
@@ -19,6 +24,7 @@ import { downloadJSON } from "./scan-detail";
 import { usePreferences } from "@/lib/preferences";
 import { SCHEMAS, short } from "@/lib/giwa";
 import {
+  normalizeBackendFilters,
   backendErrorKind,
   BackendError,
   type BackendDetail,
@@ -35,6 +41,14 @@ import {
 } from "@/lib/backend-adapter";
 import { backendNetwork } from "@/lib/data-source";
 import HistoricalExplorer from "./historical-explorer";
+import {
+  RecordOverview,
+  RecordContentPreview,
+  RecordObservation,
+  RecordEvidence,
+} from "./record-context";
+import RelatedRecords from "./related-records";
+import { isIssuerAddress } from "@/lib/product-experience";
 import {
   ExplorerSearch,
   AddressIdentity,
@@ -72,7 +86,7 @@ function Facts({ rows }: { rows: [string, React.ReactNode][] }) {
     </dl>
   );
 }
-function ErrorNotice({ error }: { error: unknown }) {
+export function ErrorNotice({ error }: { error: unknown }) {
   const t = useText();
   const kind = backendErrorKind(error);
   return (
@@ -89,8 +103,8 @@ function ErrorNotice({ error }: { error: unknown }) {
             )
           : error instanceof BackendError && error.status === 503
             ? t(
-                "수집 데이터 조회 준비 중 · 잠시 후 재조회 가능",
-                "Indexed data is not ready · retry shortly",
+                "저장된 기록 조회 서비스를 사용할 수 없습니다. 결과는 확인되지 않았습니다.",
+                "Stored record service unavailable. No query result was established.",
               )
             : kind === "absent"
               ? t(
@@ -99,8 +113,8 @@ function ErrorNotice({ error }: { error: unknown }) {
                 )
               : kind === "query"
                 ? t(
-                    "검색 형식 오류 · UID/스키마 32바이트, 발행자 주소 20바이트",
-                    "Invalid query · UID/schema: 32 bytes; issuer address: 20 bytes",
+                    "검색 형식 오류 · UID/스키마 32바이트, 수신자·발행자 주소 20바이트",
+                    "Invalid query · UID/schema: 32 bytes; recipient/issuer: 20 bytes",
                   )
                 : t(
                     "도장 기록 조회 실패 · 재조회 필요. 조회 실패는 기록 부재를 의미하지 않습니다.",
@@ -263,7 +277,7 @@ export function BackendCoverage({
 function RecordStatus({ record }: { record: IndexedAttestation }) {
   const t = useText();
   const labels = {
-    active: t("EAS 활성", "EAS active"),
+    active: t("관측상 미철회·미만료", "No observed revocation or expiry"),
     revoked: t("철회됨", "Revoked"),
     expired: t("만료됨", "Expired"),
     unknown: t("미확인 · UNKNOWN", "UNKNOWN"),
@@ -280,46 +294,19 @@ export default function BackendExplorer(props: { publicSearch: () => void }) {
     new URLSearchParams(location.search).get("history") === "backfill";
   return (
     <div className="explorer-shell">
-      <nav
-        className="explorer-datasets"
-        aria-label={t("데이터 출처 선택", "Choose a data source")}
-      >
-        <a
-          className="text-button"
-          aria-current={!historical ? "page" : undefined}
-          href="?view=explore&source=backend"
-        >
-          {t("수집된 도장", "Indexed attestations")}
-          <small>
-            {t(
-              "Live Backend · 저장된 관측 기준",
-              "Live Backend · stored observations",
-            )}
-          </small>
-        </a>
-        <a
-          className="text-button"
-          aria-current={historical ? "page" : undefined}
-          href="?view=explore&source=backend&history=backfill"
-        >
-          {t("과거 이력", "Historical events")}
-          <small>
-            {t(
-              "Historical · 발급과 철회 기록",
-              "Historical · issuance and revocation",
-            )}
-          </small>
-        </a>
-        <a href="?view=explore&source=public">
-          {t("직접 조회", "Direct lookup")}
-          <small>Public RPC / Explorer ↗</small>
-        </a>
-      </nav>
       {historical ? <HistoricalExplorer /> : <BackendRecords {...props} />}
     </div>
   );
 }
-function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
+export function BackendRecords({
+  publicSearch,
+  issuerMode = false,
+  recipientMode = false,
+}: {
+  publicSearch: () => void;
+  issuerMode?: boolean;
+  recipientMode?: boolean;
+}) {
   const t = useText();
   const [page, setPage] = useState<BackendPage | null>(null);
   const [status, setStatus] = useState<BackendStatus>();
@@ -334,21 +321,53 @@ function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
   const [detailError, setDetailError] = useState<unknown>(null);
   const [detailBusy, setDetailBusy] = useState(false);
   const [display, setDisplay] = useState("cards");
-  const [filters, setFilters] = useState<BackendFilters>({});
-  const [draft, setDraft] = useState<BackendFilters>({});
+  const initialFilters: BackendFilters = Object.fromEntries(
+    ["recipient", "issuer", "schema"].flatMap((k) => {
+      const v = new URLSearchParams(location.search).get(k);
+      return v ? [[k, v]] : [];
+    }),
+  );
+  const [filters, setFilters] = useState<BackendFilters>(initialFilters);
+  const [draft, setDraft] = useState<BackendFilters>(initialFilters);
+  const addressMode = recipientMode || issuerMode;
+  const addressKey = recipientMode ? "recipient" : "issuer";
+  const [addressInput, setAddressInput] = useState(
+    initialFilters[addressKey] ?? "",
+  );
+  const [queryError, setQueryError] = useState("");
   const sequence = useRef(0);
   const detailSequence = useRef(0);
   async function load(nextFilters: BackendFilters = filters, cursor?: string) {
+    if (addressMode && !isIssuerAddress(nextFilters[addressKey] ?? "")) {
+      setQueryError(
+        t(
+          "조회할 주소를 입력해야 합니다.",
+          "Enter an address to query records.",
+        ),
+      );
+      return;
+    }
+    setQueryError("");
+    const url = new URL(location.href);
+    for (const key of ["recipient", "issuer", "schema"] as const) {
+      if (nextFilters[key]?.trim())
+        url.searchParams.set(key, nextFilters[key]!.trim().toLowerCase());
+      else url.searchParams.delete(key);
+    }
+    history.replaceState(null, "", url);
+    setFilters(nextFilters);
     const seq = ++sequence.current;
     setBusy(true);
+    setNotice("");
     setError(null);
     setPage(null);
     setStatus(undefined);
     setStatusError(null);
     try {
+      nextFilters = normalizeBackendFilters(nextFilters);
       const result = await getData<{ page: BackendPage; reset: boolean }>(
         "backend-list",
-        { ...nextFilters, limit: "6", ...(cursor ? { cursor } : {}) },
+        { ...nextFilters, limit: "20", ...(cursor ? { cursor } : {}) },
       );
       if (seq !== sequence.current) return;
       setPage(result.page);
@@ -395,7 +414,8 @@ function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
     }
   }
   useEffect(() => {
-    void load({});
+    if ((!addressMode || initialFilters[addressKey]) && !uid)
+      void load(initialFilters);
     if (uid) void lookup(uid);
     return () => {
       sequence.current++;
@@ -405,6 +425,7 @@ function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
   const items = page?.data.map(adaptProjection) ?? [];
   function close() {
     detailSequence.current++;
+    setUid("");
     setDetail(null);
     setDetailError(null);
     setDetailBusy(false);
@@ -414,28 +435,46 @@ function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
   }
   return (
     <>
-      <ExplorerSearch
-        busy={busy || detailBusy}
-        onSearch={(kind, value) => {
-          if (kind === "uid") void lookup(value);
-          else {
-            const f = { [kind]: value };
+      {addressMode ? (
+        <AddressRecordSearch
+          recipient={recipientMode}
+          value={addressInput}
+          busy={busy}
+          onChange={setAddressInput}
+          onSubmit={() => {
+            const address = addressInput.trim().toLowerCase();
+            if (!isIssuerAddress(address)) {
+              setQueryError(
+                t(
+                  "주소 형식 오류 · 0x와 40자리 16진수가 필요합니다.",
+                  "Invalid address · expected 0x and 40 hex characters.",
+                ),
+              );
+              return;
+            }
+            const f = { [addressKey]: address };
             setDraft(f);
             void load(f);
-          }
-        }}
-      />
-      <div className="explorer-context">
-        <span>
-          {t("Live Backend · 수집된 기록", "Live Backend · stored records")}
-        </span>
-        <button className="text-button" onClick={publicSearch}>
-          {t(
-            "지갑·트랜잭션 직접 조회 ↗",
-            "Look up a wallet or transaction ↗",
-          )}
-        </button>
-      </div>
+          }}
+        />
+      ) : (
+        <ExplorerSearch
+          busy={busy || detailBusy}
+          onSearch={(kind, value) => {
+            if (kind === "uid") void lookup(value);
+            else {
+              const f = { [kind]: value };
+              setDraft(f);
+              void load(f);
+            }
+          }}
+        />
+      )}
+      {queryError && (
+        <p role="alert" className="notice danger">
+          {queryError}
+        </p>
+      )}
       {error != null && (
         <div className="explorer-empty">
           <ErrorNotice error={error} />
@@ -444,7 +483,7 @@ function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
             disabled={busy}
             onClick={() => void load()}
           >
-            {t("재조회", "New proof request")}
+            {t("재조회", "Retry lookup")}
           </button>
         </div>
       )}
@@ -454,237 +493,279 @@ function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
         </p>
       )}
       {busy && <LoadingRecords ko={t("ko", "en") === "ko"} />}
-      {page && (
-        <p className="explorer-observation" role="status">
-          {t("목록 관측", "List observed")}:{" "}
-          {displayDate(page.meta.observedAt, t("ko", "en") === "ko")} ·{" "}
-          {page.meta.coverage.raw_complete
-            ? t("Raw 수집 완료", "Raw complete")
-            : t("부분 수집", "Partial history")}{" "}
-          ·{" "}
-          {t(
-            "EAS 상태는 이용 허가가 아닙니다",
-            "EAS status is not access approval",
-          )}
-        </p>
-      )}
-      <section className="records-workspace">
-        <div className="section-heading bare">
-          <h2>{t("수집된 도장", "Indexed attestations")}</h2>
-          <div className="display-toggle">
-            <button
-              aria-pressed={display === "cards"}
-              aria-label={t("카드 보기", "Card view")}
-              onClick={() => setDisplay("cards")}
-            >
-              <LayoutGrid size={17} />
-            </button>
-            <button
-              aria-pressed={display === "list"}
-              aria-label={t("목록 보기", "List view")}
-              onClick={() => setDisplay("list")}
-            >
-              <List size={17} />
-            </button>
-            <button
-              aria-label={t("새로고침", "Refresh")}
-              disabled={busy}
-              onClick={() => void load()}
-            >
-              <RefreshCw size={17} />
-            </button>
-            <button
-              aria-label={t("현재 페이지 JSON 저장", "Download page JSON")}
-              disabled={!page}
-              onClick={() => downloadJSON(page, "dojang-backend-page.json")}
-            >
-              <Download size={17} />
-            </button>
-          </div>
+      {page && addressMode && (
+        <div className="queried-address">
+          <span>{t("조회한 주소", "Address queried")}</span>
+          <AddressIdentity value={filters[addressKey] ?? ""} />
+          <CopyButton
+            value={location.href}
+            label={t("검색 링크 복사", "Copy search link")}
+          />
         </div>
-        <form
-          className="filters-row backend-filters"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void load(draft);
+      )}
+      {page && !items.length && (
+        <EmptyStoredRecords
+          meta={page.meta}
+          recipient={recipientMode}
+          address={addressMode ? filters[addressKey] : undefined}
+          filtered={Boolean(
+            filters.schema ||
+              (recipientMode && filters.issuer) ||
+              (!addressMode && (filters.issuer || filters.recipient)),
+          )}
+          onClear={() => {
+            const f = addressMode ? { [addressKey]: filters[addressKey] } : {};
+            setDraft(f);
+            void load(f);
           }}
-        >
-          <label>
-            {t("도장 종류", "Attestation type")}
-            <input
-              list="explorer-schemas"
-              placeholder={t(
-                "전체 종류 · 스키마 UID",
-                "All types · schema UID",
-              )}
-              aria-label="Backend schema filter"
-              value={draft.schema ?? ""}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  schema: e.target.value.trim().toLowerCase(),
-                })
-              }
-            />
-          </label>
-          <datalist id="explorer-schemas">
-            {SCHEMAS.map((s) => (
-              <option key={s.uid} value={s.uid}>
-                {t(s.label, s.name)}
-              </option>
-            ))}
-          </datalist>
-          <label>
-            {t("발행자 주소", "Issuer address")}
-            <input
-              placeholder={t("전체 발행자 · 0x…", "All issuers · 0x…")}
-              aria-label="Backend issuer filter"
-              value={draft.issuer ?? ""}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  issuer: e.target.value.trim().toLowerCase(),
-                })
-              }
-            />
-          </label>
-          <button type="submit" disabled={busy}>
-            {t("필터 적용", "Apply filters")}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setDraft({});
-              void load({});
-            }}
-          >
-            {t("초기화", "Reset")}
-          </button>
-        </form>
-        {page && (
-          <p className="fine-print">
-            {t("현재 서버 페이지의 기록 수", "Records on this server page")}:{" "}
-            {items.length} ·{" "}
-            {t(
-              "현재 페이지의 기록입니다. 전체 발급량이 아닙니다.",
-              "Records on this page, not the total issuance count.",
+          onEdit={() => {
+            const input = document.querySelector<HTMLInputElement>(
+              addressMode ? "#record-address" : ".explorer-search input",
+            );
+            input?.focus();
+            input?.select();
+          }}
+          onPublic={() => {
+            if (addressMode && filters[addressKey])
+              location.href =
+                "?view=wallet&source=public&address=" +
+                encodeURIComponent(filters[addressKey]!);
+            else publicSearch();
+          }}
+        />
+      )}
+      {page && items.length > 0 && (
+        <section className="records-workspace">
+          <div className="section-heading bare">
+            <h2>
+              {addressMode
+                ? recipientMode
+                  ? t("수신한 도장 기록", "Received records")
+                  : t("발급한 도장 기록", "Issued records")
+                : t("조회 기록", "Matching records")}{" "}
+              <span className="result-page-count">
+                {t("현재 페이지", "This page")} · {items.length}
+              </span>
+            </h2>
+            <div className="display-toggle">
+              <button
+                aria-pressed={display === "cards"}
+                aria-label={t("카드 보기", "Card view")}
+                onClick={() => setDisplay("cards")}
+              >
+                <LayoutGrid size={17} />
+              </button>
+              <button
+                aria-pressed={display === "list"}
+                aria-label={t("목록 보기", "List view")}
+                onClick={() => setDisplay("list")}
+              >
+                <List size={17} />
+              </button>
+              <button
+                aria-label={t("새로고침", "Refresh")}
+                disabled={busy}
+                onClick={() => void load()}
+              >
+                <RefreshCw size={17} />
+              </button>
+              <button
+                aria-label={t("현재 페이지 JSON 저장", "Download page JSON")}
+                disabled={!page}
+                onClick={() => downloadJSON(page, "dojang-backend-page.json")}
+              >
+                <Download size={17} />
+              </button>
+            </div>
+          </div>
+          <StoredRecordContext meta={page.meta} />
+          <details
+            className="result-filters"
+            key={String(
+              Boolean(filters.schema || (recipientMode && filters.issuer)),
             )}
-          </p>
-        )}
-        {page && !items.length && (
-          <div className="explorer-empty">
-            <h3>
-              {t(
-                "조건에 맞는 도장을 찾지 못했습니다",
-                "No matching attestations",
-              )}
-            </h3>
-            <p>
-              {t(
-                "현재 필터와 수집 범위 내 일치 기록이 없습니다. 전체 체인의 기록 부재를 의미하지 않습니다.",
-                "No matching records within the filters and indexed range. This does not establish absence across the chain.",
-              )}
-            </p>
-            <button
-              className="secondary-button"
-              onClick={() => {
-                setDraft({});
-                void load({});
+            open={
+              Boolean(filters.schema || (recipientMode && filters.issuer)) ||
+              undefined
+            }
+          >
+            <summary>
+              {issuerMode
+                ? t("도장 종류 필터", "Filter by type")
+                : t("도장 종류·발행자 필터", "Filter by type or issuer")}
+            </summary>
+            <form
+              className="filters-row backend-filters"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void load(draft);
               }}
             >
-              {t("필터 지우기", "Clear filters")}
+              <label>
+                {t("도장 종류", "Attestation type")}
+                <input
+                  list="explorer-schemas"
+                  placeholder={t(
+                    "전체 종류 · 스키마 UID",
+                    "All types · schema UID",
+                  )}
+                  aria-label="Backend schema filter"
+                  value={draft.schema ?? ""}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      schema: e.target.value.trim().toLowerCase(),
+                    })
+                  }
+                />
+              </label>
+              <datalist id="explorer-schemas">
+                {SCHEMAS.map((s) => (
+                  <option key={s.uid} value={s.uid}>
+                    {t(s.label, s.name)}
+                  </option>
+                ))}
+              </datalist>
+              {!issuerMode && (
+                <label>
+                  {t("발행자 주소", "Issuer address")}
+                  <input
+                    placeholder={t("전체 발행자 · 0x…", "All issuers · 0x…")}
+                    aria-label="Backend issuer filter"
+                    readOnly={issuerMode}
+                    value={draft.issuer ?? ""}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        issuer: e.target.value.trim().toLowerCase(),
+                      })
+                    }
+                  />
+                </label>
+              )}
+              <button type="submit" disabled={busy}>
+                {t("필터 적용", "Apply filters")}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  const reset = addressMode
+                    ? { [addressKey]: filters[addressKey] }
+                    : {};
+                  setDraft(reset);
+                  void load(reset);
+                }}
+              >
+                {t("초기화", "Reset")}
+              </button>
+            </form>
+          </details>
+          <div
+            className={display === "cards" ? "credential-grid" : "backend-list"}
+          >
+            {items.map((record) => (
+              <article className="explorer-attestation" key={record.uid}>
+                <div className="explorer-card-heading">
+                  <span className="explorer-seal">
+                    <Fingerprint size={22} aria-hidden="true" />
+                  </span>
+                  <RecordStatus record={record} />
+                </div>
+                <h3>
+                  <button onClick={() => void lookup(record.uid)}>
+                    {schemaTitle(record.schema, t("ko", "en") === "ko")}
+                  </button>
+                </h3>
+                <RecordContentPreview fields={record.fields} />
+                <dl className="explorer-card-facts">
+                  <div>
+                    <dt>{t("발행자", "Issued by")}</dt>
+                    <dd>
+                      <AddressIdentity value={record.attester} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t("수신자", "Issued to")}</dt>
+                    <dd>
+                      <AddressIdentity value={record.recipient} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t("발급일", "Issued at")}</dt>
+                    <dd>
+                      {displayDate(
+                        record.projection.issuedAt,
+                        t("ko", "en") === "ko",
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="explorer-card-footer">
+                  <span title={record.uid}>UID {short(record.uid, 4)}</span>
+                  <button
+                    onClick={() => void lookup(record.uid)}
+                    aria-label={`${t("도장 상세", "Attestation detail")} ${record.uid}`}
+                  >
+                    {t("기록·확인 근거", "Record and evidence")}
+                    <ArrowUpRight size={16} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="record-pagination">
+            <button disabled={busy || !page} onClick={() => void load()}>
+              {t("첫 페이지", "First page")}
+            </button>
+            <button
+              disabled={busy || !page?.next}
+              onClick={() => void load(filters, page!.next!)}
+            >
+              {t("다음 페이지", "Next page")}
             </button>
           </div>
-        )}
-        <div
-          className={display === "cards" ? "credential-grid" : "backend-list"}
-        >
-          {items.map((record) => (
-            <article className="explorer-attestation" key={record.uid}>
-              <div className="explorer-card-heading">
-                <span className="explorer-seal">
-                  <Fingerprint size={22} aria-hidden="true" />
-                </span>
-                <RecordStatus record={record} />
-              </div>
-              <h3>
-                <button onClick={() => void lookup(record.uid)}>
-                  {schemaTitle(record.schema, t("ko", "en") === "ko")}
-                </button>
-              </h3>
-              <dl className="explorer-card-facts">
-                <div>
-                  <dt>{t("발행자", "Issued by")}</dt>
-                  <dd>
-                    <AddressIdentity value={record.attester} />
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t("수신자", "Issued to")}</dt>
-                  <dd>
-                    <AddressIdentity value={record.recipient} />
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t("발급일", "Issued at")}</dt>
-                  <dd>
-                    {displayDate(
-                      record.projection.issuedAt,
-                      t("ko", "en") === "ko",
-                    )}
-                  </dd>
-                </div>
-              </dl>
-              <div className="explorer-card-footer">
-                <span title={record.uid}>UID {short(record.uid, 4)}</span>
-                <button
-                  onClick={() => void lookup(record.uid)}
-                  aria-label={`${t("도장 상세", "Attestation detail")} ${record.uid}`}
-                >
-                  {t("상세 보기", "View details")}
-                  <ArrowUpRight size={16} />
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="record-pagination">
-          <button disabled={busy || !page} onClick={() => void load()}>
-            {t("첫 페이지", "First page")}
-          </button>
-          <button
-            disabled={busy || !page?.next}
-            onClick={() => void load(filters, page!.next!)}
-          >
-            {t("다음 페이지", "Next page")}
-          </button>
-        </div>
-      </section>
+        </section>
+      )}
       {page && (
         <>
-          <p className="fine-print">
-            {t("목록 snapshot 기준", "List snapshot reference")}: #
-            {number(page.meta.asOfBlock)} · {time(page.meta.observedAt)}
-          </p>
-          {status && (
-            <p className="fine-print">
-              {t(
-                "아래 수집 상태는 별도 GET의 관측값입니다. 수집 진행 중 목록과 기준 블록이 다를 수 있습니다.",
-                "The coverage below is a separate status observation and may advance beyond the list snapshot.",
-              )}
-            </p>
-          )}
-          <BackendCoverage meta={status?.meta ?? page.meta} status={status} />
+          <details className="product-source-control">
+            <summary>
+              {t("수집·평가 범위 상세", "Collection and evaluation details")}
+            </summary>
+            <BackendCoverage meta={page.meta} status={status} />
+          </details>
         </>
       )}
       {statusError != null && (
-        <>
-          <p>
-            {t("별도 head 상태 조회 실패", "Separate head status query failed")}
-          </p>
+        <details className="product-source-control">
+          <summary>
+            {t(
+              "추가 관측 정보 조회 실패",
+              "Additional observation unavailable",
+            )}
+          </summary>
           <ErrorNotice error={statusError} />
-        </>
+        </details>
+      )}
+      {page && (
+        <details className="product-source-control result-sources">
+          <summary>{t("다른 출처에서 조회", "Look up another source")}</summary>
+          <p>
+            {t(
+              "현재 결과는 Live에 저장된 기록입니다. 다른 출처의 결과와 자동으로 합치지 않습니다.",
+              "These results are stored Live records. Other sources are queried separately.",
+            )}
+          </p>
+          <nav>
+            <button className="text-button" onClick={publicSearch}>
+              Public Explorer ↗
+            </button>
+            <a href="?view=explore&source=backend&history=backfill">
+              Historical ↗
+            </a>
+          </nav>
+        </details>
       )}
       <Sheet
         open={detailBusy || detail !== null || detailError !== null}
@@ -696,7 +777,10 @@ function BackendRecords({ publicSearch }: { publicSearch: () => void }) {
           <SheetHeader>
             <SheetTitle>{t("도장 상세", "Attestation detail")}</SheetTitle>
             <SheetDescription>
-              NUC Backend · GIWA Sepolia · {backendNetwork}
+              {t(
+                "저장된 수집 기록 · GIWA Sepolia",
+                "Stored observations · GIWA Sepolia",
+              )}
             </SheetDescription>
           </SheetHeader>
           {detailBusy && <p role="status">{t("조회 중…", "Loading…")}</p>}
@@ -726,136 +810,19 @@ function BackendRecordDetail({ detail }: { detail: BackendDetail }) {
   );
   return (
     <>
-      <section className="explorer-detail-hero">
-        <span className="explorer-seal">
-          <Fingerprint size={28} aria-hidden="true" />
-        </span>
-        <h2>{schemaTitle(p.schema, t("ko", "en") === "ko")}</h2>
-        <div className="explorer-detail-actions">
-          <RecordStatus record={record} />
-          <span className="explorer-unknown">
-            {t(
-              "이용 자격 미확인 · UNKNOWN",
-              "Eligibility unconfirmed · UNKNOWN",
-            )}
-          </span>
-        </div>
-        <p>
-          {t(
-            "발급·철회·만료 상태와 서비스 이용 자격은 별개입니다. EAS 활성 상태도 접근 허가(ALLOW)를 뜻하지 않습니다.",
-            "Issuance, revocation and expiry are separate from eligibility. Even EAS active does not grant access (ALLOW).",
-          )}
-        </p>
-        <div className="explorer-detail-actions">
-          <span>
-            UID {short(p.uid)}{" "}
-            <CopyButton
-              value={p.uid}
-              label={t("도장 UID 복사", "Copy attestation UID")}
-            />
-          </span>
-          <span>
-            {t("공유 링크", "Share link")}
-            <CopyButton
-              value={location.href}
-              label={t("링크 복사", "Copy link")}
-            />
-          </span>
-        </div>
-      </section>
-      <section className="explorer-detail-section">
-        <h3>{t("발급 정보", "Issuance details")}</h3>
-        <Facts
-          rows={[
-            [
-              t("발행자", "Issued by"),
-              <AddressIdentity value={p.issuer} full />,
-            ],
-            [
-              t("수신자", "Issued to"),
-              <AddressIdentity value={p.recipient} full />,
-            ],
-            [
-              t("발급 시각", "Issued at"),
-              displayDate(p.issuedAt, t("ko", "en") === "ko"),
-            ],
-            [
-              t("철회 여부", "Revoked"),
-              p.notRevoked == null
-                ? t("확인되지 않음", "Unconfirmed")
-                : tri(!p.notRevoked),
-            ],
-            [
-              t("만료 시각", "Expires at"),
-              p.expiresAt === "0"
-                ? t("만료 시각 없음", "No expiration time")
-                : displayDate(p.expiresAt, t("ko", "en") === "ko"),
-            ],
-          ]}
-        />
-        <p className="explorer-hint">
-          {t("상태 기준", "Status reference")}:{" "}
-          {displayDate(detail.meta.observedAt, t("ko", "en") === "ko")} ·{" "}
-          {t("저장된 평가", "Stored evaluation")} #
-          {number(p.evaluatedBlock ?? detail.meta.evaluatedBlock)}
-        </p>
-      </section>
-      <section className="explorer-detail-section">
-        <h3>{t("도장 데이터", "Attestation data")}</h3>
-        {record.fields.length ? (
-          <Facts rows={record.fields.map((f) => [f.name, f.value])} />
-        ) : (
-          <p>
-            {t(
-              "현재 API에서 해석된 내용을 제공하지 않습니다.",
-              "Decoded content is not available from this API.",
-            )}
-          </p>
-        )}
-        <p className="explorer-hint">
-          {t(
-            "발행자가 기록한 내용입니다. 이 화면은 내용의 사실성이나 잔액 Merkle proof를 독립 검증하지 않습니다.",
-            "These are issuer assertions. This view does not independently verify their truth or Balance Merkle proofs.",
-          )}
-        </p>
-      </section>
-      <section className="explorer-detail-section">
-        <h3>
-          {t("선택 상태와 과거 기록", "Selection and historical records")}
-        </h3>
-        <p>
-          {record.indexStatus === "selected"
-            ? t(
-                "Indexer 관측에서 선택된 도장입니다.",
-                "Selected in the Indexer observation.",
-              )
-            : record.indexStatus === "not-selected"
-              ? t(
-                  "Indexer 관측에서 선택되지 않았습니다. 다른 도장으로 대체될 수 있으며, 철회를 뜻하지 않습니다.",
-                  "Not selected in the Indexer observation. Another attestation may replace it; this does not mean revocation.",
-                )
-              : t(
-                  "Indexer 선택 여부를 아직 확인할 수 없습니다.",
-                  "Indexer selection has not been established.",
-                )}
-        </p>
-        <HistoricalSnapshots uid={p.uid} />
-        <a
-          className="text-button"
-          href={`?view=explore&source=backend&history=backfill&uid=${encodeURIComponent(p.uid)}`}
-        >
-          {t(
-            "이 UID의 Backfill 발급·철회·Indexer 이력 보기",
-            "View this UID's Backfill issuance, revocation and Indexer events",
-          )}
-        </a>
-        <p>
-          {t(
-            "Indexer 선택 변경 이벤트의 전체 이력과 refUID는 API 미제공입니다. Snapshot의 미선택 상태를 철회로 해석하지 않습니다.",
-            "Full Indexer selection event history and refUID are not exposed. A snapshot that is not selected is not treated as revoked.",
-          )}
-        </p>
-      </section>
+      <RecordOverview
+        schema={p.schema}
+        issuer={p.issuer}
+        recipient={p.recipient}
+        issuedAt={p.issuedAt}
+        fields={record.fields}
+        uid={p.uid}
+        source={t("저장된 수집 기록 · Live", "Stored observations · Live")}
+      />
+      <StoredRecordContext meta={detail.meta} />
+      <RecordObservation detail={detail} />
+      <RelatedRecords uid={p.uid} />
+      <RecordEvidence detail={detail} />
       <details className="explorer-technical">
         <summary>
           {t(
@@ -892,6 +859,14 @@ function BackendRecordDetail({ detail }: { detail: BackendDetail }) {
             </li>
           ))}
         </ul>
+        <details>
+          <summary>
+            {t("Payload·전체 응답 JSON", "Payload and full response JSON")}
+          </summary>
+          <pre className="historical-hash">
+            {JSON.stringify(detail, null, 2)}
+          </pre>
+        </details>
         <button
           className="secondary-button"
           onClick={() => downloadJSON(detail, `${p.uid}.json`)}
@@ -899,7 +874,13 @@ function BackendRecordDetail({ detail }: { detail: BackendDetail }) {
           <Download size={16} /> {t("원본 JSON 저장", "Download source JSON")}
         </button>
       </details>
-      <BackendCoverage meta={detail.meta} />
+      <details className="product-source-control">
+        <summary>
+          {t("수집 범위·평가 기준", "Coverage and evaluation reference")}
+        </summary>
+        <BackendCoverage meta={detail.meta} />
+        <HistoricalSnapshots uid={p.uid} />
+      </details>
     </>
   );
 }

@@ -52,6 +52,7 @@ export function ExplorerSearch({
         >
           <option value="uid">{ko ? "도장 UID" : "Attestation UID"}</option>
           <option value="schema">{ko ? "도장 종류" : "Schema"}</option>
+          <option value="recipient">{ko ? "수신 주소" : "Recipient"}</option>
           <option value="issuer">{ko ? "발행자" : "Issuer"}</option>
         </select>
         <input
@@ -62,10 +63,10 @@ export function ExplorerSearch({
           autoComplete="off"
           spellCheck={false}
           placeholder={
-            kind === "issuer"
+            kind === "issuer" || kind === "recipient"
               ? ko
-                ? "발행자 지갑 주소 (0x…)"
-                : "Issuer wallet address (0x…)"
+                ? "지갑 주소 (0x…)"
+                : "Wallet address (0x…)"
               : kind === "schema"
                 ? ko
                   ? "종류 이름 또는 스키마 UID"
@@ -93,8 +94,8 @@ export function ExplorerSearch({
             ? "입력 형식 오류 · UID 64자리, 주소 40자리 16진수(0x 제외)"
             : "Invalid input · UID: 64 hex characters; address: 40 (excluding 0x)"
           : ko
-            ? "도장 UID · 알려진 종류 이름 · 발행자 주소로 검색합니다. 수신자·트랜잭션 검색은 Public에서 제공됩니다."
-            : "Search by attestation UID, known schema name or issuer address. Recipient and transaction searches are available in Public."}
+            ? "도장 UID · 도장 종류 · 수신자·발행자 주소로 저장된 기록을 검색합니다. 트랜잭션 검색은 Public에서 별도로 제공됩니다."
+            : "Search stored records by UID, schema, recipient or issuer. Transaction lookup is available separately in Public."}
       </p>
       <div className="explorer-suggestions">
         <span>{ko ? "스키마별 조회" : "Browse by schema"}</span>
@@ -147,11 +148,7 @@ export function AddressIdentity({
 export function LoadingRecords({ ko }: { ko: boolean }) {
   return (
     <div role="status" aria-live="polite" className="explorer-loading">
-      <p>
-        {ko
-          ? "저장된 도장 조회 중…"
-          : "Loading stored attestations…"}
-      </p>
+      <p>{ko ? "저장된 도장 조회 중…" : "Loading stored attestations…"}</p>
       <div aria-hidden="true" className="explorer-skeletons">
         {[0, 1, 2].map((i) => (
           <div key={i}>

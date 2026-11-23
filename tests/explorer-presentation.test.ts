@@ -37,6 +37,14 @@ test("ambiguous 32-byte identifiers require the selected search type; no automat
     kind: "issuer",
     value: "0x" + "a".repeat(40),
   });
+  assert.deepEqual(
+    resolveExplorerSearch(" 0x" + "A".repeat(40) + " ", "recipient"),
+    {
+      kind: "recipient",
+      value: "0x" + "a".repeat(40),
+    },
+  );
+  assert.equal(resolveExplorerSearch(uid, "recipient"), null);
 });
 test("invalid search cannot become an unfiltered query or an arbitrary URL", () => {
   for (const value of [
@@ -47,7 +55,7 @@ test("invalid search cannot become an unfiltered query or an arbitrary URL", () 
     "unknown schema",
     "0x" + "g".repeat(64),
   ]) {
-    for (const kind of ["uid", "schema", "issuer"] as const)
+    for (const kind of ["uid", "schema", "issuer", "recipient"] as const)
       assert.equal(resolveExplorerSearch(value, kind), null);
   }
 });

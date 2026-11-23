@@ -40,7 +40,7 @@ export function observationIsOld(
     now - Date.parse(value) > 15 * 60_000
   );
 }
-export type SearchKind = "uid" | "schema" | "issuer";
+export type SearchKind = "uid" | "schema" | "issuer" | "recipient";
 export function resolveExplorerSearch(
   value: string,
   kind: SearchKind,
@@ -52,10 +52,18 @@ export function resolveExplorerSearch(
       (n) => n.toLowerCase() === input.toLowerCase(),
     ),
   );
-  if (schema && kind !== "issuer") return { kind: "schema", value: schema.uid };
-  if (kind === "issuer" && /^0x[\da-f]{40}$/i.test(input))
+  if (schema && kind !== "issuer" && kind !== "recipient")
+    return { kind: "schema", value: schema.uid };
+  if (
+    (kind === "issuer" || kind === "recipient") &&
+    /^0x[\da-f]{40}$/i.test(input)
+  )
     return { kind, value: input.toLowerCase() };
-  if (kind !== "issuer" && /^0x[\da-f]{64}$/i.test(input))
+  if (
+    kind !== "issuer" &&
+    kind !== "recipient" &&
+    /^0x[\da-f]{64}$/i.test(input)
+  )
     return { kind, value: input.toLowerCase() };
   return null;
 }

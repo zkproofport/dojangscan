@@ -79,12 +79,41 @@ export type BackendStatus = {
   };
 };
 export type BackendFilters = {
+  recipient?: string;
   issuer?: string;
   schema?: string;
   domain?: string;
   from?: string;
   to?: string;
 };
+/** Match the deployed filter contract before making a GET; no source fallback. */
+export function normalizeBackendFilters(
+  filters: BackendFilters,
+): BackendFilters {
+  const result: BackendFilters = {};
+  for (const key of [
+    "recipient",
+    "issuer",
+    "schema",
+    "domain",
+    "from",
+    "to",
+  ] as const) {
+    const value = filters[key]?.trim();
+    if (!value) continue;
+    if (
+      (key === "recipient" || key === "issuer") &&
+      !/^0x[0-9a-f]{40}$/i.test(value)
+    )
+      throw new BackendError(400, "INVALID_QUERY");
+    if (key === "schema" && !/^0x[0-9a-f]{64}$/i.test(value))
+      throw new BackendError(400, "INVALID_QUERY");
+    result[key] = ["recipient", "issuer", "schema"].includes(key)
+      ? value.toLowerCase()
+      : value;
+  }
+  return result;
+}
 export class BackendError extends Error {
   constructor(
     public status: number,
@@ -122,9 +151,7 @@ export function createBackendClient(
     let response: Response;
     try {
       response = await request(
-        (audit ? base : prefix) +
-          path +
-          (query ? "?" + query : ""),
+        (audit ? base : prefix) + path + (query ? "?" + query : ""),
         {
           method: "GET",
           credentials: "omit",
@@ -176,8 +203,10 @@ export function createBackendClient(
       if (!Number.isInteger(limit) || limit < 1 || limit > 100)
         throw new BackendError(400, "INVALID_LIMIT");
       const params: Record<string, string> = { limit: String(limit) };
-      for (const key of ["issuer", "schema", "domain", "from", "to"] as const)
-        if (filters[key]) params[key] = filters[key]!;
+      for (const [key, value] of Object.entries(
+        normalizeBackendFilters(filters),
+      ))
+        params[key] = value;
       if (cursor) params.cursor = cursor; // Opaque: never parse or repackage.
       const result = await read<BackendPage>("/attestations", params);
       if (

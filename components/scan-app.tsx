@@ -1,4 +1,6 @@
-import BackendExplorer from "./backend-explorer";
+import BackendExplorer, { BackendRecords } from "./backend-explorer";
+import ProductHome from "./product-home";
+import { initialProductView } from "@/lib/product-experience";
 import { backendEnabled, backendNetwork } from "@/lib/data-source";
 import { IdentityFootprint } from "./identity-footprint";
 import { AddressHistory } from "./address-history";
@@ -49,27 +51,30 @@ const BrandKit = lazy(() => import("./brand-kit"));
 const LearningGuide = lazy(() => import("./learning-guide"));
 const CodeExplorer = lazy(() => import("./code-explorer"));
 const nav = [
-  { id: "explore", label: "도장 탐색", icon: ScanLine },
+  { id: "home", label: "기록 확인", icon: Search },
+  { id: "recipient-records", label: "주소별 조회", icon: Wallet },
+  { id: "explore", label: "데이터 탐색", icon: ScanLine },
   { id: "schemas", label: "도장 종류", icon: Layers },
   { id: "codes", label: "사용처별 조회", icon: Fingerprint },
   { id: "issuers", label: "발행자·관리자", icon: ShieldCheck },
-  { id: "wallet", label: "내 도장", icon: Wallet },
   { id: "lab", label: "Proof Studio", icon: ZkProofportLogo },
 ];
 type WalletData = ScanData & { address: string; verifiedBy: Issuer[] };
 export default function ScanApp() {
   const [language, theme] = usePreferences();
   const [view, setView] = useState(() => {
-    const requested = new URLSearchParams(window.location.search).get("view");
+    const requested = initialProductView(window.location.search);
     return requested === "workspace"
       ? "issuers"
       : requested &&
           (nav.some((item) => item.id === requested) ||
             requested === "guide" ||
             requested === "brand" ||
-            requested === "issuer")
+            requested === "issuer-records" ||
+            requested === "issuer" ||
+            requested === "wallet")
         ? requested
-        : "explore";
+        : "home";
   });
   const trackedSection = useRef("");
   useEffect(() => {
@@ -121,6 +126,15 @@ export default function ScanApp() {
   }
   function navigate(v: string) {
     if (v === "codes" && view === "codes") return;
+    // Source selection is initialized with the page. Cross it explicitly so
+    // subsequent Explorer navigation cannot disagree with the URL source.
+    if (
+      ["issuer-records", "recipient-records"].includes(v) &&
+      !backendEnabled
+    ) {
+      location.href = localURL({ view: v, source: "backend" });
+      return;
+    }
     sequence.current++;
     walletSequence.current++;
     setSearching(false);
@@ -130,8 +144,16 @@ export default function ScanApp() {
     setCodeSearchRequested(false);
     setDetail(null);
     clearSchema();
-    updateURL({ view: v });
+    updateURL({
+      view: v,
+      ...(["issuer-records", "recipient-records"].includes(v)
+        ? { source: "backend" }
+        : {}),
+    });
     if (
+      v !== "home" &&
+      v !== "issuer-records" &&
+      v !== "recipient-records" &&
       v !== "codes" &&
       !(backendEnabled && v === "explore") &&
       !data &&
@@ -230,7 +252,9 @@ export default function ScanApp() {
   async function runSearch(value: string) {
     value = value.trim();
     if (!value) {
-      setSearchError(tr("검색에 지갑 주소, 도장 UID 또는 트랜잭션 해시가 필요합니다."));
+      setSearchError(
+        tr("검색에 지갑 주소, 도장 UID 또는 트랜잭션 해시가 필요합니다."),
+      );
       return;
     }
     const seq = ++sequence.current;
@@ -356,7 +380,13 @@ export default function ScanApp() {
     let live = true;
     const q = new URLSearchParams(window.location.search);
     const v = q.get("view");
-    if (v === "codes" || (backendEnabled && (!v || v === "explore")))
+    if (
+      initialProductView(location.search) === "home" ||
+      v === "issuer-records" ||
+      v === "recipient-records" ||
+      v === "codes" ||
+      (backendEnabled && (!v || v === "explore"))
+    )
       setLoading(false);
     else
       void getData<ScanData>("overview")
@@ -377,13 +407,24 @@ export default function ScanApp() {
       updateURL({ view: "issuers", mode: "manage" });
     } else if (
       v &&
-      (nav.some((n) => n.id === v) || v === "guide" || v === "brand")
+      (nav.some((n) => n.id === v) ||
+        v === "issuer-records" ||
+        v === "wallet" ||
+        v === "guide" ||
+        v === "brand")
     )
       setView(v);
     const query =
       q.get("uid") ?? q.get("schema") ?? q.get("address") ?? q.get("tx");
-    if (q.get("issuer")) openIssuer(q.get("issuer")!);
-    if (query && !(backendEnabled && (!v || v === "explore") && q.get("uid"))) {
+    const storedLookup =
+      v === "issuer-records" ||
+      v === "recipient-records" ||
+      (backendEnabled && (!v || v === "explore"));
+    if (q.get("issuer") && !storedLookup) openIssuer(q.get("issuer")!);
+    if (
+      query &&
+      !(storedLookup && (q.get("uid") || q.get("schema") || q.get("recipient")))
+    ) {
       setSearch(query);
       if (v === "codes" && q.get("uid")) {
         void getData<Attestation>("attestation", { uid: query })
@@ -469,15 +510,18 @@ export default function ScanApp() {
   const currentSchemas =
     data?.schemas.filter((s) => s.current && s.registered) ?? [];
   const titles: Record<string, { title: string; text: string }> = {
+    home: { title: "Dojangscan", text: "" },
+    "issuer-records": {
+      title: tr("발급 기록"),
+      text: tr("발행자 주소별 저장 기록 · 관리 작업과 분리된 조회"),
+    },
     explore: {
       title: "Dojangscan",
       text: tr("발급·철회·Indexer 이력 및 상태 조회"),
     },
     schemas: {
       title: tr("도장 종류"),
-      text: tr(
-        "스키마 형식, 발급 권한 및 데이터 공개 범위",
-      ),
+      text: tr("스키마 형식, 발급 권한 및 데이터 공개 범위"),
     },
     codes: {
       title: "사용처별 조회",
@@ -492,16 +536,12 @@ export default function ScanApp() {
       text: tr("발행자 등록 현황, 도장 발급 및 권한 관리"),
     },
     wallet: {
-      title: tr("내 도장"),
-      text: tr(
-        "지갑 주소별 공개 기록 조회 · 지갑 연결 선택 사항",
-      ),
+      title: tr("주소별 조회"),
+      text: tr("지갑 주소별 공개 기록 조회 · 지갑 연결 선택 사항"),
     },
     lab: {
       title: "Proof Studio",
-      text: tr(
-        "테스트넷 도장 기반 ZK 증명 생성 및 검증",
-      ),
+      text: tr("테스트넷 도장 기반 ZK 증명 생성 및 검증"),
     },
     brand: {
       title: "브랜드 킷",
@@ -518,7 +558,7 @@ export default function ScanApp() {
       <Toaster position="bottom-right" theme={theme} />
       <header className="topbar">
         <div className="brand-identity">
-          <button className="brand" onClick={() => navigate("explore")}>
+          <button className="brand" onClick={() => navigate("home")}>
             <span className="brand-seal">
               <DojangLogo />
             </span>
@@ -537,13 +577,22 @@ export default function ScanApp() {
           {nav.map((n) => (
             <button
               className={
-                "nav-link " +
-                (view === n.id || (view === "issuer" && n.id === "issuers")
+                (n.id === "explore"
+                  ? "nav-link nav-secondary-start "
+                  : "nav-link ") +
+                (view === n.id ||
+                (view === "issuer-records" && n.id === "recipient-records") ||
+                (view === "issuer" && n.id === "issuers")
                   ? "active"
                   : "")
               }
               key={n.id}
-              aria-current={view === n.id ? "page" : undefined}
+              aria-current={
+                view === n.id ||
+                (view === "issuer-records" && n.id === "recipient-records")
+                  ? "page"
+                  : undefined
+              }
               onClick={() => navigate(n.id)}
             >
               <n.icon size={16} />
@@ -612,60 +661,94 @@ export default function ScanApp() {
         </a>
       </header>
       <main>
-        <div className="backend-source explorer-source-strip">
-          <strong>
-            {language === "ko" ? "데이터 출처" : "Data source"}:{" "}
-            {backendEnabled && view === "explore"
-              ? new URLSearchParams(location.search).get("history") ===
-                "backfill"
-                ? "Historical Backfill · local"
-                : "NUC Backend"
-              : "GIWA public RPC / Explorer"}
-          </strong>
-          <span>
-            {language === "ko"
-              ? "각 출처의 수집 범위와 기준 블록은 별개입니다."
-              : "Each source has its own coverage and block reference."}
-          </span>
-          {view === "explore" && backendNetwork && (
-            <a
-              className="text-button"
-              href={localURL({
-                view: "explore",
-                source: backendEnabled ? "public" : "backend",
-              })}
-            >
-              {backendEnabled ? "Public RPC / Explorer ↗" : "NUC Backend ↗"}
-            </a>
+        {view !== "home" &&
+          view !== "recipient-records" &&
+          view !== "issuer-records" && (
+            <details className="product-source-control app-source-control">
+              <summary>
+                {language === "ko"
+                  ? "조회 출처·지원 범위"
+                  : "Source and supported scope"}{" "}
+                ·{" "}
+                {view === "issuer-records" ||
+                view === "recipient-records" ||
+                (backendEnabled && view === "explore")
+                  ? new URLSearchParams(location.search).get("history") ===
+                    "backfill"
+                    ? "Historical"
+                    : "Live"
+                  : "Public"}
+              </summary>
+              <p>
+                {language === "ko"
+                  ? "Live는 저장된 관측, Historical은 고정 과거 구간, Public은 공개 RPC·Explorer 조회입니다. 출처를 전환해도 같은 데이터 범위를 보장하지 않습니다."
+                  : "Live provides stored observations; Historical covers a fixed past range; Public uses public RPC and Explorer data. Sources do not have identical coverage."}
+              </p>
+              <nav>
+                <a href="?view=explore&source=public">Public ↗</a>
+                <a href="?view=explore&source=backend">Live ↗</a>
+                <a href="?view=explore&source=backend&history=backfill">
+                  Historical ↗
+                </a>
+              </nav>
+            </details>
           )}
-        </div>
-        <section
-          className={
-            "intro " + (view === "explore" ? "explore-intro" : "compact")
-          }
-        >
-          <div>
-            <span className="section-kicker">
-              {tr(
-                view === "explore"
-                  ? "GIWA SEPOLIA"
-                  : "DOJANGSCAN / " + view.toUpperCase(),
-              )}
-            </span>
-            <h1>
-              {view === "explore" ? tr("GIWA 도장·EAS 기록 조회") : tr(heading.title)}
-            </h1>
-            <p>{view === "explore" ? tr("발급·철회·Indexer 이력 및 상태 조회") : tr(heading.text)}</p>
+        {view === "home" && <ProductHome />}
+        {(view === "issuer-records" || view === "recipient-records") && (
+          <div className="explorer-shell">
+            <BackendRecords
+              key={view}
+              issuerMode={view === "issuer-records"}
+              recipientMode={view === "recipient-records"}
+              publicSearch={() => {
+                location.href = "?view=wallet&source=public";
+              }}
+            />
           </div>
-        </section>
+        )}
+        {view !== "home" &&
+          view !== "issuer-records" &&
+          view !== "recipient-records" && (
+            <section
+              className={
+                "intro " + (view === "explore" ? "explore-intro" : "compact")
+              }
+            >
+              <div>
+                <span className="section-kicker">
+                  {tr(
+                    view === "explore"
+                      ? "GIWA SEPOLIA"
+                      : "DOJANGSCAN / " + view.toUpperCase(),
+                  )}
+                </span>
+                <h1>
+                  {view === "explore"
+                    ? tr("GIWA 도장·EAS 기록 조회")
+                    : tr(heading.title)}
+                </h1>
+                <p>
+                  {view === "explore"
+                    ? tr("발급·철회·Indexer 이력 및 상태 조회")
+                    : tr(heading.text)}
+                </p>
+              </div>
+            </section>
+          )}
         {loading &&
           !(backendEnabled && view === "explore") &&
+          view !== "home" &&
+          view !== "issuer-records" &&
+          view !== "recipient-records" &&
           view !== "codes" &&
           view !== "lab" &&
           view !== "guide" &&
           view !== "brand" && <ChainLoading />}
         {error &&
           !(backendEnabled && view === "explore") &&
+          view !== "home" &&
+          view !== "issuer-records" &&
+          view !== "recipient-records" &&
           view !== "codes" &&
           view !== "lab" &&
           view !== "guide" &&
@@ -686,6 +769,9 @@ export default function ScanApp() {
           )}
         {!(backendEnabled && view === "explore") &&
           view !== "lab" &&
+          view !== "home" &&
+          view !== "issuer-records" &&
+          view !== "recipient-records" &&
           view !== "codes" &&
           view !== "guide" &&
           view !== "brand" &&
@@ -714,10 +800,7 @@ export default function ScanApp() {
             </form>
           )}
         {searching && (
-          <ChainLoading
-            title="검색 중"
-            description="주소·식별자 조회 중"
-          />
+          <ChainLoading title="검색 중" description="주소·식별자 조회 중" />
         )}
         {searchError && (
           <div className="notice danger" role="alert">
@@ -894,7 +977,9 @@ export default function ScanApp() {
               ) : !items.length ? (
                 <Empty
                   title={tr("이 범위에는 해당 도장이 없습니다.")}
-                  text={tr("전체 EAS 필터 또는 이전 기록 조회로 검색 범위를 확대할 수 있습니다.")}
+                  text={tr(
+                    "전체 EAS 필터 또는 이전 기록 조회로 검색 범위를 확대할 수 있습니다.",
+                  )}
                 />
               ) : display === "cards" ? (
                 <ScanCards
@@ -1049,7 +1134,7 @@ export default function ScanApp() {
             <div className="wallet-connect-card">
               <div>
                 <Wallet size={24} />
-                <h2>{tr("주소만으로도 볼 수 있어요.")}</h2>
+                <h2>{tr("지갑 주소로 공개 기록 조회")}</h2>
                 <p>{tr("조회에는 서명이나 가스가 필요 없습니다.")}</p>
               </div>
               <button

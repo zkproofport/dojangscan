@@ -1,3 +1,5 @@
+import { RecordOverview } from "./record-context";
+import RelatedRecords from "./related-records";
 import { issuerMetadata } from "@/lib/issuer-metadata";
 import { tr } from "@/lib/i18n";
 import { formatDateTime } from "@/lib/date-time";
@@ -135,9 +137,7 @@ export default function ScanDetail({
           <SheetDescription>
             {tr(
               schemaUid
-                ? tr(
-                    "도장 데이터 필드 및 발급 권한",
-                  )
+                ? tr("도장 데이터 필드 및 발급 권한")
                 : tr("EAS의 현재 기록과 발행자 등록 근거를 함께 읽습니다."),
             )}
           </SheetDescription>
@@ -159,9 +159,7 @@ export default function ScanDetail({
           ) : (schemaUid ? schemaError : error) ? (
             <div className="notice danger read-feedback" role="alert">
               <strong>{tr("최신 상태를 확인하지 못했습니다.")}</strong>
-              {(schema || record) && (
-                <p>{tr("마지막 조회 결과 표시 중")}</p>
-              )}
+              {(schema || record) && <p>{tr("마지막 조회 결과 표시 중")}</p>}
               <p>{tr(schemaUid ? schemaError : error)}</p>
               <button
                 className="secondary-button"
@@ -286,12 +284,27 @@ export default function ScanDetail({
             </>
           ) : a ? (
             <>
+              <RecordOverview
+                schema={a.schema}
+                issuer={a.attester}
+                recipient={a.recipient}
+                issuedAt={String(a.time)}
+                fields={a.fields}
+                uid={a.uid}
+                source="Public · GIWA Sepolia"
+              />
               <div className="detail-status">
                 <Status value={a.status} />
                 <IssuerStamp kind={a.issuerClass} />
                 {busy && <RefreshCw size={14} className="spinning" />}
               </div>
               <p className="record-statement">{tr(describeRecord(a))}</p>
+              <p className="record-limit">
+                {tr(
+                  "EAS 상태와 현재 이용 자격은 별개입니다. Current Decision UNKNOWN · ALLOW 비활성화",
+                )}
+              </p>
+              <RelatedRecords uid={a.uid} />
               {a.dojang && a.schemaName === "Verified Code" && (
                 <p className="notice">
                   {tr(

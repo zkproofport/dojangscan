@@ -186,3 +186,77 @@ test("409 recovery preserves the requested page size and does not loop on failur
     "6",
   );
 });
+
+test("recipient pagination retains normalized recipient, issuer and schema together", async () => {
+  const urls: URL[] = [];
+  const client = createBackendClient(network, async (input) => {
+    urls.push(new URL(String(input), "http://localhost"));
+    return response({ meta, data: [projection], next: "opaque+/=next" });
+  });
+  const filters = {
+    recipient: " 0x" + "AB".repeat(20) + " ",
+    issuer: projection.issuer,
+    schema: projection.schema,
+  };
+  const first = await client.list(filters);
+  await client.list(filters, first.next!);
+  for (const url of urls) {
+    assert.equal(url.searchParams.get("recipient"), "0x" + "ab".repeat(20));
+    assert.equal(url.searchParams.get("issuer"), projection.issuer);
+    assert.equal(url.searchParams.get("schema"), projection.schema);
+    assert.equal(url.searchParams.get("limit"), "20");
+  }
+  assert.equal(urls[1].searchParams.get("cursor"), first.next);
+});
+
+test("snapshot reset keeps the recipient scope and returns only the replacement page", async () => {
+  const urls: URL[] = [];
+  const client = createBackendClient(network, async (input) => {
+    urls.push(new URL(String(input), "http://localhost"));
+    return urls.length === 1
+      ? response({ error: "CURSOR_SNAPSHOT_CHANGED" }, 409)
+      : response({ meta, data: [projection], next: "new" });
+  });
+  const result = await backendPage(
+    client,
+    { recipient: projection.recipient, issuer: projection.issuer },
+    "old",
+    20,
+  );
+  assert.equal(result.reset, true);
+  assert.deepEqual(result.page.data, [projection]);
+  assert.equal(urls[1].searchParams.has("cursor"), false);
+  for (const url of urls) {
+    assert.equal(url.searchParams.get("recipient"), projection.recipient);
+    assert.equal(url.searchParams.get("issuer"), projection.issuer);
+  }
+});
+
+test("invalid recipient makes no request and server errors never resolve to an empty page", async () => {
+  let calls = 0;
+  const client = createBackendClient(network, async () => {
+    calls++;
+    return response({ meta, data: [], next: null });
+  });
+  for (const recipient of [
+    "0x123",
+    "0x" + "g".repeat(40),
+    "https://example.com",
+  ])
+    await assert.rejects(client.list({ recipient }), {
+      status: 400,
+      code: "INVALID_QUERY",
+    });
+  assert.equal(calls, 0);
+  for (const status of [400, 429, 502, 503, 504]) {
+    await assert.rejects(
+      createBackendClient(network, async () =>
+        response({ error: "UNAVAILABLE" }, status),
+      ).list({ recipient: projection.recipient }),
+      { status },
+    );
+  }
+  const empty = await client.list({ recipient: projection.recipient });
+  assert.deepEqual(empty.data, []);
+  assert.equal(empty.meta.stateEvaluationReady, false);
+});

@@ -1,3 +1,4 @@
+import { EventTimeline } from "./record-context";
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Badge, CopyButton } from "./scan-ui";
@@ -448,7 +449,9 @@ export default function HistoricalExplorer() {
                 </dd>
               </div>
               <div>
-                <dt>{t("Receipt 검증 완료 블록", "Receipt-verified blocks")}</dt>
+                <dt>
+                  {t("Receipt 검증 완료 블록", "Receipt-verified blocks")}
+                </dt>
                 <dd>
                   {coverage.receiptVerifiedBlocks.length.toLocaleString()} ·{" "}
                   {t("연속 Raw coverage 아님", "not continuous Raw coverage")}
@@ -500,9 +503,7 @@ export default function HistoricalExplorer() {
               )}
             </p>
             <details>
-              <summary>
-                {t("미확인 증거 항목", "Unresolved evidence")}
-              </summary>
+              <summary>{t("미확인 증거 항목", "Unresolved evidence")}</summary>
               <p>
                 {t("기존 발급 증거 재사용", "Reused issuance proofs")}:{" "}
                 {coverage.summary.existingProofs}
@@ -713,7 +714,7 @@ export default function HistoricalExplorer() {
                 {t("관측된 이벤트", "Observed events")}
               </h3>
               {empty(detail)}
-              {events(detail)}
+              <EventTimeline page={detail} uid={selected} />
               <button
                 disabled={!detail.next}
                 onClick={() => void lookup(selected, detail.next!)}
