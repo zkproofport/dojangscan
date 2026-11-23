@@ -116,6 +116,15 @@ export function contentFieldLabel(name: string, ko: boolean) {
     policyVersion: ["기록된 정책 버전", "Recorded policy version"],
     occurredDay: ["기록된 occurredDay 값", "Recorded occurredDay value"],
     origin: ["출처 코드", "Origin code"],
+    runner: ["기록된 runner 식별값", "Recorded runner identifier"],
+    shoe: ["기록된 shoe 식별값", "Recorded shoe identifier"],
+    seedHash: ["기록된 seed 해시", "Recorded seed hash"],
+    dataHash: ["기록된 데이터 해시", "Recorded data hash"],
+    firstNonce: ["기록된 firstNonce 값", "Recorded firstNonce value"],
+    drawNonce: ["기록된 drawNonce 값", "Recorded drawNonce value"],
+    drawKind: ["기록된 drawKind 값", "Recorded drawKind value"],
+    rarity: ["기록된 rarity 값", "Recorded rarity value"],
+    modelId: ["기록된 모델 식별값", "Recorded model identifier"],
   };
   return labels[name]?.[ko ? 0 : 1] ?? name;
 }
