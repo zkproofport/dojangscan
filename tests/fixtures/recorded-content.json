@@ -1,0 +1,876 @@
+{
+  "fixtureOnly": true,
+  "note": "Content from six stored payloads using the local Backend interpreter; projection state fields are conservative synthetic UI fixtures, not live API responses.",
+  "details": [
+    {
+      "meta": {
+        "network": "giwa-sepolia-catchup25-r1",
+        "chainId": "91342",
+        "asOfBlock": 41639611,
+        "evaluatedBlock": 41472564,
+        "blockHash": "0xa01c2e19fa69889b442c954ae811ad2e46675fe632b68f938c7c832e0f212b73",
+        "observedAt": "2026-11-23T10:50:10.570Z",
+        "verifiedAt": "2026-11-23T11:17:03.052809+00:00",
+        "freshness": "stale",
+        "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+        "stateEvaluationReady": false,
+        "range": {
+          "from": 41472210,
+          "through": 41639611,
+          "requestedRangeComplete": true
+        },
+        "coverage": {
+          "raw_complete": false,
+          "hydration_complete": false,
+          "initialStateComplete": false,
+          "pending": 987,
+          "exhausted": 987
+        }
+      },
+      "data": {
+        "uid": "0x2229b65e8c6a7e9a712535220bddc10fd8aa87da294e0b351997fefcfc1e8714",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "issuer": "0xbd9991a26d0a0bf744ecdb8ad4f59f60a9132956",
+        "recipient": "0x3e0020afaef01ca2ceb7b4fc512f0911840325a9",
+        "issuedAt": "1794978033",
+        "fields": {},
+        "issued": null,
+        "notRevoked": null,
+        "notExpired": null,
+        "currentIndexSelected": null,
+        "policyAccepted": null,
+        "dependencyValid": null,
+        "issuerRegistered": null,
+        "issuerRegisteredAtIssuance": null,
+        "schemaRegistered": null,
+        "reasons": [
+          "UNKNOWN_SCHEMA"
+        ]
+      },
+      "content": {
+        "version": "recorded-content-v1",
+        "purpose": "recorded_content_only",
+        "status": "decoded",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "definitionEvidence": {
+          "kind": "previously-saved-fixed-block-getSchema",
+          "chainId": "91342",
+          "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+          "registry": "0x4200000000000000000000000000000000000020",
+          "blockHash": "0x0effd5e017a5fa59139de8f104e0632a974210578a38ed34eecf334371d220f8",
+          "sourceSHA256": "72452d94fc53f9676aebf61af7d7c9b674ca43bf20b2dea849b1393340a239da",
+          "receiptRootVerified": false,
+          "independentProvider": false
+        },
+        "observation": {
+          "blockHash": "0x5fb2b1c5eb5c25e0be2b1d23f750b5720ba3420027b05674876adaa25ef329ac",
+          "blockNumber": 41633147,
+          "observedAt": "2026-11-20T21:57:37.896Z"
+        },
+        "fields": [
+          {
+            "name": "occurrenceId",
+            "type": "bytes32",
+            "value": "0xc93f14bdfc8cd637217ac7d7bcfbb8e6a6a91293b731067ee38787c34fefa26f"
+          },
+          {
+            "name": "actionId",
+            "type": "bytes32",
+            "value": "0x5ff9193202d31d5a2168575f4b75c5f38a120986703cd9236aad80da79ecd67e"
+          },
+          {
+            "name": "revision",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "actionCode",
+            "type": "uint16",
+            "value": "12"
+          },
+          {
+            "name": "schemaVersion",
+            "type": "uint16",
+            "value": "1"
+          },
+          {
+            "name": "policyVersion",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "environmentId",
+            "type": "bytes32",
+            "value": "0xd5bc532db275cd70e5f55280b01cd2acc6b30b90d5aaa451adeb4b9a8f02c264"
+          },
+          {
+            "name": "creatorId",
+            "type": "bytes32",
+            "value": "0x00000000000000000000000000000000284db618fb9149879d44543f7210d834"
+          },
+          {
+            "name": "campaignId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "name": "occurredDay",
+            "type": "uint32",
+            "value": "20775"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "value": "0"
+          },
+          {
+            "name": "evidenceCommitment",
+            "type": "bytes32",
+            "value": "0x85b22d3dea6005b309f63ed364f3114cbed2b0a955c0cacfbaf78c5fab7f7e9d"
+          },
+          {
+            "name": "credentialRefsHash",
+            "type": "bytes32",
+            "value": "0x1607a9dbdd57ebf15f1c360a9bee737727e36d34a7557468a82d8b2d2ef19ea3"
+          },
+          {
+            "name": "migrationBatchId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "reasons": [],
+        "limitations": [
+          "CONTENT_NOT_TRUTH_VERIFIED",
+          "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+          "NOT_CURRENT_ELIGIBILITY"
+        ]
+      }
+    },
+    {
+      "meta": {
+        "network": "giwa-sepolia-catchup25-r1",
+        "chainId": "91342",
+        "asOfBlock": 41639611,
+        "evaluatedBlock": 41472564,
+        "blockHash": "0xa01c2e19fa69889b442c954ae811ad2e46675fe632b68f938c7c832e0f212b73",
+        "observedAt": "2026-11-23T10:50:10.570Z",
+        "verifiedAt": "2026-11-23T11:17:03.052809+00:00",
+        "freshness": "stale",
+        "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+        "stateEvaluationReady": false,
+        "range": {
+          "from": 41472210,
+          "through": 41639611,
+          "requestedRangeComplete": true
+        },
+        "coverage": {
+          "raw_complete": false,
+          "hydration_complete": false,
+          "initialStateComplete": false,
+          "pending": 987,
+          "exhausted": 987
+        }
+      },
+      "data": {
+        "uid": "0x3f6f14736da28faa144d2363171d9f2bc783366574d4093b8f1d015a3310117d",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "issuer": "0xbd9991a26d0a0bf744ecdb8ad4f59f60a9132956",
+        "recipient": "0x1de79e342ccc40ce1c65fa546b0d20a6160bc0bb",
+        "issuedAt": "1794901142",
+        "fields": {},
+        "issued": null,
+        "notRevoked": null,
+        "notExpired": null,
+        "currentIndexSelected": null,
+        "policyAccepted": null,
+        "dependencyValid": null,
+        "issuerRegistered": null,
+        "issuerRegisteredAtIssuance": null,
+        "schemaRegistered": null,
+        "reasons": [
+          "UNKNOWN_SCHEMA"
+        ]
+      },
+      "content": {
+        "version": "recorded-content-v1",
+        "purpose": "recorded_content_only",
+        "status": "decoded",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "definitionEvidence": {
+          "kind": "previously-saved-fixed-block-getSchema",
+          "chainId": "91342",
+          "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+          "registry": "0x4200000000000000000000000000000000000020",
+          "blockHash": "0x0effd5e017a5fa59139de8f104e0632a974210578a38ed34eecf334371d220f8",
+          "sourceSHA256": "72452d94fc53f9676aebf61af7d7c9b674ca43bf20b2dea849b1393340a239da",
+          "receiptRootVerified": false,
+          "independentProvider": false
+        },
+        "observation": {
+          "blockHash": "0x259be795f4c0f434f4b63d73677ba406239acf974e5c870ad038323c696f5df0",
+          "blockNumber": 41556059,
+          "observedAt": "2026-11-20T05:00:18.206Z"
+        },
+        "fields": [
+          {
+            "name": "occurrenceId",
+            "type": "bytes32",
+            "value": "0xc204dd80da7cf6d5861e5234218af0bb9ee2d1cab6999e36cbf9cdac294fc96d"
+          },
+          {
+            "name": "actionId",
+            "type": "bytes32",
+            "value": "0x41e494cc8d9523ef037c507c4000897c239881fa5e8d224bad9e8cc83ac37414"
+          },
+          {
+            "name": "revision",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "actionCode",
+            "type": "uint16",
+            "value": "6"
+          },
+          {
+            "name": "schemaVersion",
+            "type": "uint16",
+            "value": "1"
+          },
+          {
+            "name": "policyVersion",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "environmentId",
+            "type": "bytes32",
+            "value": "0xd5bc532db275cd70e5f55280b01cd2acc6b30b90d5aaa451adeb4b9a8f02c264"
+          },
+          {
+            "name": "creatorId",
+            "type": "bytes32",
+            "value": "0x000000000000000000000000000000005ca8e8e211164f009000000000000001"
+          },
+          {
+            "name": "campaignId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "name": "occurredDay",
+            "type": "uint32",
+            "value": "20774"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "value": "0"
+          },
+          {
+            "name": "evidenceCommitment",
+            "type": "bytes32",
+            "value": "0x55e5a90b11dd1db16009506f8dc0a26fcbcba9804a4cd854c96d47919e9a9668"
+          },
+          {
+            "name": "credentialRefsHash",
+            "type": "bytes32",
+            "value": "0x01a332bded8ca6df5e788eb49b15e2d6a2ed39022011cd62108c4d767a3bc0d5"
+          },
+          {
+            "name": "migrationBatchId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "reasons": [],
+        "limitations": [
+          "CONTENT_NOT_TRUTH_VERIFIED",
+          "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+          "NOT_CURRENT_ELIGIBILITY"
+        ]
+      }
+    },
+    {
+      "meta": {
+        "network": "giwa-sepolia-catchup25-r1",
+        "chainId": "91342",
+        "asOfBlock": 41639611,
+        "evaluatedBlock": 41472564,
+        "blockHash": "0xa01c2e19fa69889b442c954ae811ad2e46675fe632b68f938c7c832e0f212b73",
+        "observedAt": "2026-11-23T10:50:10.570Z",
+        "verifiedAt": "2026-11-23T11:17:03.052809+00:00",
+        "freshness": "stale",
+        "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+        "stateEvaluationReady": false,
+        "range": {
+          "from": 41472210,
+          "through": 41639611,
+          "requestedRangeComplete": true
+        },
+        "coverage": {
+          "raw_complete": false,
+          "hydration_complete": false,
+          "initialStateComplete": false,
+          "pending": 987,
+          "exhausted": 987
+        }
+      },
+      "data": {
+        "uid": "0x4f8659bf5753eb5c54da100aa86a83198d42c1695bfe58569645e8c3e2b0a14a",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "issuer": "0xbd9991a26d0a0bf744ecdb8ad4f59f60a9132956",
+        "recipient": "0x3e0020afaef01ca2ceb7b4fc512f0911840325a9",
+        "issuedAt": "1794977877",
+        "fields": {},
+        "issued": null,
+        "notRevoked": null,
+        "notExpired": null,
+        "currentIndexSelected": null,
+        "policyAccepted": null,
+        "dependencyValid": null,
+        "issuerRegistered": null,
+        "issuerRegisteredAtIssuance": null,
+        "schemaRegistered": null,
+        "reasons": [
+          "UNKNOWN_SCHEMA"
+        ]
+      },
+      "content": {
+        "version": "recorded-content-v1",
+        "purpose": "recorded_content_only",
+        "status": "decoded",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "definitionEvidence": {
+          "kind": "previously-saved-fixed-block-getSchema",
+          "chainId": "91342",
+          "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+          "registry": "0x4200000000000000000000000000000000000020",
+          "blockHash": "0x0effd5e017a5fa59139de8f104e0632a974210578a38ed34eecf334371d220f8",
+          "sourceSHA256": "72452d94fc53f9676aebf61af7d7c9b674ca43bf20b2dea849b1393340a239da",
+          "receiptRootVerified": false,
+          "independentProvider": false
+        },
+        "observation": {
+          "blockHash": "0x2434724cd3b1f84a44907a78c69cb445a074e468002d0866708bc8a4a40aba80",
+          "blockNumber": 41632827,
+          "observedAt": "2026-11-20T21:52:49.220Z"
+        },
+        "fields": [
+          {
+            "name": "occurrenceId",
+            "type": "bytes32",
+            "value": "0x88ec222bc87f97bbd0a78b863709c85bc12eb02f9ead4a885c7718d5ae7aa6f1"
+          },
+          {
+            "name": "actionId",
+            "type": "bytes32",
+            "value": "0x97b1c29ded88d3d3fbf02c29ef15a04936e68d3e2ddf74961a8928afb980ac5f"
+          },
+          {
+            "name": "revision",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "actionCode",
+            "type": "uint16",
+            "value": "12"
+          },
+          {
+            "name": "schemaVersion",
+            "type": "uint16",
+            "value": "1"
+          },
+          {
+            "name": "policyVersion",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "environmentId",
+            "type": "bytes32",
+            "value": "0xd5bc532db275cd70e5f55280b01cd2acc6b30b90d5aaa451adeb4b9a8f02c264"
+          },
+          {
+            "name": "creatorId",
+            "type": "bytes32",
+            "value": "0x00000000000000000000000000000000284db618fb9149879d44543f7210d834"
+          },
+          {
+            "name": "campaignId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "name": "occurredDay",
+            "type": "uint32",
+            "value": "20775"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "value": "0"
+          },
+          {
+            "name": "evidenceCommitment",
+            "type": "bytes32",
+            "value": "0x04de725ba45e7ee73834f402956f667c56d763d97fbb75127accdd9533cf4a72"
+          },
+          {
+            "name": "credentialRefsHash",
+            "type": "bytes32",
+            "value": "0x1df1ae78de74c5d16738ec470f9fe3e766bf0aa3a8232fdf88536f4f5b09ca5c"
+          },
+          {
+            "name": "migrationBatchId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "reasons": [],
+        "limitations": [
+          "CONTENT_NOT_TRUTH_VERIFIED",
+          "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+          "NOT_CURRENT_ELIGIBILITY"
+        ]
+      }
+    },
+    {
+      "meta": {
+        "network": "giwa-sepolia-catchup25-r1",
+        "chainId": "91342",
+        "asOfBlock": 41639611,
+        "evaluatedBlock": 41472564,
+        "blockHash": "0xa01c2e19fa69889b442c954ae811ad2e46675fe632b68f938c7c832e0f212b73",
+        "observedAt": "2026-11-23T10:50:10.570Z",
+        "verifiedAt": "2026-11-23T11:17:03.052809+00:00",
+        "freshness": "stale",
+        "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+        "stateEvaluationReady": false,
+        "range": {
+          "from": 41472210,
+          "through": 41639611,
+          "requestedRangeComplete": true
+        },
+        "coverage": {
+          "raw_complete": false,
+          "hydration_complete": false,
+          "initialStateComplete": false,
+          "pending": 987,
+          "exhausted": 987
+        }
+      },
+      "data": {
+        "uid": "0xac5b202c26a77118d83dadab7fc7075345ddb702c538c30c0cbe8315b1250d62",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "issuer": "0xbd9991a26d0a0bf744ecdb8ad4f59f60a9132956",
+        "recipient": "0x3e0020afaef01ca2ceb7b4fc512f0911840325a9",
+        "issuedAt": "1794978068",
+        "fields": {},
+        "issued": null,
+        "notRevoked": null,
+        "notExpired": null,
+        "currentIndexSelected": null,
+        "policyAccepted": null,
+        "dependencyValid": null,
+        "issuerRegistered": null,
+        "issuerRegisteredAtIssuance": null,
+        "schemaRegistered": null,
+        "reasons": [
+          "UNKNOWN_SCHEMA"
+        ]
+      },
+      "content": {
+        "version": "recorded-content-v1",
+        "purpose": "recorded_content_only",
+        "status": "decoded",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "definitionEvidence": {
+          "kind": "previously-saved-fixed-block-getSchema",
+          "chainId": "91342",
+          "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+          "registry": "0x4200000000000000000000000000000000000020",
+          "blockHash": "0x0effd5e017a5fa59139de8f104e0632a974210578a38ed34eecf334371d220f8",
+          "sourceSHA256": "72452d94fc53f9676aebf61af7d7c9b674ca43bf20b2dea849b1393340a239da",
+          "receiptRootVerified": false,
+          "independentProvider": false
+        },
+        "observation": {
+          "blockHash": "0x32fbed7699cfedb8e455dead369077a252bad16668d3d1042620c91b212046ec",
+          "blockNumber": 41633211,
+          "observedAt": "2026-11-20T21:58:36.561Z"
+        },
+        "fields": [
+          {
+            "name": "occurrenceId",
+            "type": "bytes32",
+            "value": "0xee77d407324bd4f5ad3dcbf49e97f1d012810d7549cc2285eee734c9ed50dde3"
+          },
+          {
+            "name": "actionId",
+            "type": "bytes32",
+            "value": "0xf1c7313ca16517253bdd9ed1d868f2c25498457e003a21660110c7b8a7cd3d10"
+          },
+          {
+            "name": "revision",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "actionCode",
+            "type": "uint16",
+            "value": "12"
+          },
+          {
+            "name": "schemaVersion",
+            "type": "uint16",
+            "value": "1"
+          },
+          {
+            "name": "policyVersion",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "environmentId",
+            "type": "bytes32",
+            "value": "0xd5bc532db275cd70e5f55280b01cd2acc6b30b90d5aaa451adeb4b9a8f02c264"
+          },
+          {
+            "name": "creatorId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000018ec531995fb413495f497ff95ae726b"
+          },
+          {
+            "name": "campaignId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "name": "occurredDay",
+            "type": "uint32",
+            "value": "20775"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "value": "0"
+          },
+          {
+            "name": "evidenceCommitment",
+            "type": "bytes32",
+            "value": "0x4668ca15f11be49a6f9ebeac9fcb7beedb4cbcffe430a4179c0660e2bd241274"
+          },
+          {
+            "name": "credentialRefsHash",
+            "type": "bytes32",
+            "value": "0x09e6235c2bbf62d900c7cd668bd6b216aee63099bf586d86532cb316c52c088f"
+          },
+          {
+            "name": "migrationBatchId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "reasons": [],
+        "limitations": [
+          "CONTENT_NOT_TRUTH_VERIFIED",
+          "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+          "NOT_CURRENT_ELIGIBILITY"
+        ]
+      }
+    },
+    {
+      "meta": {
+        "network": "giwa-sepolia-catchup25-r1",
+        "chainId": "91342",
+        "asOfBlock": 41639611,
+        "evaluatedBlock": 41472564,
+        "blockHash": "0xa01c2e19fa69889b442c954ae811ad2e46675fe632b68f938c7c832e0f212b73",
+        "observedAt": "2026-11-23T10:50:10.570Z",
+        "verifiedAt": "2026-11-23T11:17:03.052809+00:00",
+        "freshness": "stale",
+        "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+        "stateEvaluationReady": false,
+        "range": {
+          "from": 41472210,
+          "through": 41639611,
+          "requestedRangeComplete": true
+        },
+        "coverage": {
+          "raw_complete": false,
+          "hydration_complete": false,
+          "initialStateComplete": false,
+          "pending": 987,
+          "exhausted": 987
+        }
+      },
+      "data": {
+        "uid": "0xe846c2aa17403e7c2d2fbf2adec9dfefd44933e90027d71169470f2fca7934ee",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "issuer": "0xbd9991a26d0a0bf744ecdb8ad4f59f60a9132956",
+        "recipient": "0x3e0020afaef01ca2ceb7b4fc512f0911840325a9",
+        "issuedAt": "1794978136",
+        "fields": {},
+        "issued": null,
+        "notRevoked": null,
+        "notExpired": null,
+        "currentIndexSelected": null,
+        "policyAccepted": null,
+        "dependencyValid": null,
+        "issuerRegistered": null,
+        "issuerRegisteredAtIssuance": null,
+        "schemaRegistered": null,
+        "reasons": [
+          "UNKNOWN_SCHEMA"
+        ]
+      },
+      "content": {
+        "version": "recorded-content-v1",
+        "purpose": "recorded_content_only",
+        "status": "decoded",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "definitionEvidence": {
+          "kind": "previously-saved-fixed-block-getSchema",
+          "chainId": "91342",
+          "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+          "registry": "0x4200000000000000000000000000000000000020",
+          "blockHash": "0x0effd5e017a5fa59139de8f104e0632a974210578a38ed34eecf334371d220f8",
+          "sourceSHA256": "72452d94fc53f9676aebf61af7d7c9b674ca43bf20b2dea849b1393340a239da",
+          "receiptRootVerified": false,
+          "independentProvider": false
+        },
+        "observation": {
+          "blockHash": "0x78650af96d7ef69ddf191ceb61d831a82d7e41de8734920e2ea3c572ddfb614e",
+          "blockNumber": 41633371,
+          "observedAt": "2026-11-20T22:01:00.021Z"
+        },
+        "fields": [
+          {
+            "name": "occurrenceId",
+            "type": "bytes32",
+            "value": "0x8bb4e632ecf94a8e2af1f8d5eafa78dd50572d18a2feac5409117841e14aeed6"
+          },
+          {
+            "name": "actionId",
+            "type": "bytes32",
+            "value": "0x7b9fb202a2541dc1718438e555afaf7d21e1d9727e0fe1410ce1faba256b95d8"
+          },
+          {
+            "name": "revision",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "actionCode",
+            "type": "uint16",
+            "value": "12"
+          },
+          {
+            "name": "schemaVersion",
+            "type": "uint16",
+            "value": "1"
+          },
+          {
+            "name": "policyVersion",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "environmentId",
+            "type": "bytes32",
+            "value": "0xd5bc532db275cd70e5f55280b01cd2acc6b30b90d5aaa451adeb4b9a8f02c264"
+          },
+          {
+            "name": "creatorId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000018ec531995fb413495f497ff95ae726b"
+          },
+          {
+            "name": "campaignId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "name": "occurredDay",
+            "type": "uint32",
+            "value": "20775"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "value": "0"
+          },
+          {
+            "name": "evidenceCommitment",
+            "type": "bytes32",
+            "value": "0x6a15c6dddab4cf22ca403526f2efae1609df1d5ebe9796c819826e5d87e6dc3e"
+          },
+          {
+            "name": "credentialRefsHash",
+            "type": "bytes32",
+            "value": "0x509983769b23ca76e736476c402ff1027aa212d74c892dd122a6ad59619f4853"
+          },
+          {
+            "name": "migrationBatchId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "reasons": [],
+        "limitations": [
+          "CONTENT_NOT_TRUTH_VERIFIED",
+          "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+          "NOT_CURRENT_ELIGIBILITY"
+        ]
+      }
+    },
+    {
+      "meta": {
+        "network": "giwa-sepolia-catchup25-r1",
+        "chainId": "91342",
+        "asOfBlock": 41639611,
+        "evaluatedBlock": 41472564,
+        "blockHash": "0xa01c2e19fa69889b442c954ae811ad2e46675fe632b68f938c7c832e0f212b73",
+        "observedAt": "2026-11-23T10:50:10.570Z",
+        "verifiedAt": "2026-11-23T11:17:03.052809+00:00",
+        "freshness": "stale",
+        "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+        "stateEvaluationReady": false,
+        "range": {
+          "from": 41472210,
+          "through": 41639611,
+          "requestedRangeComplete": true
+        },
+        "coverage": {
+          "raw_complete": false,
+          "hydration_complete": false,
+          "initialStateComplete": false,
+          "pending": 987,
+          "exhausted": 987
+        }
+      },
+      "data": {
+        "uid": "0xfb9a84ebb6feda6499eb4d7c9a52ac588ef574f342595304b92abe3e9f6a5f99",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "issuer": "0xbd9991a26d0a0bf744ecdb8ad4f59f60a9132956",
+        "recipient": "0x1de79e342ccc40ce1c65fa546b0d20a6160bc0bb",
+        "issuedAt": "1794901132",
+        "fields": {},
+        "issued": null,
+        "notRevoked": null,
+        "notExpired": null,
+        "currentIndexSelected": null,
+        "policyAccepted": null,
+        "dependencyValid": null,
+        "issuerRegistered": null,
+        "issuerRegisteredAtIssuance": null,
+        "schemaRegistered": null,
+        "reasons": [
+          "UNKNOWN_SCHEMA"
+        ]
+      },
+      "content": {
+        "version": "recorded-content-v1",
+        "purpose": "recorded_content_only",
+        "status": "decoded",
+        "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+        "definitionEvidence": {
+          "kind": "previously-saved-fixed-block-getSchema",
+          "chainId": "91342",
+          "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+          "registry": "0x4200000000000000000000000000000000000020",
+          "blockHash": "0x0effd5e017a5fa59139de8f104e0632a974210578a38ed34eecf334371d220f8",
+          "sourceSHA256": "72452d94fc53f9676aebf61af7d7c9b674ca43bf20b2dea849b1393340a239da",
+          "receiptRootVerified": false,
+          "independentProvider": false
+        },
+        "observation": {
+          "blockHash": "0x259be795f4c0f434f4b63d73677ba406239acf974e5c870ad038323c696f5df0",
+          "blockNumber": 41556059,
+          "observedAt": "2026-11-20T05:00:17.992Z"
+        },
+        "fields": [
+          {
+            "name": "occurrenceId",
+            "type": "bytes32",
+            "value": "0x823bab9f18a6269d01e26e15900404ed97a3dcc5eda558d15e116bd894e6d540"
+          },
+          {
+            "name": "actionId",
+            "type": "bytes32",
+            "value": "0xb7ff2aea97d9b93e69510d8b9597610f13b74956880be6b032e299a6bd243166"
+          },
+          {
+            "name": "revision",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "actionCode",
+            "type": "uint16",
+            "value": "7"
+          },
+          {
+            "name": "schemaVersion",
+            "type": "uint16",
+            "value": "1"
+          },
+          {
+            "name": "policyVersion",
+            "type": "uint32",
+            "value": "1"
+          },
+          {
+            "name": "environmentId",
+            "type": "bytes32",
+            "value": "0xd5bc532db275cd70e5f55280b01cd2acc6b30b90d5aaa451adeb4b9a8f02c264"
+          },
+          {
+            "name": "creatorId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "name": "campaignId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "name": "occurredDay",
+            "type": "uint32",
+            "value": "20774"
+          },
+          {
+            "name": "origin",
+            "type": "uint8",
+            "value": "0"
+          },
+          {
+            "name": "evidenceCommitment",
+            "type": "bytes32",
+            "value": "0xdf8ceb5c70798c5b7a69cd724ab139f45b7c19f2cfcd17d9f0ade7f9c1985d3f"
+          },
+          {
+            "name": "credentialRefsHash",
+            "type": "bytes32",
+            "value": "0x7ab3f9a5b24a67f18844aa61346e013efe394c4e68f9313bbc8304bc11d67d12"
+          },
+          {
+            "name": "migrationBatchId",
+            "type": "bytes32",
+            "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "reasons": [],
+        "limitations": [
+          "CONTENT_NOT_TRUTH_VERIFIED",
+          "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+          "NOT_CURRENT_ELIGIBILITY"
+        ]
+      }
+    }
+  ]
+}

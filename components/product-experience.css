@@ -864,3 +864,14 @@
     margin: 12px 0 16px;
   }
 }
+.recorded-interpretation { min-width: 0; font-size: 14px; line-height: 1.65; }
+.recorded-interpretation .interpreted-fields dd { display: flex; gap: 8px; align-items: flex-start; min-width: 0; }
+.interpreted-fields dd > span, .interpreted-fields dd > code { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; flex: 1; }
+.interpreted-fields dd > button { flex: 0 0 auto; }
+.recorded-interpretation .content-limitations { padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; }
+.content-evidence { margin-top: 16px; }
+.content-evidence summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
+.content-evidence code { overflow-wrap: anywhere; font-size: 12px; }
+@media (max-width: 480px) {
+  .recorded-interpretation .interpreted-fields > div { grid-template-columns: 1fr; gap: 4px; }
+}

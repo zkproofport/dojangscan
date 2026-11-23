@@ -1,4 +1,5 @@
 import { liveAPIBase } from "./api-endpoints";
+import type { RecordedContent } from "./recorded-content";
 // Read-only API contract from dojangscan-backend/apps/api/server.ts.
 export type TriState = boolean | null;
 export type BackendMeta = {
@@ -59,7 +60,11 @@ export type BackendPage = {
   data: BackendProjection[];
   next: string | null;
 };
-export type BackendDetail = { meta: BackendMeta; data: BackendProjection };
+export type BackendDetail = {
+  meta: BackendMeta;
+  data: BackendProjection;
+  content?: RecordedContent;
+};
 export type BackendHistory = {
   historicalOnly: true;
   currentDecision: "UNKNOWN";

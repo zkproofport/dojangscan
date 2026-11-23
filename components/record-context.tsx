@@ -1,4 +1,5 @@
 import { usePreferences } from "@/lib/preferences";
+import type { ReactNode } from "react";
 import { NETWORK } from "@/lib/giwa";
 import { displayDate, schemaTitle } from "@/lib/explorer-presentation";
 import {
@@ -55,6 +56,7 @@ export function RecordOverview({
   fields,
   uid,
   source,
+  contentSlot,
 }: {
   schema: string;
   issuer: string;
@@ -63,6 +65,7 @@ export function RecordOverview({
   fields: { name: string; value: string }[];
   uid: string;
   source: string;
+  contentSlot?: ReactNode;
 }) {
   const [language] = usePreferences();
   const ko = language === "ko";
@@ -98,29 +101,33 @@ export function RecordOverview({
       </dl>
       <div className="record-content">
         <h3>{t("발행자가 기록한 내용", "Content recorded by the issuer")}</h3>
-        {content.length ? (
-          <dl>
-            {content.map((f) => (
-              <div key={f.name}>
-                <dt>{fieldLabel(f.name, ko)}</dt>
-                <dd>{recordFieldValue(f.name, f.value, ko)}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p>
-            {t(
-              "해석된 요약 내용이 없거나 식별값만 제공됩니다. 원문은 상세 정보에서 확인할 수 있습니다.",
-              "No decoded summary, or only identifiers are available. See source details below.",
+        {contentSlot ?? (
+          <>
+            {content.length ? (
+              <dl>
+                {content.map((f) => (
+                  <div key={f.name}>
+                    <dt>{fieldLabel(f.name, ko)}</dt>
+                    <dd>{recordFieldValue(f.name, f.value, ko)}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p>
+                {t(
+                  "해석된 요약 내용이 없거나 식별값만 제공됩니다. 원문은 상세 정보에서 확인할 수 있습니다.",
+                  "No decoded summary, or only identifiers are available. See source details below.",
+                )}
+              </p>
             )}
-          </p>
+            <p className="fine-print">
+              {t(
+                "발행자의 기록이며, 내용의 사실성이나 현재 서비스 이용 자격을 보증하지 않습니다.",
+                "Issuer assertions, not a guarantee of truth or current eligibility.",
+              )}
+            </p>
+          </>
         )}
-        <p className="fine-print">
-          {t(
-            "발행자의 기록이며, 내용의 사실성이나 현재 서비스 이용 자격을 보증하지 않습니다.",
-            "Issuer assertions, not a guarantee of truth or current eligibility.",
-          )}
-        </p>
       </div>
       <div className="record-actions">
         <span>

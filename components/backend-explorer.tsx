@@ -48,6 +48,7 @@ import {
   RecordEvidence,
 } from "./record-context";
 import RelatedRecords from "./related-records";
+import { RecordedContentPanel } from "./recorded-content";
 import { isIssuerAddress } from "@/lib/product-experience";
 import {
   ExplorerSearch,
@@ -800,6 +801,7 @@ export function BackendRecords({
 }
 function BackendRecordDetail({ detail }: { detail: BackendDetail }) {
   const t = useText();
+  const [language] = usePreferences();
   const p = detail.data;
   const record = adaptProjection(p);
   const tri = (v: TriState | undefined) =>
@@ -818,6 +820,15 @@ function BackendRecordDetail({ detail }: { detail: BackendDetail }) {
         fields={record.fields}
         uid={p.uid}
         source={t("저장된 수집 기록 · Live", "Stored observations · Live")}
+        contentSlot={
+          detail.content !== undefined || record.fields.length === 0 ? (
+            <RecordedContentPanel
+              value={detail.content}
+              schema={p.schema}
+              ko={language === "ko"}
+            />
+          ) : undefined
+        }
       />
       <StoredRecordContext meta={detail.meta} />
       <RecordObservation detail={detail} />
