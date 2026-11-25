@@ -296,7 +296,7 @@ export default function Workspace({
       </div>
       <TransactionHistory />
       {role === "console" ? (
-        <Suspense fallback={<p>{tr("화면 준비 중")}</p>}>
+        <Suspense fallback={<p>{tr("불러오는 중…")}</p>}>
           <ContractConsole address={connected} chain={chain} />
         </Suspense>
       ) : (

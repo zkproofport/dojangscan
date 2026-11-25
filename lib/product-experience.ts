@@ -2,6 +2,7 @@ import { SCHEMAS } from "./giwa";
 import type { BackendDetail } from "./backend-api";
 import type { HistoricalEvent } from "./historical-api";
 import { adaptProjection } from "./backend-adapter";
+import { sourceURL } from "./record-navigation";
 
 export type LookupIntent = "record" | "wallet" | "issuer" | "schema";
 export type LookupTarget = {
@@ -27,7 +28,11 @@ export function addressRoleURL(value: string, recipient: boolean) {
 /** Show issuer-provided content, without inferring units or verification. */
 export function recordSummaryFields(fields: { name: string; value: string }[]) {
   return fields
-    .filter((f) => !["salt", "proofs", "root", "codeHash"].includes(f.name))
+    .filter(
+      (f) =>
+        !["salt", "proofs", "root", "codeHash"].includes(f.name) &&
+        !/^0x[0-9a-f]{64,}$/i.test(f.value),
+    )
     .slice(0, 2);
 }
 
@@ -67,7 +72,13 @@ export function resolveProductLookup(
       )
         return null;
       const uid = url.searchParams.get("uid");
-      if (!uid || !uidPattern.test(uid)) return null;
+      const issuer = url.searchParams.get("issuer");
+      const recipient =
+        url.searchParams.get("recipient") ?? url.searchParams.get("address");
+      if (uid && !uidPattern.test(uid)) return null;
+      if (issuer && !addressPattern.test(issuer)) return null;
+      if (recipient && !addressPattern.test(recipient)) return null;
+      if (!uid && !issuer && !recipient) return null;
       const historical = url.searchParams.get("history") === "backfill";
       const recent = url.searchParams.get("history") === "recent";
       // Old links without a source were Public. Preserve their original meaning.
@@ -76,18 +87,18 @@ export function resolveProductLookup(
           ? "backend"
           : "public";
       return {
-        kind: "record",
+        kind: uid ? "record" : issuer ? "issuer" : "wallet",
         source: recent ? "recent" : historical ? "history" : source,
-        href: route({
-          view: "explore",
-          source,
-          ...(recent
-            ? { history: "recent" }
+        href: sourceURL(
+          recent
+            ? "recent"
             : historical
-              ? { history: "backfill" }
-              : {}),
-          uid: uid.toLowerCase(),
-        }),
+              ? "history"
+              : source === "backend"
+                ? "live"
+                : "public",
+          url.search,
+        ),
       };
     } catch {
       return null;

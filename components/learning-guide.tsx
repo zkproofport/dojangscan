@@ -106,7 +106,7 @@ export default function LearningGuide({
         <div className="trust-legend">
           <div>
             <ShieldCheck size={23} />
-            <Badge variant="success">{tr("Dojang 등록")}</Badge>
+            <Badge variant="success">{tr("현재 Dojang 등록")}</Badge>
             <p>
               {tr("현재 발행자 등록 여부")}
               <br />
@@ -203,7 +203,7 @@ export default function LearningGuide({
             rel="noreferrer"
           >
             {tr("Dojang 소개")}
-            <ExternalLink size={14} />
+
           </a>
           <a
             href="https://github.com/giwa-io/dojang"
@@ -211,7 +211,7 @@ export default function LearningGuide({
             rel="noreferrer"
           >
             {tr("Dojang 컨트랙트 소스")}
-            <ExternalLink size={14} />
+
           </a>
         </div>
         <div className="source-address">
@@ -224,7 +224,7 @@ export default function LearningGuide({
             target="_blank"
             rel="noreferrer"
           >
-            <ExternalLink size={14} />
+
           </a>
         </div>
       </section>

@@ -51,17 +51,17 @@ test("six stored payload interpretations display content without changing projec
   }
 });
 test("legacy absence and all interpretation failure states remain distinct in Korean and English", () => {
-  assert.match(render(undefined), /별도 내용 해석이 제공되지/);
-  assert.match(render(undefined, false), /does not include a separate content/);
+  assert.match(render(undefined), /기록 내용 미제공/);
+  assert.match(render(undefined, false), /Record content unavailable/);
   for (const [status, reason, ko, en] of [
     [
       "unavailable",
       "STORED_PAYLOAD_UNAVAILABLE",
-      "저장 Payload",
-      "stored payload is unavailable",
+      "기록 내용 미제공",
+      "Content unavailable",
     ],
-    ["invalid", "PAYLOAD_ABI_INVALID", "형식 또는 식별", "format or identity"],
-    ["limited", "CONTENT_SIZE_LIMIT", "표시 크기 제한", "size limit"],
+    ["invalid", "PAYLOAD_ABI_INVALID", "형식·식별", "format or identity"],
+    ["limited", "CONTENT_SIZE_LIMIT", "크기 제한", "display limit"],
   ]) {
     const c = { ...detail.content, status, reasons: [reason], fields: [] };
     assert.ok(render(c).includes(ko));
@@ -87,7 +87,7 @@ test("malformed or wrong schema responses are content errors, never empty succes
       "contract-error",
     );
     assert.match(render(value), /role="alert"/);
-    assert.match(render(value), /응답을 확인할 수 없습니다/);
+    assert.match(render(value), /응답 오류/);
   }
 });
 test("untrusted strings stay escaped text; numeric codes are not converted into eligibility or dates", () => {
@@ -102,8 +102,8 @@ test("untrusted strings stay escaped text; numeric codes are not converted into 
   assert.match(html, /&lt;img/);
   assert.doesNotMatch(html, /<img/);
   assert.match(html, /20775/);
-  assert.match(html, /임의로 추정하지/);
-  assert.match(render(c, false), /not inferred/);
+  assert.match(html, /단위·날짜 변환 없이/);
+  assert.match(render(c, false), /without unit or date conversion/);
 });
 test("overview shows issuer and recipient with new content and removes the misleading empty-content summary", () => {
   const html = renderToStaticMarkup(

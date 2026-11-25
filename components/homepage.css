@@ -1,0 +1,470 @@
+/* Homepage only: existing search/results and signing tools retain their layout. */
+.app[data-view="home"] {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+.app[data-view="home"] > main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+}
+.app .dojang-home {
+  width: 100%;
+  margin: 0 auto;
+  padding: 64px 0 52px;
+}
+.dojang-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr);
+  align-items: stretch;
+  border-top: 1px solid var(--product-line);
+  border-bottom: 1px solid var(--product-line);
+}
+.dojang-hero-main {
+  min-width: 0;
+  padding: 36px 44px 40px 0;
+}
+.dojang-home-brand {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 48px;
+}
+.dojang-home-brand > span:first-child {
+  color: var(--product-ink);
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.dojang-home-brand > span:last-child {
+  border-left: 1px solid var(--product-line);
+  padding-left: 14px;
+  font-size: 13px;
+  color: var(--product-muted);
+}
+.app .dojang-hero h1 {
+  margin: 0;
+  max-width: 570px;
+  font-size: clamp(38px, 4vw, 60px);
+  font-weight: 600;
+  line-height: 1.13;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+  word-break: keep-all;
+}
+.app .dojang-hero header p {
+  margin: 22px 0 0;
+  font-size: 17px;
+  line-height: 1.8;
+  max-width: 420px;
+  color: var(--product-muted);
+  word-break: keep-all;
+}
+.dojang-search {
+  margin-top: 38px;
+}
+.dojang-search > label {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--product-ink);
+  font-size: 14px;
+  font-weight: 550;
+}
+.dojang-search-field {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--product-line);
+  border-radius: 8px;
+  padding: 0 16px;
+  min-height: 62px;
+  background: var(--product-surface);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.dojang-search-field > svg {
+  flex: none;
+  color: var(--product-muted);
+}
+.app .dojang-search-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 18px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--product-ink);
+  font-size: 15px;
+  line-height: 1.5;
+  border-radius: 0;
+  box-shadow: none;
+}
+.dojang-search-field input::placeholder {
+  color: var(--product-muted);
+  opacity: 1;
+}
+.dojang-search-field:hover {
+  border-color: var(--product-muted);
+}
+.dojang-search-field:focus-within {
+  border-color: var(--product-coral);
+  box-shadow: 0 0 0 3px var(--product-tint);
+}
+.dojang-search-field[data-invalid="true"] {
+  border-color: var(--product-coral);
+}
+.dojang-search-submit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+.app .dojang-search-submit > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 14px 20px;
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--product-coral);
+  color: var(--product-bg);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.app .dojang-search-submit > button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--product-coral) 85%, var(--product-ink));
+}
+.app .dojang-search-submit > button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.app .dojang-search-submit > button:disabled {
+  background: var(--product-tint);
+  border-color: var(--product-line);
+  color: var(--product-muted);
+  cursor: not-allowed;
+}
+.dojang-search-submit > p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--product-muted);
+}
+.app .dojang-search-error {
+  color: var(--product-coral);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 12px 0 0;
+}
+.dojang-search-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.app .dojang-search-roles button {
+  padding: 10px 14px;
+  min-height: 44px;
+  border: 1px solid var(--product-line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--product-muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+.app .dojang-search-roles button[aria-pressed="true"] {
+  color: var(--product-ink);
+  background: var(--product-tint);
+  border-color: var(--product-coral);
+}
+.dojang-home-feature {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--product-surface);
+  border-left: 1px solid var(--product-line);
+}
+.dojang-seal-art {
+  position: relative;
+  min-height: 280px;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: linear-gradient(145deg, transparent 45%, var(--product-tint));
+}
+.dojang-seal-lines {
+  width: min(100%, 320px);
+  height: auto;
+  max-height: 280px;
+  stroke: var(--product-line);
+  stroke-width: 1;
+}
+.dojang-seal-lines rect:first-child {
+  stroke: var(--product-coral);
+  opacity: 0.5;
+}
+.dojang-seal-art > img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 104px;
+  height: 104px;
+}
+.dojang-home-mark-dark {
+  display: none;
+}
+:root[data-theme="dark"] .dojang-home-mark-light {
+  display: none;
+}
+:root[data-theme="dark"] .dojang-home-mark-dark {
+  display: block;
+}
+.app .dojang-sample {
+  display: flex;
+  flex-direction: column;
+  padding: 26px 28px;
+  border-top: 1px solid var(--product-line);
+  color: var(--product-ink);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.app .dojang-sample:hover {
+  background: var(--product-tint);
+}
+.dojang-sample-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--product-muted);
+  font-size: 13px;
+}
+.dojang-sample-kicker svg {
+  flex: none;
+  color: var(--product-coral);
+}
+.dojang-sample > strong {
+  display: block;
+  margin: 15px 0 8px;
+  font-size: 22px;
+  font-weight: 550;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+}
+.dojang-sample-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--product-muted);
+}
+.dojang-sample-scope {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--product-line);
+  color: var(--product-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.dojang-address-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 28px;
+}
+.app .dojang-address-actions > a {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 26px 22px 0;
+  color: var(--product-ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.app .dojang-address-actions > a + a {
+  border-left: 1px solid var(--product-line);
+  padding-left: 30px;
+  padding-right: 0;
+}
+.app .dojang-address-actions > a:hover {
+  border-bottom-color: var(--product-coral);
+  background: color-mix(in srgb, var(--product-surface) 60%, transparent);
+}
+.dojang-action-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--product-line);
+  border-radius: 50%;
+  color: var(--product-coral);
+}
+.dojang-address-actions strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 550;
+  letter-spacing: -0.02em;
+}
+.dojang-address-actions strong + span {
+  display: block;
+  margin-top: 8px;
+  color: var(--product-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.dojang-action-arrow {
+  flex: none;
+  margin-left: auto;
+  color: var(--product-muted);
+}
+.app[data-view="home"] .site-footer {
+  margin-top: auto;
+  padding: 24px 0;
+}
+.app[data-view="home"] .footer-main {
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.app[data-view="home"] .footer-main nav {
+  gap: 12px 22px;
+  flex-wrap: wrap;
+}
+.app[data-view="home"] .footer-main nav a,
+.app[data-view="home"] .footer-main nav button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+}
+.app[data-view="home"] .footer-bottom {
+  font-size: 12px;
+  margin-top: 12px;
+}
+@media (min-width: 901px) and (max-width: 1200px) {
+  .dojang-hero {
+    grid-template-columns: minmax(0, 1.25fr) minmax(250px, 1fr);
+  }
+  .dojang-hero-main {
+    padding-right: 28px;
+  }
+  .dojang-home-brand {
+    margin-bottom: 36px;
+  }
+  .app .dojang-sample {
+    padding: 24px;
+  }
+}
+@media (max-width: 760px) {
+  .app .dojang-home {
+    padding: 30px 0 36px;
+  }
+  .dojang-hero {
+    grid-template-columns: 1fr;
+  }
+  .dojang-hero-main {
+    padding: 24px 0 32px;
+  }
+  .dojang-home-brand {
+    margin-bottom: 32px;
+  }
+  .app .dojang-hero h1 {
+    font-size: 40px;
+    max-width: 460px;
+  }
+  .app .dojang-hero header p {
+    font-size: 16px;
+    margin-top: 18px;
+  }
+  .dojang-search {
+    margin-top: 28px;
+  }
+  .dojang-home-feature {
+    border-left: 0;
+    border-top: 1px solid var(--product-line);
+    display: grid;
+    grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+  }
+  .dojang-seal-art {
+    min-height: 0;
+    padding: 12px;
+  }
+  .dojang-seal-art > img {
+    width: 48px;
+    height: 48px;
+  }
+  .app .dojang-sample {
+    border-top: 0;
+    border-left: 1px solid var(--product-line);
+    padding: 20px;
+  }
+  .dojang-sample > strong {
+    font-size: 19px;
+  }
+  .dojang-address-actions {
+    grid-template-columns: 1fr;
+    margin-top: 18px;
+  }
+  .app .dojang-address-actions > a,
+  .app .dojang-address-actions > a + a {
+    border-left: 0;
+    padding: 22px 0;
+  }
+  .app .dojang-address-actions > a + a {
+    border-top: 1px solid var(--product-line);
+  }
+  .dojang-address-actions strong {
+    font-size: 17px;
+  }
+}
+@media (max-width: 400px) {
+  .app .dojang-hero h1 {
+    font-size: 36px;
+  }
+  .app .dojang-search-field {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .app .dojang-search-field input {
+    font-size: 14px;
+  }
+  .dojang-search-submit {
+    gap: 12px;
+  }
+  .dojang-search-submit > p {
+    font-size: 12px;
+  }
+  .dojang-home-feature {
+    grid-template-columns: 80px minmax(0, 1fr);
+  }
+  .dojang-seal-art {
+    padding: 6px;
+  }
+  .dojang-seal-art > img {
+    width: 34px;
+    height: 34px;
+  }
+  .app .dojang-sample {
+    padding: 20px 16px;
+  }
+  .dojang-address-actions > a {
+    gap: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dojang-home * {
+    transition: none !important;
+  }
+}

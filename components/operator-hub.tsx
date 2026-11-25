@@ -27,14 +27,16 @@ export default function OperatorHub({
   onWallet,
   onIssuer,
   initialManage = false,
+  initialConsole = false,
 }: {
   data: ScanData | null;
   error: string;
   onWallet: (address: string) => void;
   onIssuer: (address: string) => void;
   initialManage?: boolean;
+  initialConsole?: boolean;
 }) {
-  const [role, setRole] = useState<Role>("issuer");
+  const [role, setRole] = useState<Role>(initialConsole ? "console" : "issuer");
   const [manage, setManage] = useState(initialManage);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -124,8 +126,8 @@ export default function OperatorHub({
               <p>
                 {tr(
                   role === "issuer"
-                    ? "등록 발행자 조회 및 권한 보유 지갑의 도장 발급"
-                    : "현재 역할 조회 및 권한에 따른 등록·설정 관리",
+                    ? "현재 등록 상태이며 과거 발급 권한을 보장하지 않습니다."
+                    : "계약별 현재 역할과 관리 기능",
                 )}
               </p>
             </div>
@@ -141,7 +143,7 @@ export default function OperatorHub({
         )}
         {manage || role === "console" ? (
           <Suspense
-            fallback={<p className="operator-empty">{tr("화면 준비 중")}</p>}
+            fallback={<p className="operator-empty">{tr("불러오는 중…")}</p>}
           >
             <Workspace key={role} data={data} role={role} />
           </Suspense>
@@ -150,8 +152,8 @@ export default function OperatorHub({
             <div className="operator-search">
               <Search size={17} />
               <input
-                aria-label={tr("이름 또는 주소로 찾기")}
-                placeholder={tr("이름 또는 주소로 찾기")}
+                aria-label={tr("이름 또는 주소")}
+                placeholder={tr("이름 또는 주소")}
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -164,7 +166,7 @@ export default function OperatorHub({
                   disabled={!isAddress(query.trim())}
                   onClick={() => onIssuer(query.trim())}
                 >
-                  {tr("발행 주소로 조회")}
+                  {tr("발급 내역 조회")}
                 </button>
               )}
               <span>{total}</span>
@@ -172,7 +174,7 @@ export default function OperatorHub({
             <div className="operator-directory">
               {!data ? (
                 <p className="operator-empty" role="status">
-                  {tr(error || "온체인 등록 정보를 불러오는 중입니다.")}
+                  {tr(error || "등록 정보 조회 중…")}
                 </p>
               ) : !total ? (
                 <p className="operator-empty">
@@ -193,30 +195,28 @@ export default function OperatorHub({
                         <CopyButton value={issuer.address} />
                       </div>
                     </div>
-                    <Badge variant="success">{tr("Dojang 등록")}</Badge>
+                    <Badge variant="success">{tr("현재 Dojang 등록")}</Badge>
                     <div className="operator-row-actions">
                       <button
                         className="text-button"
                         onClick={() => onIssuer(issuer.address)}
                       >
-                        {tr("발행한 도장")}
-                        <ArrowRight size={14} />
+                        {tr("발급 내역")}
+
                       </button>
                       <button
                         className="text-button"
                         onClick={() => onWallet(issuer.address)}
                       >
-                        {tr("받은 도장")}
-                        <ArrowRight size={14} />
+                        {tr("수신 내역")}
+
                       </button>
                       <a
                         href={`${NETWORK.explorer}/address/${issuer.address}`}
                         target="_blank"
                         rel="noreferrer"
                         aria-label={tr("탐색기")}
-                      >
-                        <ExternalLink size={16} />
-                      </a>
+                      >{tr("탐색기")}</a>
                     </div>
                     <details className="operator-row-detail">
                       <summary>{tr("등록 정보")}</summary>
@@ -228,7 +228,7 @@ export default function OperatorHub({
                             target="_blank"
                             rel="noreferrer"
                           >
-                            {tr("발행자 이름 출처: GIWA 공식 문서")} ↗
+                            {tr("발행자 이름 출처: GIWA 공식 문서")}
                           </a>
                         </p>
                       )}
@@ -238,7 +238,7 @@ export default function OperatorHub({
                           target="_blank"
                           rel="noreferrer"
                         >
-                          {tr("등록 이벤트")} ↗
+                          {tr("등록 이벤트")}
                         </a>
                       )}
                     </details>
@@ -270,7 +270,7 @@ export default function OperatorHub({
                         rel="noreferrer"
                       >
                         {tr("탐색기")}
-                        <ExternalLink size={15} />
+
                       </a>
                     </div>
                     <details className="operator-row-detail">
@@ -332,7 +332,7 @@ export default function OperatorHub({
                     rel="noreferrer"
                   >
                     {name}
-                    <ExternalLink size={13} />
+
                   </a>
                 ))}
               </div>

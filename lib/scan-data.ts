@@ -1,5 +1,6 @@
 import { historyRequest, historyEvents, historyCursor, schemaHistoryRequest, schemaHistoryEvents, type HistoryRole, type LogCursor } from "./history";
 import { issuerMetadata, PLAYGROUND_ATTESTER_ID } from "./issuer-metadata";
+import { publicReadURL } from './public-read-transport';
 import { AbiCoder, Interface, id, isAddress, getAddress, ZeroAddress } from 'ethers';
 import { CONTRACTS, TEST_ATTESTER, NETWORK, SCHEMAS, UPBIT_ID, ZERO, type Attestation, type SchemaRecord, type Issuer, type GovernanceRole } from './giwa';
 import { classifyIssuer } from './trust';
@@ -26,7 +27,7 @@ async function json(url:string,options?:RequestInit):Promise<any>{
  const request=async()=>{
   for(let attempt=0;attempt<4;attempt++){
    if(url===NETWORK.rpc){await pause(Math.max(0,650-(Date.now()-rpcStartedAt)));rpcStartedAt=Date.now();}
-   const response=await fetch(url,{...options,signal:AbortSignal.timeout(18000)});
+   const response=await fetch(import.meta.env?.DEV === true && import.meta.env?.MODE === 'public-readonly' ? publicReadURL(url, true) : url,{...options,signal:AbortSignal.timeout(18000)});
    if(response.status===429&&attempt<3){const seconds=Number(response.headers.get('retry-after'));await pause(Math.min(5000,Math.max(1000,Number.isFinite(seconds)?seconds*1000:1000)*(attempt+1)));continue;}
    if(!response.ok)throw new Error(response.status===429?'공개 RPC 조회 한도 도달 · 잠시 후 재조회 가능':`공개 데이터 서비스 응답 오류 (${response.status}) · 재조회 필요`);
    const body=await response.json();
@@ -140,8 +141,21 @@ export async function recent(cursor: Record<string, number> | null = null, filte
  return { ...cat, attestations, next: page.next_page_params, warnings, coverage: '최신 EAS 로그 50개를 조회합니다. 숫자는 조회 범위 내 집계이며 네트워크 전체 통계가 아닙니다.' };
 }
 export async function attestation(uid: string) {
- if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('32바이트 UID가 필요합니다.'); const cat = await catalog(await headBlock()); const result = await batchCalls([{ target: CONTRACTS.EAS, abi: eas, method: 'getAttestation', args: [uid] }], cat.block); if (!result[0]) throw new Error('EAS에서 도장을 조회하지 못했습니다.'); const raw = result[0][0]; if (raw.uid === ZERO) return null;
- let detail = normalize(raw, cat); if (!detail.fields.length) { const schema = await getSchema(detail.schema, cat.block); if (schema) detail = { ...detail, fields: formatFields(schema.definition, detail.data) }; } return { ...detail, checkedAt: cat.checkedAt, checkedBlock: cat.block };
+ if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('32바이트 UID가 필요합니다.');
+ return attestationAtCatalog(uid, await catalog(await headBlock()));
+}
+export async function attestationAtCatalog(uid: string, cat: Awaited<ReturnType<typeof catalog>>) {
+ if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('32바이트 UID가 필요합니다.');
+ const result=await batchCalls([{target:CONTRACTS.EAS,abi:eas,method:'getAttestation',args:[uid]}],cat.block);
+ if(!result[0])throw new Error('EAS에서 도장을 조회하지 못했습니다.');
+ const raw=result[0][0]; if(raw.uid===ZERO)return null;
+ if(String(raw.uid).toLowerCase()!==uid.toLowerCase())throw new Error('EAS_UID_MISMATCH');
+ let detail=normalize(raw,cat);
+ if(!detail.fields.length){
+  const value=(await batchCalls([{target:CONTRACTS.SchemaRegistry,abi:registry,method:'getSchema',args:[detail.schema]}],cat.block))[0]?.[0];
+  if(value && String(value.uid).toLowerCase()===detail.schema.toLowerCase())detail={...detail,fields:formatFields(value.schema,detail.data)};
+ }
+ return {...detail,checkedAt:cat.checkedAt,checkedBlock:cat.block};
 }
 export async function getSchema(uid: string, block?: number) {
  if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('유효한 스키마 UID가 필요합니다.'); const cat = await catalog(block); const found = cat.schemas.find(s => s.uid.toLowerCase() === uid.toLowerCase()); if (found) return found;
@@ -187,6 +201,7 @@ export async function queryScan(kind: string, params: Record<string,string> = {}
   case 'attestation':result=await attestation(params.uid??'');break;
   case 'schema':result=await getSchema(params.uid??'');break;
   case 'schemas':result=await catalog();break;
+  case 'catalog-view':result={...await catalog(),catalogOnly:true,attestations:[],next:null,coverage:'Catalog only; no issuance query performed'};break;
   case 'wallet':result=await wallet(params.address??'');break;
   case 'history': if((params.cursor?.length??0)>300)throw new Error('페이지 값이 잘못되었습니다.'); result=await addressHistory(params.address??'',params.role as HistoryRole,params.cursor?JSON.parse(params.cursor):null);break;
   case 'transaction':result=await transaction(params.hash??'');break;

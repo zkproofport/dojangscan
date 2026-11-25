@@ -173,7 +173,7 @@ export function ScanCards({
             <p>
               {codeField(a, "domain") ? (
                 <a href={codeLink(codeField(a, "domain"), a.attester)}>
-                  {tr(describeRecord(a))} ↗
+                  {tr(describeRecord(a))}
                 </a>
               ) : (
                 tr(describeRecord(a))
@@ -214,7 +214,7 @@ export function ScanCards({
                 short(a.uid),
               ])}
             >
-              <ArrowUpRight size={19} />
+              {tr("상세 보기")}
             </button>
           </div>
         </article>

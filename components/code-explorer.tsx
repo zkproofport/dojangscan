@@ -1,3 +1,4 @@
+import { writeRoute } from "@/lib/record-navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { codeHistory } from "@/lib/scan-data";
@@ -97,7 +98,7 @@ export default function CodeExplorer({
   function change(next: CodeFilters) {
     setFilters(next);
     setPage(1);
-    window.history.replaceState(null, "", localURL(codeParams(next)));
+    writeRoute(localURL({ ...codeParams(next), source: "public" }));
   }
   function submitSearch() {
     if (pending.current || !searchInput.trim()) return;
@@ -300,7 +301,7 @@ export default function CodeExplorer({
         {!data && !busy && !error && (
           <p className="fine-print">
             {tr(
-              "사용처를 입력하고 찾기 또는 Enter를 누르면 발급 내역을 조회합니다.",
+              "사용처 이름으로 발급 내역을 검색합니다.",
             )}
           </p>
         )}
@@ -309,7 +310,7 @@ export default function CodeExplorer({
             <p className="fine-print">
               {tr(
                 filters.query && !matchingDomains.length
-                  ? "조회된 기록에 일치하는 사용처가 없습니다. 조회 가능한 사용처는 아래에 표시됩니다."
+                  ? "조회된 기록에 일치하는 사용처 없음"
                   : "불러온 기록의 사용처",
               )}
             </p>
@@ -456,8 +457,8 @@ export default function CodeExplorer({
         )}
         {busy && (
           <ChainLoading
-            title="코드 인증 기록을 불러오고 있습니다."
-            description="코드 인증 이벤트를 조회하고 온체인 상태를 확인합니다."
+            title="코드 발급 내역 조회 중…"
+            description="발급 이벤트와 EAS 상태 조회"
           />
         )}
         {error && (
@@ -481,7 +482,7 @@ export default function CodeExplorer({
           <>
             <div className="code-results-heading">
               <div>
-                <h2>{tr("발급 내역 보기")}</h2>
+                <h2>{tr("발급 내역")}</h2>
                 <p className="fine-print">
                   {tr(
                     "조회 시점의 발급 기록과 철회·만료 상태입니다. 코드 식별값은 코드를, UID는 개별 발급 기록을 구분합니다.",
@@ -701,7 +702,7 @@ export default function CodeExplorer({
           <p>
             {tr(
               inputKind === "code"
-                ? "실제로 전달받은 코드가 해당 사용처·발행자의 유효한 코드인지 확인합니다. 발급 내역을 보는 데 필수인 단계는 아닙니다."
+                ? "입력한 코드의 발급·철회·만료 상태를 조회합니다."
                 : "공개된 코드 해시로 현재 상태를 다시 조회합니다. 목록 조회 이후 철회·만료되었거나 현재 조회되는 발급 기록이 달라졌을 수 있습니다.",
             )}
           </p>
@@ -838,7 +839,7 @@ export default function CodeExplorer({
             )}
           </p>
           {verifyBusy && (
-            <ChainLoading title="현재 유효한 발급 기록을 조회하고 있습니다." />
+            <ChainLoading title="현재 발급 상태 조회 중…" />
           )}
           {verifyError && (
             <p className="notice danger" role="alert">

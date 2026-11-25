@@ -4,7 +4,13 @@ import { addressRoleURL } from "@/lib/product-experience";
 import type { BackendMeta } from "@/lib/backend-api";
 
 /** Present limits in plain language; keep exact snapshot identifiers expandable. */
-export function StoredRecordContext({ meta }: { meta: BackendMeta }) {
+export function StoredRecordContext({
+  meta,
+  showDecision = true,
+}: {
+  meta: BackendMeta;
+  showDecision?: boolean;
+}) {
   const [language] = usePreferences();
   const ko = language === "ko";
   return (
@@ -16,11 +22,11 @@ export function StoredRecordContext({ meta }: { meta: BackendMeta }) {
         <strong>
           {meta.freshness === "stale"
             ? ko
-              ? "최근 관측이 없는 저장 기록"
+              ? "Live 저장 기록 · 최신성 주의"
               : "Stored records · no recent observation"
             : ko
-              ? "저장된 기록 기준"
-              : "Stored record reference"}
+              ? "수집된 발급 기록"
+              : "Collected issuance records"}
         </strong>
         <span>
           {ko ? "마지막 관측" : "Last observed"}:{" "}
@@ -29,8 +35,12 @@ export function StoredRecordContext({ meta }: { meta: BackendMeta }) {
       </p>
       <p>
         {ko
-          ? "일부 수집·평가된 기록만 포함합니다. 현재 서비스 이용 자격은 확인할 수 없습니다 (UNKNOWN)."
-          : "Only collected and evaluated records are included. Current service eligibility is unconfirmed (UNKNOWN)."}
+          ? showDecision
+            ? "일부 수집·평가된 기록만 포함합니다. 이 기록만으로 현재 이용 자격을 확인할 수 없습니다."
+            : "일부 수집·평가된 기록만 포함합니다."
+          : showDecision
+            ? "Only collected and evaluated records are included. This record alone does not establish current eligibility."
+            : "Only collected and evaluated records are included."}
       </p>
       <details>
         <summary>
@@ -86,19 +96,19 @@ export function AddressRoleControl({
   return (
     <nav
       className="record-role-control"
-      aria-label={ko ? "주소 조회 역할" : "Address lookup role"}
+      aria-label={ko ? "조회 구분" : "Lookup type"}
     >
       <a
         aria-current={recipient ? "page" : undefined}
         href={addressRoleURL(value, true)}
       >
-        {ko ? "수신한 기록" : "Received"}
+        {ko ? "수신 내역" : "Received records"}
       </a>
       <a
         aria-current={!recipient ? "page" : undefined}
         href={addressRoleURL(value, false)}
       >
-        {ko ? "발급한 기록" : "Issued"}
+        {ko ? "발급 내역" : "Issued records"}
       </a>
     </nav>
   );
@@ -121,11 +131,11 @@ export function AddressRecordSearch({
   const ko = language === "ko";
   return (
     <section className="product-lookup issuer-lookup address-lookup">
-      <h1>{ko ? "주소로 도장 기록 조회" : "Attestation records by address"}</h1>
+      <h1>{ko ? "주소별 기록 조회" : "Records by address"}</h1>
       <p>
         {ko
-          ? "하나의 주소에서 수신한 기록과 발급한 기록을 구분해 조회합니다. 지갑 연결 및 서명 불필요."
-          : "Look up records received or issued by one address. No wallet connection or signature required."}
+          ? "주소의 수신·발급 내역을 조회합니다. 지갑 연결·서명은 필요하지 않습니다."
+          : "Look up received and issued records. No wallet connection or signature required."}
       </p>
       <form
         onSubmit={(e) => {
@@ -160,7 +170,7 @@ export function AddressRecordSearch({
           {ko
             ? "발급·철회·권한 관리 · 서명 필요"
             : "Issuance and permissions · signature required"}{" "}
-          ↗
+
         </a>
       )}
     </section>
@@ -193,8 +203,8 @@ export function EmptyStoredRecords({
     >
       <h2>
         {ko
-          ? "이 조건에 맞는 저장 기록이 없습니다"
-          : "No stored records match this query"}
+          ? "일치하는 저장 기록 없음"
+          : "No matching stored records"}
       </h2>
       <p>
         {ko
@@ -215,7 +225,7 @@ export function EmptyStoredRecords({
               : ko
                 ? "이 주소의 수신 기록"
                 : "Records received by this address"}{" "}
-            →
+
           </a>
         )}
         {filtered && (
@@ -224,7 +234,7 @@ export function EmptyStoredRecords({
           </button>
         )}
         <button className="text-button" onClick={onPublic}>
-          {ko ? "Public에서 별도 조회 ↗" : "Separate Public lookup ↗"}
+          {ko ? "공개 체인에서 조회" : "Look up on the public chain"}
         </button>
       </div>
     </section>

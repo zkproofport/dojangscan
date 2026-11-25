@@ -1,199 +1,232 @@
 import { useId, useState } from "react";
-import { Search, ArrowRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowRight, Search } from "lucide-react";
 import { usePreferences } from "@/lib/preferences";
 import {
   resolveProductLookup,
   isIssuerAddress,
+  addressRoleURL,
 } from "@/lib/product-experience";
 
-export default function ProductHome() {
-  const [language] = usePreferences();
-  const ko = language === "ko";
+// Saved public response: tests/fixtures/real-public-records.json, dojang-detail.
+// The server's Dojang classification is not a current eligibility decision.
+export const HOME_RECORD_UID =
+  "0x000f5defabca90f7500181b4c06aaa6113c8b7a6f8e6734b26b605558de5f9e7";
+
+export function HomeContent({ ko }: { ko: boolean }) {
   const t = (a: string, b: string) => (ko ? a : b);
   const id = useId();
   const [input, setInput] = useState("");
   const [role, setRole] = useState<"wallet" | "issuer">("wallet");
-  const [source, setSource] = useState<"backend" | "recent">("backend");
   const [invalid, setInvalid] = useState(false);
+  const address = isIssuerAddress(input);
   const target = resolveProductLookup(
     input,
-    isIssuerAddress(input) ? role : "record",
-    source,
+    address ? role : "record",
+    address ? "recent" : "backend",
   );
   return (
-    <div className="product-home product-home-focused">
-      <header className="product-intro">
-        <span className="section-kicker">DOJANGSCAN · GIWA SEPOLIA</span>
-        <h1>{t("도장 기록 확인", "Find an attestation record")}</h1>
-        <p>
-          {t(
-            "주소로 수신·발급 기록을, UID로 개별 도장의 내용과 확인 근거를 조회합니다.",
-            "Search an address for received or issued records, or a UID for a record’s content and evidence.",
-          )}
-        </p>
-      </header>
-      <section
-        className="product-lookup"
-        aria-label={t("기록 검색", "Record search")}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setInvalid(!target);
-            if (target) location.href = target.href;
-          }}
-        >
-          <label htmlFor={id}>
-            {t("지갑 주소 또는 도장 UID", "Wallet address or attestation UID")}
-          </label>
-          <div className="product-search-row">
-            <Search size={22} aria-hidden="true" />
-            <input
-              id={id}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                setInvalid(false);
-              }}
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              aria-invalid={invalid}
-              aria-describedby={id + "-scope"}
-              placeholder={t(
-                "0x… 주소, UID 또는 Dojangscan 공유 링크",
-                "0x… address, UID or Dojangscan share link",
-              )}
-            />
-            <button className="primary" type="submit">
-              {t("조회", "Search")} <ArrowRight size={18} />
-            </button>
+    <div className="dojang-home">
+      <section className="dojang-hero" aria-labelledby={`${id}-title`}>
+        <div className="dojang-hero-main">
+          <div className="dojang-home-brand">
+            <span>Dojangscan</span>
+            <span>GIWA Sepolia</span>
           </div>
-          <div className="home-address-role">
-            <label>
-              {t("조회 범위", "Search scope")}{" "}
-              <select
-                value={source}
-                onChange={(e) =>
-                  setSource(e.target.value as "backend" | "recent")
-                }
-              >
-                <option value="backend">
-                  {t("기존 저장 기록 (Live)", "Stored records (Live)")}
-                </option>
-                <option value="recent">
-                  {t(
-                    "최근 확정 이벤트 · 고정 구간",
-                    "Recent finalized events · fixed window",
-                  )}
-                </option>
-              </select>
-            </label>
-            <a href="?view=explore&source=backend&history=recent">
-              {t("최근 확정 이벤트 보기", "Browse recent finalized events")} ↗
-            </a>
-          </div>
-          <div className="home-address-role">
-            <span>{t("주소 조회 역할", "Address lookup role")}</span>
-            <div
-              className="record-role-control"
-              role="group"
-              aria-label={t("주소 조회 역할", "Address lookup role")}
-            >
-              <button
-                type="button"
-                aria-pressed={role === "wallet"}
-                onClick={() => setRole("wallet")}
-              >
-                {t("수신한 기록", "Received")}
-              </button>
-              <button
-                type="button"
-                aria-pressed={role === "issuer"}
-                onClick={() => setRole("issuer")}
-              >
-                {t("발급한 기록", "Issued")}
-              </button>
-            </div>
-            <span>
+          <header>
+            <h1 id={`${id}-title`}>
+              {t("도장 기록 조회", "Dojang record lookup")}
+            </h1>
+            <p>
               {t(
-                "UID·공유 링크에는 적용되지 않습니다.",
-                "Does not change UID or share-link lookup.",
-              )}
-            </span>
-          </div>
-          <p
-            id={id + "-scope"}
-            className="product-search-context"
-            aria-live="polite"
-          >
-            {target?.source === "recent" || (!target && source === "recent")
-              ? t(
-                  "최근 확정 구간의 발급·철회·Indexer 이벤트입니다. 실시간 추적이나 현재 유효성 판단이 아니며 기존 Live 기록과 합치지 않습니다.",
-                  "Issuance, revocation and Indexer events in a fixed finalized window. No real-time tracking or current validity determination; separate from Live records.",
-                )
-              : target?.source === "public"
-                ? t(
-                    "이 공유 링크는 별도의 Public 조회로 연결됩니다.",
-                    "This share link opens a separate Public lookup.",
-                  )
-                : target?.source === "history"
-                  ? t(
-                      "이 공유 링크는 한정된 과거 기록으로 연결됩니다. 현재 상태를 확정하지 않습니다.",
-                      "This share link opens a bounded historical record, not a determination of current state.",
-                    )
-                  : t(
-                      "저장된 기록 조회 · 지갑 연결·서명 불필요. 수집·평가되지 않은 기록은 검색되지 않습니다.",
-                      "Stored records · no wallet connection or signature. Records not collected or evaluated are excluded.",
-                    )}
-          </p>
-          {invalid && (
-            <p className="notice danger" role="alert">
-              {t(
-                "주소(0x와 40자리), UID(0x와 64자리) 또는 도장 공유 링크를 확인하세요.",
-                "Check the address (40 hex digits), UID (64 hex digits) or attestation share link.",
+                "도장 UID 또는 지갑 주소로 발급 내역과 기록 내용을 확인합니다.",
+                "Look up issuance history and available record content by Dojang UID or wallet address.",
               )}
             </p>
-          )}
-        </form>
+          </header>
+          <form
+            className="dojang-search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setInvalid(!target);
+              if (target) location.href = target.href;
+            }}
+          >
+            <label htmlFor={id}>
+              {t("도장 UID 또는 지갑 주소", "Dojang UID or wallet address")}
+            </label>
+            <div className="dojang-search-field" data-invalid={invalid}>
+              <Search size={20} aria-hidden="true" />
+              <input
+                id={id}
+                value={input}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  setInvalid(false);
+                }}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="search"
+                aria-invalid={invalid}
+                aria-describedby={invalid ? `${id}-error` : `${id}-hint`}
+                placeholder={t(
+                  "도장 UID 또는 지갑 주소 입력",
+                  "Enter a Dojang UID or wallet address",
+                )}
+              />
+            </div>
+            {address && (
+              <div
+                className="dojang-search-roles"
+                role="group"
+                aria-label={t("주소 조회 구분", "Address lookup type")}
+              >
+                <button
+                  type="button"
+                  aria-pressed={role === "wallet"}
+                  onClick={() => setRole("wallet")}
+                >
+                  {t("수신 내역", "Received records")}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={role === "issuer"}
+                  onClick={() => setRole("issuer")}
+                >
+                  {t("발급 내역", "Issued records")}
+                </button>
+              </div>
+            )}
+            {invalid && (
+              <p
+                id={`${id}-error`}
+                className="dojang-search-error"
+                role="alert"
+              >
+                {t(
+                  "주소(0x와 40자리), UID(0x와 64자리) 또는 Dojangscan 공유 링크를 입력하세요.",
+                  "Enter an address (40 hex digits), UID (64 hex digits) or Dojangscan share link.",
+                )}
+              </p>
+            )}
+            <div className="dojang-search-submit">
+              <button type="submit" disabled={!input.trim()}>
+                {address
+                  ? role === "wallet"
+                    ? t("받은 기록 조회", "View received records")
+                    : t("발급한 기록 조회", "View issued records")
+                  : t("도장 조회", "Look up Dojang")}
+                <ArrowRight size={18} aria-hidden="true" />
+              </button>
+              <p id={`${id}-hint`}>
+                {t("지갑 연결 없이 조회", "No wallet connection needed")}
+              </p>
+            </div>
+          </form>
+        </div>
+        <aside
+          className="dojang-home-feature"
+          aria-label={t("실제 기록 예시", "Example record")}
+        >
+          <div className="dojang-seal-art" aria-hidden="true">
+            <svg
+              className="dojang-seal-lines"
+              viewBox="0 0 320 280"
+              fill="none"
+            >
+              <rect x="68" y="48" width="184" height="184" rx="46" />
+              <rect x="52" y="32" width="216" height="216" rx="55" />
+              <path d="M30 74V22h52M238 22h52v52M30 206v52h52M238 258h52v-52M160 12v20M160 248v20M12 140h40M268 140h40" />
+            </svg>
+            <img
+              className="dojang-home-mark-light"
+              src="brand/dojangscan-symbol-light.svg"
+              width="104"
+              height="104"
+              alt=""
+            />
+            <img
+              className="dojang-home-mark-dark"
+              src="brand/dojangscan-symbol-dark.svg"
+              width="104"
+              height="104"
+              alt=""
+            />
+          </div>
+          <a
+            className="dojang-sample"
+            href={`?view=explore&source=backend&uid=${HOME_RECORD_UID}`}
+          >
+            <span className="dojang-sample-kicker">
+              {t("실제 기록 살펴보기", "Explore a real record")}
+              <ArrowUpRight size={20} aria-hidden="true" />
+            </span>
+            <strong>
+              {t("주소 인증 형식", "Address verification format")}
+            </strong>
+            <span className="dojang-sample-description">
+              {t(
+                "발행자, 수신자와 발급 상태 조회",
+                "View the issuer, recipient and issuance state",
+              )}
+            </span>
+            <span className="dojang-sample-scope">
+              {t(
+                "저장된 Dojang 분류 · 현재 이용 자격 미확인",
+                "Stored Dojang classification · current eligibility unconfirmed",
+              )}
+            </span>
+          </a>
+        </aside>
       </section>
-      <p className="home-source-note">
-        {t(
-          "기록의 상태와 조회 기준 시각은 검색 결과에 표시됩니다. 현재 서비스 이용 자격은 확인하지 않습니다.",
-          "Results include the observed state and reference time. Current service eligibility is not established.",
-        )}
-      </p>
-      <details className="product-source-control home-secondary">
-        <summary>
-          {t("다른 조회·관리 도구", "Other lookup and management tools")}
-        </summary>
-        <nav>
-          <a href="?view=explore&source=public">Public Explorer ↗</a>
-          <a href="?view=explore&source=backend">
-            {t("저장 데이터 탐색", "Stored data explorer")} ↗
-          </a>
-          <a href="?view=explore&source=backend&history=backfill">
-            Historical ↗
-          </a>
-          <a href="?view=schemas&source=public">
-            {t("스키마·ABI", "Schemas and ABI")} ↗
-          </a>
-          <a href="?view=issuers&mode=manage&source=public">
-            {t(
-              "발급·철회·권한 관리 · 서명 필요",
-              "Manage issuance and permissions · signature required",
-            )}{" "}
-            ↗
-          </a>
-          <a href="?view=lab&source=public">Proof Studio ↗</a>
-        </nav>
-        <p>
-          {t(
-            "각 출처는 확인 범위가 다르며 결과를 자동으로 합치지 않습니다.",
-            "Sources have separate coverage; results are not automatically combined.",
-          )}
-        </p>
-      </details>
+      <nav
+        className="dojang-address-actions"
+        aria-label={t("주소로 조회", "Look up by address")}
+      >
+        <a href={addressRoleURL(input, true)}>
+          <span className="dojang-action-icon">
+            <ArrowDownLeft size={24} aria-hidden="true" />
+          </span>
+          <span>
+            <strong>{t("받은 도장 조회", "Received Dojang")}</strong>
+            <span>
+              {t(
+                "지갑 주소로 수신 기록 확인",
+                "Find records received by a wallet",
+              )}
+            </span>
+          </span>
+          <ArrowRight
+            className="dojang-action-arrow"
+            size={20}
+            aria-hidden="true"
+          />
+        </a>
+        <a href={addressRoleURL(input, false)}>
+          <span className="dojang-action-icon">
+            <ArrowUpRight size={24} aria-hidden="true" />
+          </span>
+          <span>
+            <strong>{t("발급한 기록 조회", "Issued records")}</strong>
+            <span>
+              {t(
+                "발행자 주소로 발급 이력 확인",
+                "Find issuance history by issuer address",
+              )}
+            </span>
+          </span>
+          <ArrowRight
+            className="dojang-action-arrow"
+            size={20}
+            aria-hidden="true"
+          />
+        </a>
+      </nav>
     </div>
   );
+}
+
+export default function ProductHome() {
+  const [language] = usePreferences();
+  return <HomeContent ko={language === "ko"} />;
 }

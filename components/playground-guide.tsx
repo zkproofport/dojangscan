@@ -26,7 +26,6 @@ export function PlaygroundInvite({ onStart }: { onStart: () => void }) {
       </div>
       <button className="secondary-button" onClick={onStart}>
         {tr("발급 절차")}
-        <ArrowRight size={16} />
       </button>
     </aside>
   );
@@ -89,7 +88,6 @@ export default function PlaygroundGuide({
           rel="noreferrer"
         >
           {tr("공식 안내")}
-          <ExternalLink size={14} />
         </a>
       </header>
       <ol className="playground-steps">
@@ -108,17 +106,12 @@ export default function PlaygroundGuide({
             rel="noreferrer"
           >
             {tr("테스트 ETH 받기")}
-            <ExternalLink size={14} />
           </a>
         </li>
         <li>
           <span className="playground-step-number">02</span>
           <h3>{tr("Playground에서 발급")}</h3>
-          <p>
-            {tr(
-              "지갑 연결 → Issue Dojang → 거래 승인 → 발급 기록 조회",
-            )}
-          </p>
+          <p>{tr("지갑 연결 → Issue Dojang → 거래 승인 → 발급 기록 조회")}</p>
           <a
             className="secondary-button"
             href={PLAYGROUND_LINKS.playground}
@@ -126,7 +119,6 @@ export default function PlaygroundGuide({
             rel="noreferrer"
           >
             {tr("Playground 열기")}
-            <ExternalLink size={14} />
           </a>
         </li>
         <li>
@@ -139,7 +131,6 @@ export default function PlaygroundGuide({
           </p>
           <a className="text-button" href="#playground-lookup">
             {tr("조회로 이동")}
-            <ArrowRight size={14} />
           </a>
         </li>
       </ol>
@@ -174,11 +165,7 @@ export default function PlaygroundGuide({
             }}
           />
           <button className="primary" disabled={busy}>
-            {busy ? (
-              <RefreshCw size={16} className="spinning" />
-            ) : (
-              <ArrowRight size={16} />
-            )}
+            {busy ? <RefreshCw size={16} className="spinning" /> : null}
             {tr(busy ? "조회 중" : "발급 기록 확인")}
           </button>
         </div>
@@ -225,7 +212,7 @@ export default function PlaygroundGuide({
           )}
           <div className="playground-evidence">
             <a href={ISSUER_METADATA_SOURCE} target="_blank" rel="noreferrer">
-              TESTNET FAUCET <ExternalLink size={12} />
+              TESTNET FAUCET
             </a>
             <a
               href={`${NETWORK.explorer}/address/${result.issuer}`}
@@ -233,7 +220,6 @@ export default function PlaygroundGuide({
               rel="noreferrer"
             >
               <code>{short(result.issuer)}</code>
-              <ExternalLink size={12} />
             </a>
             <span>{tr("조회 블록 {0}", [result.block.toLocaleString()])}</span>
           </div>
@@ -244,7 +230,6 @@ export default function PlaygroundGuide({
                 onClick={() => onProof(result.address)}
               >
                 {tr("Proof Studio 열기")}
-                <ArrowRight size={15} />
               </button>
             )}
             {result.status === "confirmed" && (
@@ -253,7 +238,6 @@ export default function PlaygroundGuide({
                 onClick={() => onWallet(result.address)}
               >
                 {tr("내 도장 보기")}
-                <ArrowRight size={15} />
               </button>
             )}
             {result.uid !== ZERO && (
@@ -262,7 +246,6 @@ export default function PlaygroundGuide({
                 href={`?view=wallet&uid=${result.uid}`}
               >
                 {tr("도장 상세 보기")}
-                <ArrowRight size={14} />
               </a>
             )}
             <button className="text-button" onClick={() => void check()}>
@@ -280,7 +263,7 @@ export default function PlaygroundGuide({
           )}
         </p>
         <a href={ISSUER_METADATA_SOURCE} target="_blank" rel="noreferrer">
-          {tr("발행자 이름 출처: GIWA 공식 문서")} ↗
+          {tr("발행자 이름 출처: GIWA 공식 문서")}
         </a>
       </details>
     </section>

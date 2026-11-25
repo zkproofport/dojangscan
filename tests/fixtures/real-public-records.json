@@ -1,0 +1,654 @@
+{
+  "kind": "unmodified-public-get-responses",
+  "RPC": 0,
+  "responses": [
+    {
+      "label": "content-4",
+      "url": "https://api.dojangscan.com/live/v1/networks/giwa-sepolia-catchup25-r1/attestations/0xd8802e6535bc7710f3d03fc3d23d1d6a2ea980d88177e056860bfdf05f4dbed2",
+      "path": "/live/v1/networks/giwa-sepolia-catchup25-r1/attestations/0xd8802e6535bc7710f3d03fc3d23d1d6a2ea980d88177e056860bfdf05f4dbed2",
+      "at": "2026-11-25T06:37:48.521986+00:00",
+      "status": 200,
+      "sha256": "440f32d264a0fcac242424a25d61fd19e3da1e80cabc2a5bb0026726d7b3a2e0",
+      "body": {
+        "meta": {
+          "network": "giwa-sepolia-catchup25-r1",
+          "chainId": "91342",
+          "asOfBlock": 41649457,
+          "evaluatedBlock": 41472564,
+          "blockHash": "0xc971c787a0dab1dc9713eaa4aef3e2eb368ce0306214fa56a508c4d4f8606b42",
+          "observedAt": "2026-11-25T00:53:08.347Z",
+          "verifiedAt": "2026-11-25T06:37:48.507Z",
+          "freshness": "stale",
+          "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+          "stateEvaluationReady": false,
+          "range": {
+            "from": 41472210,
+            "through": 41649457,
+            "requestedEnd": 41649467,
+            "requestedRangeComplete": false
+          },
+          "coverage": {
+            "gaps": [],
+            "pending": 999,
+            "exhausted": 999,
+            "historyScope": "partial",
+            "pendingScope": "non-expiry",
+            "raw_complete": false,
+            "certifiedBlocks": 177248,
+            "decode_coverage": {
+              "total": 11739,
+              "supported": 11739
+            },
+            "dueExpirationWork": false,
+            "hydration_complete": false,
+            "range_raw_complete": true,
+            "externalEasExcluded": 1577,
+            "initialStateComplete": false,
+            "classificationUnknown": true,
+            "classificationVersion": "dojang-scope-v4",
+            "range_evaluation_ready": false,
+            "state_evaluation_ready": false,
+            "dojangEvaluationPending": 999
+          },
+          "finalizedHead": null
+        },
+        "data": {
+          "uid": "0xd8802e6535bc7710f3d03fc3d23d1d6a2ea980d88177e056860bfdf05f4dbed2",
+          "schema": "0x7bb85b5ed64c84401e7fed73895bd409b0ceec2c510ceab92ee3cfd4b0ce0a32",
+          "issuer": "0x307fd2d78cdd62eaaa61fbc3fb5ff3677f868dc8",
+          "recipient": "0x0000000000000000000000000000000000000000",
+          "issuedAt": "1794821616",
+          "expiresAt": "0",
+          "issued": true,
+          "notRevoked": true,
+          "notExpired": true,
+          "currentIndexSelected": null,
+          "policyAccepted": null,
+          "dependencyValid": true,
+          "snapshotNotExpired": true,
+          "snapshotDependencyValid": true,
+          "issuerRegistered": null,
+          "issuerRegisteredAtIssuance": null,
+          "schemaRegistered": null,
+          "fields": {},
+          "reasons": [
+            "UNSUPPORTED_PAYLOAD",
+            "ISSUER_STATE_UNKNOWN",
+            "SCHEMA_STATE_UNKNOWN",
+            "INDEX_SELECTION_UNKNOWN",
+            "CLASSIFICATION_UNKNOWN",
+            "STALE_OR_UNAVAILABLE"
+          ],
+          "classification": "unclassified",
+          "issuanceEventObserved": true,
+          "observationBlockNumber": 41476529,
+          "evaluatedBlock": 41476529
+        },
+        "content": {
+          "version": "recorded-content-v1",
+          "purpose": "recorded_content_only",
+          "status": "decoded",
+          "schema": "0x7bb85b5ed64c84401e7fed73895bd409b0ceec2c510ceab92ee3cfd4b0ce0a32",
+          "fields": [
+            {
+              "name": "runner",
+              "type": "bytes32",
+              "value": "0x054cb685868b11fd7182b349522fde213aaf6f8b73614eb684738a878e4e1bf6"
+            },
+            {
+              "name": "shoe",
+              "type": "bytes32",
+              "value": "0x32cfda50d344647dd82af7009a74869a633e82bc92638708fbff11f7817d2e7c"
+            },
+            {
+              "name": "drawKind",
+              "type": "string",
+              "value": "FREE"
+            },
+            {
+              "name": "rarity",
+              "type": "string",
+              "value": "COMMON"
+            },
+            {
+              "name": "modelId",
+              "type": "uint32",
+              "value": "0"
+            },
+            {
+              "name": "drawNonce",
+              "type": "uint64",
+              "value": "12"
+            },
+            {
+              "name": "seedHash",
+              "type": "bytes32",
+              "value": "0xf6a4a663637e9d4faff129ea02ac47e77eedf7966c74760f99e208c5fffc2701"
+            },
+            {
+              "name": "dataHash",
+              "type": "bytes32",
+              "value": "0xff4d475afcb5ff598cbe4bd89f26772d8b77c357673f27e8d30aa6d357611231"
+            },
+            {
+              "name": "day",
+              "type": "uint32",
+              "value": "20261116"
+            }
+          ],
+          "reasons": [],
+          "limitations": [
+            "CONTENT_NOT_TRUTH_VERIFIED",
+            "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+            "NOT_CURRENT_ELIGIBILITY"
+          ],
+          "observation": {
+            "blockHash": "0xa76ae9f4758a543529b4768227ae646848892b2fecde5df7020e62167d292c70",
+            "blockNumber": 41476529,
+            "observedAt": "2026-11-17T11:04:29.312Z"
+          },
+          "definitionEvidence": {
+            "kind": "previously-saved-fixed-block-getSchema",
+            "chainId": "91342",
+            "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+            "registry": "0x4200000000000000000000000000000000000020",
+            "blockHash": "0x7e54348d46bdf73016e968535ae43308224bd22b5df26ddd4e653d73819c11cc",
+            "sourceSHA256": "1298665f56887b14d2523ccf178bd7a64e8820c6c12474b015f92cc5db8bd736",
+            "receiptRootVerified": false,
+            "independentProvider": false
+          }
+        }
+      }
+    },
+    {
+      "label": "recent-detail",
+      "url": "https://api.dojangscan.com/recent/v1/networks/giwa-sepolia-catchup25-r1/recent/uids/0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98",
+      "path": "/recent/v1/networks/giwa-sepolia-catchup25-r1/recent/uids/0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98",
+      "at": "2026-11-25T06:37:53.988864+00:00",
+      "status": 200,
+      "sha256": "b28c5eb58e3dc0edf96757a633c3c5c377418653862c15795b02f0c750286f69",
+      "body": {
+        "data": [
+          {
+            "id": "0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98:0xdf95bf301e8cd24a5c311dde3b7702cd04dbd16b5bcc5f510fd1ce6b7a7b0b65:0xd628c1374238c5751c986058dd5b7792dc05d4ff954c24d7505c1df28da92c99:2",
+            "uid": "0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98",
+            "event": "AttestationIndexed",
+            "kind": "indexer",
+            "contract": "0x9c9bf29880448ab39795a11b669e22a0f1d790ec",
+            "blockNumber": 42241619,
+            "blockHash": "0xdf95bf301e8cd24a5c311dde3b7702cd04dbd16b5bcc5f510fd1ce6b7a7b0b65",
+            "transactionHash": "0xd628c1374238c5751c986058dd5b7792dc05d4ff954c24d7505c1df28da92c99",
+            "logIndex": 2,
+            "schema": "0x072d75e18b2be4f89a13a7147240477481c4b526d5795802acba59046b426e08",
+            "issuer": "0x63cce2b569a7bc35895ee24306c1512fefc06121",
+            "recipient": "0x5355712cfc998fd3fea08a5f37c49bcc811d0dbb",
+            "refUID": null,
+            "indexKey": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "eventFields": {
+              "schema": "0x072d75e18b2be4f89a13a7147240477481c4b526d5795802acba59046b426e08",
+              "attester": "0x63CCe2b569A7bC35895ee24306c1512fefc06121",
+              "recipient": "0x5355712cfc998fD3feA08a5F37C49bcC811d0DBb",
+              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "attestationUid": "0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98"
+            },
+            "classification": "UNKNOWN",
+            "receiptVerified": false,
+            "verification": "discovery-only",
+            "applicabilityProven": false,
+            "currentIndexSelected": null,
+            "epochEvidenceDigest": "c2589c573a3edce4425a5329abc8f3a5e908605f211d376e233475be1a352a5b"
+          },
+          {
+            "id": "0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98:0xdf95bf301e8cd24a5c311dde3b7702cd04dbd16b5bcc5f510fd1ce6b7a7b0b65:0xd628c1374238c5751c986058dd5b7792dc05d4ff954c24d7505c1df28da92c99:1",
+            "uid": "0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98",
+            "event": "Attested",
+            "kind": "eas",
+            "contract": "0x4200000000000000000000000000000000000021",
+            "blockNumber": 42241619,
+            "blockHash": "0xdf95bf301e8cd24a5c311dde3b7702cd04dbd16b5bcc5f510fd1ce6b7a7b0b65",
+            "transactionHash": "0xd628c1374238c5751c986058dd5b7792dc05d4ff954c24d7505c1df28da92c99",
+            "logIndex": 1,
+            "schema": "0x072d75e18b2be4f89a13a7147240477481c4b526d5795802acba59046b426e08",
+            "issuer": "0x63cce2b569a7bc35895ee24306c1512fefc06121",
+            "recipient": "0x5355712cfc998fd3fea08a5f37c49bcc811d0dbb",
+            "refUID": null,
+            "indexKey": null,
+            "eventFields": {
+              "recipient": "0x5355712cfc998fD3feA08a5F37C49bcC811d0DBb",
+              "attester": "0x63CCe2b569A7bC35895ee24306c1512fefc06121",
+              "uid": "0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98",
+              "schemaUID": "0x072d75e18b2be4f89a13a7147240477481c4b526d5795802acba59046b426e08"
+            },
+            "classification": "UNKNOWN",
+            "receiptVerified": false,
+            "verification": "discovery-only",
+            "applicabilityProven": false,
+            "currentIndexSelected": null,
+            "epochEvidenceDigest": "54a2e94e1f78fa620da11a35fa691d0f19a62c172fa396e7162f216c16e7e96c"
+          }
+        ],
+        "next": null,
+        "meta": {
+          "source": "recent-finalized-events",
+          "network": "giwa-sepolia-catchup25-r1",
+          "observedAt": "2026-11-25T06:19:56.888Z",
+          "snapshot": "3c29f2f4f287007c18e6583c2d54e47938f78c8f0ed79ea55acb6c32c314a406",
+          "currentDecision": "UNKNOWN",
+          "historyScope": "partial",
+          "globalHistoryComplete": false,
+          "rawCoverageCertified": false,
+          "liveCheckpointChanged": false,
+          "bookInitialState": "UNKNOWN",
+          "zeroBookEventsProveNoChanges": false,
+          "window": {
+            "source": "recent-finalized-events",
+            "requestedRange": {
+              "from": 42215038,
+              "through": 42241625
+            },
+            "finalizedAnchor": {
+              "number": 42241625,
+              "hash": "0xdce83dc8ffc559b6304ceb69d99f274ebaddee0f6da392f28633207e15494c41",
+              "observedAt": "2026-11-25T06:19:56.888Z"
+            },
+            "preservedLiveCheckpoint": {
+              "rawNext": 41649458,
+              "tipHash": "0xc971c787a0dab1dc9713eaa4aef3e2eb368ce0306214fa56a508c4d4f8606b42",
+              "generation": "b4bc311a-c0f5-4611-978d-48e26cfcee85"
+            },
+            "preservedHistoricalSnapshots": [
+              {
+                "digest": "2ab958069aa9cad4bf05b21527e9459a232f07ea5f227019f9fc74dcce765baa",
+                "from": 41302850,
+                "through": 41328849
+              },
+              {
+                "digest": "e759b46f5d0fd29dfac2543b523d847a4c12ff1fc616a77459989335ce34dd70",
+                "from": 41328850,
+                "through": 41402849
+              }
+            ],
+            "unscannedGap": {
+              "from": 41649458,
+              "through": 42215037
+            },
+            "currentDecision": "UNKNOWN",
+            "historyScope": "partial",
+            "rawCoverageCertified": false,
+            "liveCheckpointChanged": false,
+            "automaticFallback": false,
+            "discoveryThrough": 42241625,
+            "completedThrough": 42241625,
+            "collectionStatus": "complete",
+            "receiptVerification": "separate-sparse",
+            "receiptCheckpointDoesNotGateDiscovery": true,
+            "digest": "9b9174908100607150526ee37c9d9a6f6e9ea03934c3c4268b8506cdd470c2aa",
+            "operationMode": "automatic-finalized-tailing",
+            "completionScope": "published-discovery-range",
+            "tailing": {
+              "phase": "caught-up",
+              "cursor": 42241626,
+              "finalizedHead": 42241625,
+              "gap": 0,
+              "observedAt": "2026-11-25T06:19:56.888Z",
+              "automaticRenewal": false
+            }
+          },
+          "collectionMode": "fixed-finalized-window",
+          "realTime": false,
+          "automaticFallback": false
+        }
+      }
+    },
+    {
+      "label": "empty-query",
+      "url": "https://api.dojangscan.com/recent/v1/networks/giwa-sepolia-catchup25-r1/recent/events?uid=0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98&schema=0x7bb85b5ed64c84401e7fed73895bd409b0ceec2c510ceab92ee3cfd4b0ce0a32&limit=20",
+      "path": "/recent/v1/networks/giwa-sepolia-catchup25-r1/recent/events?uid=0x2a4dd56cc1e91b17d8558d076f322c9214aba12d85de42539d729832cb032b98&schema=0x7bb85b5ed64c84401e7fed73895bd409b0ceec2c510ceab92ee3cfd4b0ce0a32&limit=20",
+      "at": "2026-11-25T06:38:09.890881+00:00",
+      "status": 200,
+      "sha256": "dc482de358e3099aa6c93cc7a40f6e540331ed4083db55da5b945ccba5aa16a4",
+      "body": {
+        "data": [],
+        "next": null,
+        "observation": "NOT_OBSERVED_IN_DISCOVERY_SCOPE",
+        "definitiveNotFound": false,
+        "meta": {
+          "source": "recent-finalized-events",
+          "network": "giwa-sepolia-catchup25-r1",
+          "observedAt": "2026-11-25T06:19:56.888Z",
+          "snapshot": "3c29f2f4f287007c18e6583c2d54e47938f78c8f0ed79ea55acb6c32c314a406",
+          "currentDecision": "UNKNOWN",
+          "historyScope": "partial",
+          "globalHistoryComplete": false,
+          "rawCoverageCertified": false,
+          "liveCheckpointChanged": false,
+          "bookInitialState": "UNKNOWN",
+          "zeroBookEventsProveNoChanges": false,
+          "window": {
+            "source": "recent-finalized-events",
+            "requestedRange": {
+              "from": 42215038,
+              "through": 42241625
+            },
+            "finalizedAnchor": {
+              "number": 42241625,
+              "hash": "0xdce83dc8ffc559b6304ceb69d99f274ebaddee0f6da392f28633207e15494c41",
+              "observedAt": "2026-11-25T06:19:56.888Z"
+            },
+            "preservedLiveCheckpoint": {
+              "rawNext": 41649458,
+              "tipHash": "0xc971c787a0dab1dc9713eaa4aef3e2eb368ce0306214fa56a508c4d4f8606b42",
+              "generation": "b4bc311a-c0f5-4611-978d-48e26cfcee85"
+            },
+            "preservedHistoricalSnapshots": [
+              {
+                "digest": "2ab958069aa9cad4bf05b21527e9459a232f07ea5f227019f9fc74dcce765baa",
+                "from": 41302850,
+                "through": 41328849
+              },
+              {
+                "digest": "e759b46f5d0fd29dfac2543b523d847a4c12ff1fc616a77459989335ce34dd70",
+                "from": 41328850,
+                "through": 41402849
+              }
+            ],
+            "unscannedGap": {
+              "from": 41649458,
+              "through": 42215037
+            },
+            "currentDecision": "UNKNOWN",
+            "historyScope": "partial",
+            "rawCoverageCertified": false,
+            "liveCheckpointChanged": false,
+            "automaticFallback": false,
+            "discoveryThrough": 42241625,
+            "completedThrough": 42241625,
+            "collectionStatus": "complete",
+            "receiptVerification": "separate-sparse",
+            "receiptCheckpointDoesNotGateDiscovery": true,
+            "digest": "9b9174908100607150526ee37c9d9a6f6e9ea03934c3c4268b8506cdd470c2aa",
+            "operationMode": "automatic-finalized-tailing",
+            "completionScope": "published-discovery-range",
+            "tailing": {
+              "phase": "caught-up",
+              "cursor": 42241626,
+              "finalizedHead": 42241625,
+              "gap": 0,
+              "observedAt": "2026-11-25T06:19:56.888Z",
+              "automaticRenewal": false
+            }
+          },
+          "collectionMode": "fixed-finalized-window",
+          "realTime": false,
+          "automaticFallback": false
+        }
+      }
+    },
+    {
+      "label": "dojang-detail",
+      "url": "https://api.dojangscan.com/live/v1/networks/giwa-sepolia-catchup25-r1/attestations/0x000f5defabca90f7500181b4c06aaa6113c8b7a6f8e6734b26b605558de5f9e7",
+      "path": "/live/v1/networks/giwa-sepolia-catchup25-r1/attestations/0x000f5defabca90f7500181b4c06aaa6113c8b7a6f8e6734b26b605558de5f9e7",
+      "at": "2026-11-25T06:38:29.650014+00:00",
+      "status": 200,
+      "sha256": "bb8918cb9049bc572475287608c680b956c75e5c8f2656995a9aab96e8042b7a",
+      "body": {
+        "meta": {
+          "network": "giwa-sepolia-catchup25-r1",
+          "chainId": "91342",
+          "asOfBlock": 41649457,
+          "evaluatedBlock": 41472564,
+          "blockHash": "0xc971c787a0dab1dc9713eaa4aef3e2eb368ce0306214fa56a508c4d4f8606b42",
+          "observedAt": "2026-11-25T00:53:08.347Z",
+          "verifiedAt": "2026-11-25T06:38:29.636Z",
+          "freshness": "stale",
+          "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+          "stateEvaluationReady": false,
+          "range": {
+            "from": 41472210,
+            "through": 41649457,
+            "requestedEnd": 41649467,
+            "requestedRangeComplete": false
+          },
+          "coverage": {
+            "gaps": [],
+            "pending": 999,
+            "exhausted": 999,
+            "historyScope": "partial",
+            "pendingScope": "non-expiry",
+            "raw_complete": false,
+            "certifiedBlocks": 177248,
+            "decode_coverage": {
+              "total": 11739,
+              "supported": 11739
+            },
+            "dueExpirationWork": false,
+            "hydration_complete": false,
+            "range_raw_complete": true,
+            "externalEasExcluded": 1577,
+            "initialStateComplete": false,
+            "classificationUnknown": true,
+            "classificationVersion": "dojang-scope-v4",
+            "range_evaluation_ready": false,
+            "state_evaluation_ready": false,
+            "dojangEvaluationPending": 999
+          },
+          "finalizedHead": null
+        },
+        "data": {
+          "uid": "0x000f5defabca90f7500181b4c06aaa6113c8b7a6f8e6734b26b605558de5f9e7",
+          "schema": "0x072d75e18b2be4f89a13a7147240477481c4b526d5795802acba59046b426e08",
+          "issuer": "0x63cce2b569a7bc35895ee24306c1512fefc06121",
+          "recipient": "0x238a21b1982e10a542f4daa87f7db4669756d496",
+          "issuedAt": "1794965013",
+          "expiresAt": "1797557013",
+          "issued": true,
+          "notRevoked": true,
+          "notExpired": true,
+          "currentIndexSelected": true,
+          "policyAccepted": null,
+          "dependencyValid": true,
+          "snapshotNotExpired": true,
+          "snapshotDependencyValid": true,
+          "issuerRegistered": null,
+          "issuerRegisteredAtIssuance": null,
+          "schemaRegistered": null,
+          "fields": {
+            "isVerified": "true"
+          },
+          "reasons": [
+            "ISSUER_STATE_UNKNOWN",
+            "SCHEMA_STATE_UNKNOWN",
+            "STALE_OR_UNAVAILABLE"
+          ],
+          "classification": "dojang",
+          "issuanceEventObserved": true,
+          "observationBlockNumber": 41619899,
+          "evaluatedBlock": 41619899
+        }
+      }
+    },
+    {
+      "label": "external_eas-detail",
+      "url": "https://api.dojangscan.com/live/v1/networks/giwa-sepolia-catchup25-r1/attestations/0x00061dcbeab19b3ebbabfc09771c5fa3fbb7f3eb776ac35a8fdebf31b7cf4605",
+      "path": "/live/v1/networks/giwa-sepolia-catchup25-r1/attestations/0x00061dcbeab19b3ebbabfc09771c5fa3fbb7f3eb776ac35a8fdebf31b7cf4605",
+      "at": "2026-11-25T06:38:29.806422+00:00",
+      "status": 200,
+      "sha256": "6b6682a354e7cff9425b22d907fed9c8b4985914c07d3bca14857f33f0b263fc",
+      "body": {
+        "meta": {
+          "network": "giwa-sepolia-catchup25-r1",
+          "chainId": "91342",
+          "asOfBlock": 41649457,
+          "evaluatedBlock": 41472564,
+          "blockHash": "0xc971c787a0dab1dc9713eaa4aef3e2eb368ce0306214fa56a508c4d4f8606b42",
+          "observedAt": "2026-11-25T00:53:08.347Z",
+          "verifiedAt": "2026-11-25T06:38:29.790Z",
+          "freshness": "stale",
+          "projectionGeneration": "b4bc311a-c0f5-4611-978d-48e26cfcee85",
+          "stateEvaluationReady": false,
+          "range": {
+            "from": 41472210,
+            "through": 41649457,
+            "requestedEnd": 41649467,
+            "requestedRangeComplete": false
+          },
+          "coverage": {
+            "gaps": [],
+            "pending": 999,
+            "exhausted": 999,
+            "historyScope": "partial",
+            "pendingScope": "non-expiry",
+            "raw_complete": false,
+            "certifiedBlocks": 177248,
+            "decode_coverage": {
+              "total": 11739,
+              "supported": 11739
+            },
+            "dueExpirationWork": false,
+            "hydration_complete": false,
+            "range_raw_complete": true,
+            "externalEasExcluded": 1577,
+            "initialStateComplete": false,
+            "classificationUnknown": true,
+            "classificationVersion": "dojang-scope-v4",
+            "range_evaluation_ready": false,
+            "state_evaluation_ready": false,
+            "dojangEvaluationPending": 999
+          },
+          "finalizedHead": null
+        },
+        "data": {
+          "uid": "0x00061dcbeab19b3ebbabfc09771c5fa3fbb7f3eb776ac35a8fdebf31b7cf4605",
+          "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+          "issuer": "0xbd9991a26d0a0bf744ecdb8ad4f59f60a9132956",
+          "recipient": "0x8b53e6e1446b4d26046db79073a5bc3e7aa7147d",
+          "issuedAt": "1794976377",
+          "expiresAt": "0",
+          "issued": true,
+          "notRevoked": true,
+          "notExpired": true,
+          "currentIndexSelected": null,
+          "policyAccepted": null,
+          "dependencyValid": true,
+          "snapshotNotExpired": true,
+          "snapshotDependencyValid": true,
+          "issuerRegistered": null,
+          "issuerRegisteredAtIssuance": null,
+          "schemaRegistered": null,
+          "fields": {},
+          "reasons": [
+            "UNSUPPORTED_PAYLOAD",
+            "ISSUER_STATE_UNKNOWN",
+            "SCHEMA_STATE_UNKNOWN",
+            "INDEX_SELECTION_UNKNOWN",
+            "EXTERNAL_EAS",
+            "STALE_OR_UNAVAILABLE"
+          ],
+          "classification": "external_eas",
+          "issuanceEventObserved": true,
+          "observationBlockNumber": 41631291,
+          "evaluatedBlock": 41631291
+        },
+        "content": {
+          "version": "recorded-content-v1",
+          "purpose": "recorded_content_only",
+          "status": "decoded",
+          "schema": "0xbd97671d89c9f4bb246e33369389332486f406ab821a0c7f88860034759c5c0b",
+          "fields": [
+            {
+              "name": "occurrenceId",
+              "type": "bytes32",
+              "value": "0x3cafc05c492a8e14f1df0150e8b58b7f8390885e5a04d5c58c6ea56d9f6d91d5"
+            },
+            {
+              "name": "actionId",
+              "type": "bytes32",
+              "value": "0x7ef9682ca94d91f4ea23ef61becb7e88cc0c244eb86835355e654bfbcde068ed"
+            },
+            {
+              "name": "revision",
+              "type": "uint32",
+              "value": "1"
+            },
+            {
+              "name": "actionCode",
+              "type": "uint16",
+              "value": "10"
+            },
+            {
+              "name": "schemaVersion",
+              "type": "uint16",
+              "value": "1"
+            },
+            {
+              "name": "policyVersion",
+              "type": "uint32",
+              "value": "1"
+            },
+            {
+              "name": "environmentId",
+              "type": "bytes32",
+              "value": "0xd5bc532db275cd70e5f55280b01cd2acc6b30b90d5aaa451adeb4b9a8f02c264"
+            },
+            {
+              "name": "creatorId",
+              "type": "bytes32",
+              "value": "0x00000000000000000000000000000000c4afd3790ed94be586b29c6375aab5ad"
+            },
+            {
+              "name": "campaignId",
+              "type": "bytes32",
+              "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "name": "occurredDay",
+              "type": "uint32",
+              "value": "20775"
+            },
+            {
+              "name": "origin",
+              "type": "uint8",
+              "value": "0"
+            },
+            {
+              "name": "evidenceCommitment",
+              "type": "bytes32",
+              "value": "0xd80838772be472da0e18e8ce38cc35c0a5941fbde12da70d326bac8f110c8aae"
+            },
+            {
+              "name": "credentialRefsHash",
+              "type": "bytes32",
+              "value": "0x78e5d5888014a84b3c455b5a3d488e93aafd3196adccd1273e7331eb97ed6bed"
+            },
+            {
+              "name": "migrationBatchId",
+              "type": "bytes32",
+              "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          ],
+          "reasons": [],
+          "limitations": [
+            "CONTENT_NOT_TRUTH_VERIFIED",
+            "DOJANG_APPLICABILITY_NOT_ESTABLISHED",
+            "NOT_CURRENT_ELIGIBILITY"
+          ],
+          "observation": {
+            "blockHash": "0xcb677ba34d6cb795aeac669080e829a98beb9ada727a055de822426b7698c689",
+            "blockNumber": 41631291,
+            "observedAt": "2026-11-20T21:29:26.753Z"
+          },
+          "definitionEvidence": {
+            "kind": "previously-saved-fixed-block-getSchema",
+            "chainId": "91342",
+            "genesisHash": "0xca1b5fee64a196abfca007b3a4d4e3ec2b37be83a452d452bf4e45937004cab2",
+            "registry": "0x4200000000000000000000000000000000000020",
+            "blockHash": "0x0effd5e017a5fa59139de8f104e0632a974210578a38ed34eecf334371d220f8",
+            "sourceSHA256": "72452d94fc53f9676aebf61af7d7c9b674ca43bf20b2dea849b1393340a239da",
+            "receiptRootVerified": false,
+            "independentProvider": false
+          }
+        }
+      }
+    }
+  ]
+}

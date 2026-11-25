@@ -109,12 +109,12 @@ function AttestationPractice({
             <h2 id="mock-registration-title">{tr("관리자 계정 등록")}</h2>
             <p>
               {tr(
-                "Upbit KYC를 테스트넷에서 활용하는 데 한계가 있어, 메인넷 적용 전 흐름을 테스트하기 위해 만든 GIWA Sepolia EAS KYC 목업입니다.",
+                "GIWA Sepolia의 계정 등록 증명용 테스트 목업입니다.",
               )}
             </p>
             <p>
               {tr(
-                "테스트 계정 등록은 support@masselabs.com으로 요청할 수 있습니다. 관리자 등록 완료 후 조회가 가능합니다.",
+                "관리자 등록 후 조회 가능 · 등록 문의: support@masselabs.com",
               )}
             </p>
             <span>
@@ -125,7 +125,7 @@ function AttestationPractice({
             className="secondary-button"
             href="mailto:support@masselabs.com?subject=GIWA%20Sepolia%20KYC%20Mock%20Registration"
           >
-            {tr("등록 요청 이메일")} <ArrowUpRight size={14} />
+            {tr("등록 요청 이메일")}
           </a>
         </section>
       )}
@@ -148,7 +148,7 @@ function AttestationPractice({
               <span className="studio-step">01</span>
               <div>
                 <h3 id="studio-check-title">
-                  {tr(mock ? "등록된 계정 확인" : "발급받은 도장 확인")}
+                  {tr(mock ? "계정 등록 조회" : "도장 조회")}
                 </h3>
                 <p>
                   {tr(
@@ -183,9 +183,7 @@ function AttestationPractice({
                 <button className="primary" disabled={flow.busy}>
                   {flow.phase === "checking" ? (
                     <RefreshCw size={16} className="spinning" />
-                  ) : (
-                    <ArrowRight size={16} />
-                  )}
+                  ) : null}
                   {tr(
                     flow.phase === "checking"
                       ? "조회 중"
@@ -207,13 +205,15 @@ function AttestationPractice({
                 </strong>
                 {confirmed ? (
                   <>
-                    <p>{tr("ZKProofport 앱에서도 동일한 지갑이 필요합니다.")}</p>
+                    <p>
+                      {tr("ZKProofport 앱에서도 동일한 지갑이 필요합니다.")}
+                    </p>
                     <a
                       href={`?view=wallet&uid=${flow.record.uid}`}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {tr("도장 상세 보기")} <ArrowUpRight size={13} />
+                      {tr("도장 상세 보기")}
                     </a>
                   </>
                 ) : (
@@ -230,9 +230,7 @@ function AttestationPractice({
             {mock ? (
               <div className="studio-inline-help">
                 <span>{tr("테스트 계정 등록")}</span>
-                <a href="mailto:support@masselabs.com">
-                  support@masselabs.com <ExternalLink size={13} />
-                </a>
+                <a href="mailto:support@masselabs.com">support@masselabs.com</a>
               </div>
             ) : (
               <>
@@ -243,10 +241,10 @@ function AttestationPractice({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {tr("Playground에서 발급")} <ExternalLink size={13} />
+                    {tr("Playground에서 발급")}
                   </a>
                   <button className="text-button" onClick={onGuide}>
-                    {tr("발급 가이드")} <ArrowRight size={13} />
+                    {tr("발급 가이드")}
                   </button>
                 </div>
               </>
@@ -260,7 +258,7 @@ function AttestationPractice({
               <span className="studio-step">02</span>
               <div>
                 <h3 id="studio-generate-title">
-                  {tr("휴대폰에서 ZK 증명 만들기")}
+                  {tr("ZK 증명 생성")}
                 </h3>
                 <p>
                   {tr(
@@ -280,7 +278,7 @@ function AttestationPractice({
                 <div>
                   <span className="studio-live">
                     <span />
-                    {tr("앱의 응답을 기다리는 중")}
+                    {tr("앱 응답 대기 중")}
                   </span>
                   <h4>{tr("앱에서 요청 확인 및 서명")}</h4>
                   <p>
@@ -308,10 +306,8 @@ function AttestationPractice({
               <div className="studio-received" role="status">
                 <CheckCircle2 size={22} />
                 <div>
-                  <strong>{tr("앱에서 증명이 도착했습니다.")}</strong>
-                  <p>
-                    {tr("수신된 증명을 검증할 수 있습니다.")}
-                  </p>
+                  <strong>{tr("증명 수신 완료")}</strong>
+                  <p>{tr("증명 검증 가능")}</p>
                 </div>
               </div>
             ) : (
@@ -334,7 +330,7 @@ function AttestationPractice({
             )}
             {!confirmed && (
               <p className="studio-small">
-                {tr("증명 요청 전 01 단계의 도장 조회가 필요합니다.")}
+                {tr("도장 조회 후 증명 요청 가능")}
               </p>
             )}
           </section>
@@ -353,7 +349,7 @@ function AttestationPractice({
                 <p>
                   {tr(
                     verified
-                      ? "GIWA Sepolia 검증 컨트랙트에서 현재 요청의 증명 검증이 완료됐습니다."
+                      ? "현재 요청의 증명을 GIWA Sepolia 검증 계약에서 검증했습니다."
                       : "수신된 증명을 GIWA Sepolia에서 검증합니다. 지갑 서명과 가스비는 필요하지 않습니다.",
                   )}
                 </p>
@@ -394,9 +390,7 @@ function AttestationPractice({
                 ) : (
                   <ShieldCheck size={18} />
                 )}
-                {tr(
-                  flow.phase === "verifying" ? "증명 검증 중" : "증명 검증",
-                )}
+                {tr(flow.phase === "verifying" ? "증명 검증 중" : "증명 검증")}
               </button>
             )}
             {flow.proof && <ProofInspector proof={flow.proof} />}
@@ -423,7 +417,7 @@ function AttestationPractice({
               <ZkProofportLogo size={44} />
               <div>
                 <strong>ZKProofport</strong>
-                <span>{tr("증명은 내 휴대폰에서")}</span>
+                <span>{tr("ZKProofport 앱")}</span>
               </div>
             </div>
             <h3>{tr("앱 설치")}</h3>
@@ -437,7 +431,6 @@ function AttestationPractice({
               >
                 <Download size={16} />
                 App Store
-                <ArrowUpRight size={14} />
               </a>
               <a
                 className="secondary-button"
@@ -447,7 +440,6 @@ function AttestationPractice({
               >
                 <Download size={16} />
                 Google Play
-                <ArrowUpRight size={14} />
               </a>
             </div>
             <ol className="studio-app-steps">
@@ -458,16 +450,12 @@ function AttestationPractice({
                     : "Playground 발급 지갑 연결",
                 )}
               </li>
-              <li>
-                {tr("증명 요청 후 앱에서 QR 스캔")}
-              </li>
+              <li>{tr("증명 요청 후 앱에서 QR 스캔")}</li>
             </ol>
           </section>
           <section className="studio-about">
-            <span className="section-kicker">
-              {tr("증명 범위 및 한계")}
-            </span>
-            <h3>{tr("발급 → 증명 → 검증")}</h3>
+            <span className="section-kicker">{tr("증명 범위 및 한계")}</span>
+            <h3>{tr("테스트넷 증명 범위")}</h3>
             <p>
               {tr(
                 "테스트넷 증명 생성·검증 환경입니다. 메인넷 자격 검증을 제공하지 않습니다.",

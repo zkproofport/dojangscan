@@ -151,7 +151,7 @@ export function TransactionReview({
             target="_blank"
             rel="noreferrer"
           >
-            {short(tx.hash, 12)} ↗
+            {short(tx.hash, 12)}
           </a>
           {tx.block && (
             <p>
@@ -160,7 +160,7 @@ export function TransactionReview({
           )}
           {tx.uids.map((uid) => (
             <a key={uid} href={`?view=explore&uid=${uid}`}>
-              UID {short(uid, 12)} ↗
+              UID {short(uid, 12)}
             </a>
           ))}
           {tx.error && <p className="notice danger">{tx.error}</p>}

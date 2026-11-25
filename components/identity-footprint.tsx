@@ -77,7 +77,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
         <Fingerprint size={24} aria-hidden="true" />
         <span>
           <strong id={`${id}-title`}>Identity Footprint</strong>
-          <span>{tr("이 인증 지갑의 공개 활동은 어디까지 연결될까요?")}</span>
+          <span>{tr("지갑 공개 활동")}</span>
         </span>
         <ChevronDown
           size={18}
@@ -327,7 +327,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                       </p>
                       <p className="fine-print">
                         {tr(
-                          "EAS 발급 기록과 현재 인증 상태는 별개입니다. 상세에 발행자·내용·철회·만료 상태가 표시됩니다.",
+                          "발급 기록과 현재 인증 상태는 별개입니다. 상세에서 발행자·내용·철회·만료 상태를 조회할 수 있습니다.",
                         )}
                       </p>
                     </>
@@ -387,7 +387,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
               </p>
               <p className="fine-print">
                 {tr(
-                  "주소 인증은 이미 불러온 EAS 기록만 사용합니다. 현재 인증이 확인되어도 해당 발급 기록이 이 범위에 없을 수 있습니다.",
+                  "주소 인증 내역은 조회된 기록 범위에 한정됩니다. 현재 인증에 해당하는 발급 기록이 포함되지 않을 수 있습니다.",
                 )}
               </p>
             </>

@@ -1,3 +1,8 @@
+import {
+  addressURL,
+  recordSource,
+  type RecordSource,
+} from "@/lib/record-navigation";
 import { useId, useState } from "react";
 import { ArrowUpRight, Fingerprint, Search } from "lucide-react";
 import { SCHEMAS, NETWORK, short } from "@/lib/giwa";
@@ -121,22 +126,40 @@ export function ExplorerSearch({
 export function AddressIdentity({
   value,
   full = false,
+  role = "recipient",
+  source,
 }: {
   value: string;
   full?: boolean;
+  role?: "issuer" | "recipient";
+  source?: RecordSource;
 }) {
   const [language] = usePreferences();
   return (
     <span className="explorer-address">
       <a
+        href={addressURL(
+          value,
+          role,
+          source ??
+            recordSource(
+              typeof location === "undefined" ? "" : location.search,
+            ),
+        )}
+        title={value}
+        aria-label={`${language === "ko" ? (role === "issuer" ? "이 주소의 발급 기록" : "이 주소의 수신 기록") : role === "issuer" ? "Records issued by" : "Records received by"}: ${value}`}
+      >
+        <code>{full ? value : short(value)}</code>
+      </a>
+      <a
+        className="address-external"
         href={`${NETWORK.explorer}/address/${encodeURIComponent(value)}`}
         target="_blank"
         rel="noreferrer"
-        title={value}
-        aria-label={`${language === "ko" ? "주소를 외부 Explorer에서 열기" : "Open address in external Explorer"}: ${value}`}
+        aria-label={`${language === "ko" ? "외부에서 보기" : "View externally"}: ${value}`}
+        title={language === "ko" ? "외부에서 보기" : "View externally"}
       >
-        <code>{full ? value : short(value)}</code>
-        <ArrowUpRight size={12} aria-hidden="true" />
+        <span>{language === "ko" ? "GIWA 주소" : "GIWA address"}</span>
       </a>
       <CopyButton
         value={value}

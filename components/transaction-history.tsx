@@ -49,7 +49,7 @@ export function TransactionHistory() {
             rel="noreferrer"
             href={`${NETWORK.explorer}/tx/${tx.hash}`}
           >
-            {short(tx.hash, 12)} ↗
+            {short(tx.hash, 12)}
           </a>
           <button
             className="text-button"

@@ -176,7 +176,8 @@ test("UNKNOWN, Indexer non-selection, and Receipt evidence remain separate from 
   const state = renderToStaticMarkup(
     createElement(RecordObservation, { detail }),
   );
-  assert.match(state, /미선택은 철회가 아닙니다/);
+  assert.match(markup, /미선택은 철회가 아닙니다/);
+  assert.doesNotMatch(state, /Indexer/);
   assert.match(state, /시각 미확인/);
 });
 test("Historical timeline sorts only linked events on the page without inferring times or current state", () => {
@@ -222,14 +223,15 @@ test("Historical timeline sorts only linked events on the page without inferring
 test("main offers purposes without invented usage totals; summary does not treat zero recipient as a wallet", () => {
   const home = renderToStaticMarkup(createElement(ProductHome));
   for (const label of [
-    "도장 기록 확인",
-    "수신한 기록",
-    "발급한 기록",
-    "지갑 연결·서명 불필요",
+    "도장 기록 조회",
+    "발급 내역과 기록 내용",
+    "받은 도장 조회",
+    "발급한 기록 조회",
   ])
     assert.ok(home.includes(label));
   assert.doesNotMatch(home, /1,377|100,000|product-tasks/);
   assert.equal((home.match(/<input /g) ?? []).length, 1);
+  assert.doesNotMatch(home, /<select|조회 범위<|정적 추천/);
   const summary = renderToStaticMarkup(
     createElement(RecordOverview, {
       uid,
@@ -242,7 +244,8 @@ test("main offers purposes without invented usage totals; summary does not treat
     }),
   );
   assert.match(summary, /개별 수신 지갑 없음/);
-  assert.match(summary, /스키마 이름 미확인/);
+  assert.match(summary, /발급 기록/);
+  assert.doesNotMatch(summary, /공식 도장/);
   assert.match(summary, /시각 미확인/);
 });
 
@@ -258,7 +261,7 @@ test("stored results disclose stale observations, projection-only scope and UNKN
     }),
   );
   for (const text of [
-    "최근 관측이 없는 저장 기록",
+    "Live 저장 기록 · 최신성 주의",
     "projection",
     "미평가 UID",
     "전체 체인의 기록 부재",
@@ -280,9 +283,9 @@ test("address lookup is unsigned; issuer management is a separate explicit actio
   const recipient = renderToStaticMarkup(
     createElement(AddressRecordSearch, { ...props, recipient: true }),
   );
-  assert.match(recipient, /지갑 연결 및 서명 불필요/);
-  assert.match(recipient, /수신한 기록/);
-  assert.match(recipient, /발급한 기록/);
+  assert.match(recipient, /지갑 연결·서명은 필요하지 않습니다/);
+  assert.match(recipient, /수신 내역/);
+  assert.match(recipient, /발급 내역/);
   assert.doesNotMatch(recipient, /mode=manage/);
   const issuer = renderToStaticMarkup(
     createElement(AddressRecordSearch, { ...props, recipient: false }),
@@ -335,10 +338,10 @@ test("empty results provide explicit next actions without data controls or chain
   assert.match(html, /마지막 관측/);
   assert.match(html, /다른 주소·조건 조회/);
   assert.match(html, /issuer-records/);
-  assert.match(html, /Public에서 별도 조회/);
+  assert.match(html, /공개 체인에서 조회/);
   assert.doesNotMatch(html, /다음 페이지|JSON 저장|<input|추가 필터 해제/);
   const front = html.split("<details>")[0];
-  assert.match(front, /UNKNOWN/);
+  assert.match(front, /현재 이용 자격을 확인할 수 없습니다/);
   assert.doesNotMatch(front, /projection|Generation|연속 평가 완료 블록/);
 });
 

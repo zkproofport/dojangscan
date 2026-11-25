@@ -1,5 +1,22 @@
+import { UIDConfirmation, OtherRecordPaths } from "./uid-confirmation";
+import { recordedHeadline } from "@/lib/record-presentation";
+import { SourceJSON } from "./source-json";
+import { catalogView, issuanceReferences } from "@/lib/record-catalog";
+import {
+  CatalogNavigation,
+  IssuanceList,
+  RecordHistory,
+} from "./record-catalog";
+import { ActivityList, ActivityEvidence, activityTitle } from "./activity-list";
+import SourceContext from "./source-context";
+import { writeRoute } from "@/lib/record-navigation";
+import {
+  resolveProductLookup,
+  isIssuerAddress,
+} from "@/lib/product-experience";
+import { RecordOverview } from "./record-context";
+import { eventRecordFacts, eventQuery } from "@/lib/record-navigation";
 import { RecordedContentPanel } from "./recorded-content";
-import { EventTimeline } from "./record-context";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Badge, CopyButton } from "./scan-ui";
@@ -12,18 +29,14 @@ import {
 } from "./ui/sheet";
 import { usePreferences } from "@/lib/preferences";
 import { backendNetwork } from "@/lib/data-source";
-import { short, NETWORK, SCHEMAS } from "@/lib/giwa";
-import { schemaTitle, displayDate } from "@/lib/explorer-presentation";
-import {
-  ExplorerSearch,
-  AddressIdentity,
-  LoadingRecords,
-} from "./explorer-presentation";
+import { short } from "@/lib/giwa";
+import { displayDate } from "@/lib/explorer-presentation";
+import { LoadingRecords } from "./explorer-presentation";
 import {
   createHistoricalClient,
   createRecentClient,
   HistoricalError,
-  historicalReason,
+  type HistoricalEvent,
   type HistoricalPage,
   type HistoricalCoverage,
   type HistoricalFilters,
@@ -43,13 +56,26 @@ export default function HistoricalExplorer({
   const [language] = usePreferences();
   const ko = language === "ko";
   const t = (a: string, b: string) => (ko ? a : b);
+  const catalog = catalogView(
+    typeof location === "undefined" ? "" : location.search,
+    true,
+  );
+  const technical = catalog === "events" || !recent;
+  const catalogUnavailable = recent && ["dojang", "eas"].includes(catalog);
   const [coverage, setCoverage] = useState<HistoricalCoverage>();
   const [page, setPage] = useState<HistoricalPage>();
   const [draft, setDraft] = useState<HistoricalFilters>({});
   const [filters, setFilters] = useState<HistoricalFilters>({});
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState<"recipient" | "issuer">("recipient");
+  const [searchError, setSearchError] = useState("");
+  const [viewedAt, setViewedAt] = useState<string>();
+  const [pageCursor, setPageCursor] = useState<string>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [detail, setDetail] = useState<HistoricalPage>();
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<HistoricalEvent>();
   const [selected, setSelected] = useState("");
   const [detailError, setDetailError] = useState("");
   const seq = useRef(0),
@@ -74,6 +100,19 @@ export default function HistoricalExplorer({
               : "Historical API unavailable. This does not mean the data is absent.",
           );
   async function load(f: HistoricalFilters = filters, cursor?: string) {
+    if (!technical) f = { ...f, event: "Attested" };
+    const u = new URL(location.href);
+    if (recent) u.searchParams.set("catalog", catalog);
+    for (const k of ["schema", "issuer", "recipient", "event"] as const) {
+      if (f[k]) u.searchParams.set(k, f[k]!);
+      else u.searchParams.delete(k);
+    }
+    if (f.uid) u.searchParams.set("filterUid", f.uid);
+    else u.searchParams.delete("filterUid");
+    if (cursor) u.searchParams.set("cursor", cursor);
+    else u.searchParams.delete("cursor");
+    writeRoute(u);
+    setPageCursor(cursor);
     const n = ++seq.current;
     setBusy(true);
     setError("");
@@ -88,6 +127,7 @@ export default function HistoricalExplorer({
         throw new HistoricalError(409, "CURSOR_SNAPSHOT_CHANGED");
       setCoverage(c);
       setPage(p);
+      setViewedAt(new Date().toISOString());
       setFilters(f);
     } catch (e) {
       if (n === seq.current) {
@@ -105,7 +145,9 @@ export default function HistoricalExplorer({
     setDetailError("");
     const u = new URL(location.href);
     u.searchParams.set("uid", uid);
-    history.replaceState(null, "", u);
+    if (cursor) u.searchParams.set("detailCursor", cursor);
+    else u.searchParams.delete("detailCursor");
+    writeRoute(u);
     try {
       const p = await client.uid(uid, cursor);
       if (n === detailSeq.current) setDetail(p);
@@ -116,15 +158,18 @@ export default function HistoricalExplorer({
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const initial: HistoricalFilters = {};
-    if (recent)
-      for (const k of ["recipient", "issuer", "schema", "event"] as const) {
-        const v = query.get(k);
-        if (v) initial[k] = v;
-      }
+    for (const k of ["recipient", "issuer", "schema", "event"] as const) {
+      const v = query.get(k);
+      if (v) initial[k] = v;
+    }
+    if (query.get("filterUid")) initial.uid = query.get("filterUid")!;
     setDraft(initial);
-    void load(initial);
+    setSearch(initial.uid ?? initial.issuer ?? initial.recipient ?? "");
+    setRole(initial.issuer ? "issuer" : "recipient");
+    if (!catalogUnavailable && !query.get("uid"))
+      void load(initial, query.get("cursor") ?? undefined);
     const uid = query.get("uid");
-    if (uid) void lookup(uid);
+    if (uid) void lookup(uid, query.get("detailCursor") ?? undefined);
     return () => {
       seq.current++;
       detailSeq.current++;
@@ -137,174 +182,28 @@ export default function HistoricalExplorer({
       AttestationIndexed: t("Indexer 기록", "Indexer event"),
     })[e] ?? e;
   function events(p: HistoricalPage) {
+    if (!technical)
+      return (
+        <IssuanceList
+          records={issuanceReferences(p)}
+          ko={ko}
+          source={recent ? "recent" : "history"}
+          onOpen={(uid) => void lookup(uid)}
+        />
+      );
     return (
-      <div className="backend-list historical-events">
-        {p.data.map((e) => (
-          <article className="explorer-event" key={e.id}>
-            <div
-              className={`explorer-event-mark event-${e.event}`}
-              aria-hidden="true"
-            >
-              {e.event === "Attested"
-                ? "+"
-                : e.event === "Revoked"
-                  ? "−"
-                  : "↗"}
-            </div>
-            <div className="explorer-event-main">
-              <div className="explorer-event-heading">
-                <span>{label(e.event)}</span>
-                <Badge>
-                  {e.receiptVerified
-                    ? t("Receipt 검증 완료", "Receipt verified")
-                    : t(
-                        "이벤트 발견 · Receipt 미검증",
-                        "Discovered · receipt unverified",
-                      )}
-                </Badge>
-              </div>
-              <h3>
-                {e.uid ? (
-                  <button onClick={() => void lookup(e.uid!)}>
-                    {schemaTitle(e.schema, ko)} <span>↗</span>
-                  </button>
-                ) : (
-                  t("계약 변경 기록", "Contract event")
-                )}
-              </h3>
-              <dl className="explorer-card-facts">
-                <div>
-                  <dt>{t("발행자", "Issuer")}</dt>
-                  <dd>
-                    {e.issuer ? (
-                      <AddressIdentity value={e.issuer} />
-                    ) : (
-                      t("이 이벤트에 없음", "Not in this event")
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t("수신자", "Recipient")}</dt>
-                  <dd>
-                    {e.recipient ? (
-                      <AddressIdentity value={e.recipient} />
-                    ) : (
-                      t("이 이벤트에 없음", "Not in this event")
-                    )}
-                  </dd>
-                </div>
-              </dl>
-              <p className="explorer-hint">
-                {t("발생 블록", "Event block")} #
-                {e.blockNumber.toLocaleString()} ·{" "}
-                {t(
-                  "과거 이벤트 · 현재 상태와 별개",
-                  "Past event · separate from current status",
-                )}
-              </p>
-              <details className="explorer-technical">
-                <summary>
-                  {t(
-                    "기록 식별자와 거래",
-                    "Record identifiers and transaction",
-                  )}
-                </summary>
-                <dl className="backend-facts">
-                  {e.uid && (
-                    <div>
-                      <dt>UID</dt>
-                      <dd>
-                        {e.uid}
-                        <CopyButton
-                          value={e.uid}
-                          label={t("UID 복사", "Copy UID")}
-                        />
-                      </dd>
-                    </div>
-                  )}
-                  {e.refUID && (
-                    <div>
-                      <dt>{t("연결된 기록", "Referenced record")}</dt>
-                      <dd>
-                        <button onClick={() => void lookup(e.refUID!)}>
-                          {short(e.refUID)} ↗
-                        </button>
-                        <CopyButton
-                          value={e.refUID}
-                          label={t("연결 UID 복사", "Copy reference UID")}
-                        />
-                      </dd>
-                    </div>
-                  )}
-                  {e.eventFields && (
-                    <div>
-                      <dt>{t("로그에 기록된 값", "Recorded log fields")}</dt>
-                      <dd>
-                        <pre
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            overflowWrap: "anywhere",
-                          }}
-                        >
-                          {JSON.stringify(e.eventFields, null, 2)}
-                        </pre>
-                      </dd>
-                    </div>
-                  )}
-                  {e.schema && (
-                    <div>
-                      <dt>{t("스키마 UID", "Schema UID")}</dt>
-                      <dd>{e.schema}</dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt>Transaction</dt>
-                    <dd>
-                      <a
-                        href={`${NETWORK.explorer}/tx/${e.transactionHash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {short(e.transactionHash)} ↗
-                      </a>
-                      <CopyButton
-                        value={e.transactionHash}
-                        label={t("거래 해시 복사", "Copy transaction hash")}
-                      />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Block hash</dt>
-                    <dd>
-                      {e.blockHash}
-                      <CopyButton
-                        value={e.blockHash}
-                        label={t("블록 해시 복사", "Copy block hash")}
-                      />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Log index</dt>
-                    <dd>{e.logIndex}</dd>
-                  </div>
-                  {e.indexKey && (
-                    <div>
-                      <dt>Indexer key</dt>
-                      <dd>
-                        {e.indexKey}
-                        <CopyButton
-                          value={e.indexKey}
-                          label={t("Indexer 키 복사", "Copy Indexer key")}
-                        />
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              </details>
-            </div>
-          </article>
-        ))}
-      </div>
+      <ActivityList
+        events={p.data}
+        ko={ko}
+        source={recent ? "recent" : "history"}
+        onEvidence={(event) => setSelectedEvent(event)}
+        onSelect={(event) => {
+          if (event.uid) {
+            setSelectedEvent(undefined);
+            void lookup(event.uid);
+          } else setSelectedEvent(event);
+        }}
+      />
     );
   }
   function empty(p: HistoricalPage) {
@@ -322,513 +221,344 @@ export default function HistoricalExplorer({
       )
     );
   }
+  if (selected)
+    return (
+      <section className="uid-result-page">
+        <a className="uid-return" href="?view=home">
+          {t("다른 UID 조회", "Look up another UID")}
+        </a>
+        {detailError ? (
+          <div className="uid-lookup-error">
+            <h1>
+              {t(
+                "기록을 확인하지 못했습니다",
+                "The record could not be confirmed",
+              )}
+            </h1>
+            <p role="alert">{detailError}</p>
+            <OtherRecordPaths
+              uid={selected}
+              source={recent ? "recent" : "history"}
+              ko={ko}
+            />
+          </div>
+        ) : !detail ? (
+          <p role="status">
+            {t("조회 중…", "Loading…")}
+          </p>
+        ) : (
+          <>
+            <UIDConfirmation
+              events={detail}
+              uid={selected}
+              source={recent ? "recent" : "history"}
+              ko={ko}
+            />
+            {detail.next && (
+              <button
+                className="secondary-button"
+                onClick={() => void lookup(selected, detail.next!)}
+              >
+                {t("다음 페이지", "Next page")}
+              </button>
+            )}
+          </>
+        )}
+      </section>
+    );
   return (
     <>
-      <ExplorerSearch
-        busy={busy}
-        onSearch={(kind, value) => {
-          if (kind === "uid") void lookup(value);
-          else {
-            const f = { [kind]: value };
-            setDraft(f);
-            void load(f);
-          }
-        }}
-      />
-      <p className="explorer-context">
-        {t(
-          recent
-            ? "Recent · 고정된 최근 확정 구간의 발급·철회·Indexer 이벤트입니다. 실시간 추적이 아니며 기존 Live·Historical과 별도입니다. 현재 유효성·이용 자격은 UNKNOWN입니다."
-            : "Historical · 보관된 발급·철회·Indexer 기록입니다. 과거 이벤트로 현재 유효성을 판단하지 않습니다.",
-          recent
-            ? "Recent · issuance, revocation and Indexer events in a fixed finalized window. Not real-time tracking; separate from Live and Historical. Current validity and eligibility remain UNKNOWN."
-            : "Historical · stored issuance, revocation and Indexer events. Past events do not establish current validity.",
-        )}
-      </p>
-      <h2 className="explorer-results-title">
-        {recent
-          ? t("최근 확정 이벤트", "Recent finalized events")
-          : t("도장의 과거 기록", "Attestation history")}
-      </h2>
-      {recent && coverage?.meta.window && (
-        <p className="explorer-observation">
-          {t("수집 기준", "Collection window")}:{" "}
-          {coverage.meta.window.requestedRange.from.toLocaleString()}–
-          {coverage.meta.window.requestedRange.through.toLocaleString()} ·{" "}
-          {t("기준 관측", "Anchor observed")}:{" "}
-          {displayDate(coverage.meta.window.finalizedAnchor.observedAt, ko)}.
-          {t(
-            " 이후 블록은 포함하지 않습니다.",
-            " Later blocks are not included.",
-          )}
-          {coverage.meta.window.tailing && <>
-            <br />
-            {t("다음 수집 블록", "Next collection block")}: {coverage.meta.window.tailing.cursor.toLocaleString()} · {t("관측된 finalized 블록", "Observed finalized block")}: {coverage.meta.window.tailing.finalizedHead.toLocaleString()} · {t("남은 격차", "Remaining gap")}: {coverage.meta.window.tailing.gap.toLocaleString()}
-            {coverage.meta.window.tailing.gap > 0
-              ? t("블록 · 따라잡기 중입니다.", " blocks · Catching up.")
-              : t("블록 · 마지막 관측 head까지 검색했습니다. 현재 화면은 저장된 관측 결과입니다.", " blocks · Searched through the last observed head. This screen shows a saved observation.")}
-          </>}
-        </p>
-      )}
-      <form
-        className="filters-row backend-filters"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void load(draft);
-        }}
-      >
-        {(["uid", "schema", "issuer", "recipient"] as const).map((k) => (
-          <label key={k}>
-            {k === "uid"
-              ? "UID"
-              : k === "schema"
-                ? t("스키마", "Schema")
-                : k === "recipient"
-                  ? t("수신자", "Recipient")
-                  : t("발행자", "Issuer")}
-            <input
-              placeholder={
-                k === "uid"
-                  ? "0x…"
-                  : k === "schema"
-                    ? t("전체 종류", "All types")
-                    : k === "recipient"
-                      ? t("전체 수신자", "All recipients")
-                      : t("전체 발행자", "All issuers")
-              }
-              list={k === "schema" ? "historical-schemas" : undefined}
-              aria-label={`${recent ? "Recent" : "Historical"} ${k}`}
-              value={draft[k] ?? ""}
-              onChange={(e) =>
-                setDraft({ ...draft, [k]: e.target.value.trim().toLowerCase() })
-              }
-            />
-          </label>
-        ))}
-        <datalist id="historical-schemas">
-          {SCHEMAS.map((s) => (
-            <option key={s.uid} value={s.uid}>
-              {ko ? s.label : s.name}
-            </option>
-          ))}
-        </datalist>
-        <label>
-          {t("이벤트 종류", "Event type")}
-          <select
-            aria-label="Historical event"
-            value={draft.event ?? ""}
-            onChange={(e) => setDraft({ ...draft, event: e.target.value })}
-          >
-            <option value="">{t("전체", "All")}</option>
-            {["Attested", "Revoked", "AttestationIndexed"].map((x) => (
-              <option key={x} value={x}>
-                {label(x)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" disabled={busy}>
-          {t("필터 적용", "Apply filters")}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => {
-            setDraft({});
-            void load({});
-          }}
-        >
-          {t("초기화", "Reset")}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void load()}
-          aria-label="Refresh historical"
-        >
-          <RefreshCw size={16} />
-        </button>
-      </form>
-      {error && (
-        <p className="notice danger" role="alert">
-          {error}
-        </p>
-      )}
-      {busy && <LoadingRecords ko={ko} />}
-      {page && (
-        <>
-          <p className="explorer-hint" role="status">
-            {t("현재 페이지", "On this page")}: {page.data.length}{" "}
+      {recent && <CatalogNavigation current={catalog} ko={ko} eventSource />}
+      {catalogUnavailable && (
+        <section className="catalog-unavailable">
+          <h2>
             {t(
-              "개 이벤트 · 전체 도장 수가 아닙니다",
-              "events · not the total attestation count",
+              "이 구간은 Dojang 분류 미제공",
+              "Dojang classification unavailable for this range",
+            )}
+          </h2>
+          <p>
+            {t(
+              "발급 내역은 ‘분류 미확인’에 표시됩니다. 기록 부재를 뜻하지 않습니다.",
+              "Issuances appear under ‘Unclassified’. This does not mean no records exist.",
             )}
           </p>
-          {empty(page)}
-          {events(page)}
-          <div className="record-pagination">
-            <button disabled={busy} onClick={() => void load()}>
-              {t("처음", "First page")}
-            </button>
-            <button
-              disabled={!page.next || busy}
-              onClick={() => void load(filters, page.next!)}
-            >
-              {t("다음", "Next page")}
-            </button>
-          </div>
-        </>
-      )}
-      {coverage && (
-        <section className="records-panel backend-coverage">
-          <div className="section-heading bare">
-            <h2>
-              {recent
-                ? t("최근 이벤트 수집 범위", "Recent event coverage")
-                : t("과거 수집 범위", "Historical coverage")}
-            </h2>
-            <Badge>{t("부분 이력", "Partial history")}</Badge>
-          </div>
-          <p className="explorer-hint">
+          <a href="?view=explore&source=backend&catalog=dojang">
             {t(
-              "검색한 범위와 거래 기록까지 검증한 블록은 서로 다릅니다. 전체 역사나 현재 자격 판단을 보장하지 않습니다.",
-              "Searched ranges differ from receipt-verified blocks. Neither establishes full history or current eligibility.",
+              "이전에 분류된 Dojang 기록 보기",
+              "View previously classified Dojang records",
             )}
-          </p>
-          <div className="explorer-metrics">
-            <div>
-              <span>{t("로그 검색 범위", "Log discovery")}</span>
-              <strong>
-                {coverage.discovery
-                  .reduce((n, r) => n + r.through - r.from + 1, 0)
-                  .toLocaleString()}{" "}
-                {t("블록", "blocks")}
-              </strong>
-            </div>
-            <div>
-              <span>{t("Receipt 검증", "Receipt-verified")}</span>
-              <strong>
-                {coverage.receiptVerifiedBlocks.length.toLocaleString()}{" "}
-                {t("블록", "blocks")}
-              </strong>
-            </div>
-            <div>
-              <span>{t("발견된 도장 UID", "Discovered UIDs")}</span>
-              <strong>{coverage.summary.uniqueUIDs.toLocaleString()}</strong>
-            </div>
-          </div>
-          <p className="explorer-observation">
-            {t("관측 시각", "Observed at")}:{" "}
-            {displayDate(coverage.meta.observedAt, ko)}
-          </p>
-          <details className="explorer-technical">
-            <summary>
-              {t(
-                "수집 범위와 미확인 근거",
-                "Collection scope and missing evidence",
-              )}
-            </summary>
-            <dl className="backend-facts">
-              <div>
-                <dt>Discovery</dt>
-                <dd>
-                  {coverage.discovery
-                    .reduce((n, r) => n + r.through - r.from + 1, 0)
-                    .toLocaleString()}{" "}
-                  {t("블록", "blocks")}
-                </dd>
-              </div>
-              <div>
-                <dt>
-                  {t("Receipt 검증 완료 블록", "Receipt-verified blocks")}
-                </dt>
-                <dd>
-                  {coverage.receiptVerifiedBlocks.length.toLocaleString()} ·{" "}
-                  {t("연속 Raw coverage 아님", "not continuous Raw coverage")}
-                </dd>
-              </div>
-              <div>
-                <dt>UID / Payload</dt>
-                <dd>
-                  {coverage.summary.uniqueUIDs.toLocaleString()} /{" "}
-                  {coverage.summary.payloads.toLocaleString()}
-                </dd>
-              </div>
-              <div>
-                <dt>{t("이벤트", "Events")}</dt>
-                <dd>
-                  {Object.entries(coverage.summary.events)
-                    .map(([k, n]) => `${label(k)} ${n.toLocaleString()}`)
-                    .join(" · ")}
-                </dd>
-              </div>
-              <div>
-                <dt>{t("관측 시각", "Observed at")}</dt>
-                <dd>{coverage.meta.observedAt}</dd>
-              </div>
-              <div>
-                <dt>
-                  {t(
-                    "독립 Backfill checkpoint",
-                    "Independent Backfill checkpoint",
-                  )}
-                </dt>
-                <dd>{coverage.checkpoint.nextBlock.toLocaleString()}</dd>
-              </div>
-            </dl>
-            <details>
-              <summary>{t("발견 범위 보기", "View discovered ranges")}</summary>
-              <ul>
-                {coverage.discovery.map((r) => (
-                  <li key={r.from}>
-                    {r.from.toLocaleString()}–{r.through.toLocaleString()}
-                  </li>
-                ))}
-              </ul>
-            </details>
-            <p>
-              {t(
-                "Book 이벤트 0건은 전체 역사에서 변경이 없었다는 증거가 아닙니다. 초기 상태와 현재 자격 판단은 UNKNOWN입니다.",
-                "Zero Book events do not prove no changes across history. Initial state and current eligibility remain UNKNOWN.",
-              )}
-            </p>
-            <details>
-              <summary>{t("미확인 증거 항목", "Unresolved evidence")}</summary>
-              <p>
-                {t("기존 발급 증거 재사용", "Reused issuance proofs")}:{" "}
-                {coverage.summary.existingProofs}
-              </p>
-              <ul>
-                {Object.entries(coverage.summary.unknownReasons).map(
-                  ([r, n]) => (
-                    <li key={r}>
-                      {historicalReason(r, ko)}: {n.toLocaleString()}
-                    </li>
-                  ),
-                )}
-              </ul>
-            </details>
-          </details>
+          </a>
         </section>
       )}
+      {!catalogUnavailable && (
+        <>
+          <form
+            className="event-search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSearchError("");
+              const value = search.trim();
+              if (/^https?:/i.test(value) || value.startsWith("?")) {
+                const target = resolveProductLookup(value, "record", "recent");
+                if (target) {
+                  location.href = target.href;
+                  return;
+                }
+                setSearchError(
+                  t(
+                    "Dojangscan 공유 링크를 확인하세요.",
+                    "Check the Dojangscan share link.",
+                  ),
+                );
+                return;
+              }
+              const query = eventQuery(value, role, draft);
+              if (query.kind === "invalid") {
+                setSearchError(
+                  t("UID 또는 주소를 입력하세요.", "Enter a UID or address."),
+                );
+                return;
+              }
+              if (query.kind === "uid") {
+                void lookup(query.uid);
+                return;
+              }
+              setDraft(query.filters);
+              void load(query.filters);
+            }}
+          >
+            <div className="event-search-primary">
+              <label>
+                {t("UID·주소·공유 링크", "UID, address or share link")}
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  placeholder="0x…"
+                />
+              </label>
+              {isIssuerAddress(search.trim()) && (
+                <label>
+                  {t("주소 역할", "Address role")}
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as typeof role)}
+                  >
+                    <option value="recipient">
+                      {t("수신 내역", "Received records")}
+                    </option>
+                    <option value="issuer">{t("발급 내역", "Issued records")}</option>
+                  </select>
+                </label>
+              )}
+              {technical && (
+                <label>
+                  {t("이벤트 종류", "Event type")}
+                  <select
+                    value={draft.event ?? ""}
+                    onChange={(e) =>
+                      setDraft({ ...draft, event: e.target.value })
+                    }
+                  >
+                    <option value="">{t("전체", "All")}</option>
+                    {["Attested", "Revoked", "AttestationIndexed"].map((x) => (
+                      <option key={x} value={x}>
+                        {label(x)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <button type="submit" disabled={busy}>
+                {t("조회", "Search")}
+              </button>
+            </div>
+            <details className="event-advanced">
+              <summary>
+                {t("추가 필터", "More filters")}
+                {[draft.schema, draft.issuer, draft.recipient].filter(Boolean)
+                  .length > 0 &&
+                  ` (${[draft.schema, draft.issuer, draft.recipient].filter(Boolean).length})`}
+              </summary>
+              <div className="event-advanced-fields">
+                {(["schema", "issuer", "recipient"] as const).map((k) => (
+                  <label key={k}>
+                    {k === "schema"
+                      ? t("스키마 UID", "Schema UID")
+                      : k === "issuer"
+                        ? t("발행자", "Issuer")
+                        : t("수신자", "Recipient")}
+                    <input
+                      value={draft[k] ?? ""}
+                      placeholder="0x…"
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          [k]: e.target.value.trim().toLowerCase(),
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setSearch("");
+                  void load(draft);
+                }}
+              >
+                {t("추가 필터 적용", "Apply additional filters")}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setSearch("");
+                  setDraft({});
+                  void load({});
+                }}
+              >
+                {t("초기화", "Reset")}
+              </button>
+            </details>
+          </form>
+          <div className="activity-toolbar">
+            <span className="result-scope">
+              {technical
+                ? t("수집된 이벤트", "Collected events")
+                : t(
+                    "발급 내역 · Dojang 분류 미확인",
+                    "Issuances · Dojang classification unconfirmed",
+                  )}
+            </span>
+            <button
+              className="activity-refresh"
+              disabled={busy}
+              onClick={() => void load(filters, pageCursor)}
+            >
+              <RefreshCw size={16} />
+              {t("새로고침", "Refresh")}
+            </button>
+          </div>
+          <p className="activity-observation">
+            {coverage ? (
+              <>
+                {t("관측", "Observed")}{" "}
+                {displayDate(
+                  coverage.meta.window?.tailing?.observedAt ??
+                    coverage.meta.observedAt,
+                  ko,
+                )}{" "}
+                · {t("부분 이력", "Partial history")} ·{" "}
+                {t("화면 조회", "Retrieved")}{" "}
+                {displayDate(viewedAt ?? null, ko)}
+              </>
+            ) : (
+              t(
+                "저장된 이벤트 조회 · 부분 이력",
+                "Stored events · partial history",
+              )
+            )}
+          </p>
+          {searchError && (
+            <p className="notice danger" role="alert">
+              {searchError}
+            </p>
+          )}
+          {error && (
+            <p className="notice danger" role="alert">
+              {error}
+            </p>
+          )}
+          {busy && <LoadingRecords ko={ko} />}
+          {page && (
+            <>
+              {empty(page)}
+              {events(page)}
+              {(page.next || pageCursor) && (
+                <div className="record-pagination">
+                  <button disabled={busy} onClick={() => void load()}>
+                    {t("처음", "First page")}
+                  </button>
+                  <button
+                    disabled={!page.next || busy}
+                    onClick={() => void load(filters, page.next!)}
+                  >
+                    {t("다음", "Next page")}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+          <footer className="activity-footnote">
+            <button onClick={() => setEvidenceOpen(true)}>
+              {t("수집 범위·검증 근거", "Coverage & evidence")}
+            </button>
+          </footer>
+        </>
+      )}
       <Sheet
-        open={!!selected}
+        open={evidenceOpen || !!selectedEvent}
         onOpenChange={(open) => {
           if (!open) {
-            detailSeq.current++;
-            setSelected("");
-            setDetail(undefined);
-            const u = new URL(location.href);
-            u.searchParams.delete("uid");
-            history.replaceState(null, "", u);
+            setEvidenceOpen(false);
+            setSelectedEvent(undefined);
           }
         }}
       >
-        <SheetContent className="backend-detail">
+        <SheetContent className="backend-detail activity-detail">
           <SheetHeader>
             <SheetTitle>
-              {recent
-                ? t("최근 구간의 UID 이벤트", "UID events in the recent window")
-                : t("과거 UID 이력", "Historical UID history")}
+              {selectedEvent
+                ? activityTitle(selectedEvent, ko)
+                : t("조회 근거", "Query evidence")}
             </SheetTitle>
             <SheetDescription>
               {t(
-                "발급 당시 증거와 관측된 이벤트이며 현재 자격 판단은 UNKNOWN입니다.",
-                "Issuance evidence and observed events; current eligibility is UNKNOWN.",
+                "조회 결과와 검증 한계",
+                "Results and verification limits",
               )}
             </SheetDescription>
           </SheetHeader>
-          <p className="explorer-detail-actions">
-            <code title={selected}>UID {short(selected)}</code>
-            <CopyButton value={selected} label={t("UID 복사", "Copy UID")} />
-            <span>
-              {t("공유", "Share")}
-              <CopyButton
-                value={location.href}
-                label={t("링크 복사", "Copy link")}
-              />
-            </span>
-          </p>
-          {detailError ? (
-            <p className="notice danger" role="alert">
-              {detailError}
-            </p>
-          ) : !detail ? (
-            <p>{t("조회 중…", "Loading…")}</p>
+          {selectedEvent ? (
+            <ActivityEvidence
+              events={[selectedEvent]}
+              ko={ko}
+              onUID={(uid) => {
+                setSelectedEvent(undefined);
+                void lookup(uid);
+              }}
+            />
           ) : (
-            <>
-              {detail.content && (
-                <RecordedContentPanel
-                  value={detail.content}
-                  schema={detail.content.schema}
-                  ko={ko}
-                />
-              )}
-              {recent && !detail.issuanceEvidence && !detail.content && (
-                <p className="explorer-hint">
-                  {t(
-                    "이 구간에 저장된 발급 Payload가 없습니다. 아래 이벤트의 발행자·수신자·Receipt 근거를 확인할 수 있지만 기록 내용이나 현재 자격을 추정하지 않습니다.",
-                    "No issuance Payload is stored for this window. Issuer, recipient and receipt evidence are shown below; content and current eligibility are not inferred.",
-                  )}
-                </p>
-              )}
-              {detail.issuanceEvidence ? (
-                <>
-                  <section className="explorer-detail-hero">
-                    <h2>
-                      {schemaTitle(
-                        String(detail.issuanceEvidence.payload.schema ?? ""),
-                        ko,
-                      )}
-                    </h2>
-                    <Badge>
-                      {detail.issuanceEvidence.proofComplete
-                        ? t(
-                            "기존 발급 증거 검증 완료",
-                            "Existing issuance evidence verified",
-                          )
-                        : t(
-                            "발급 증거 미확인 · UNKNOWN",
-                            "Unresolved issuance evidence · UNKNOWN",
-                          )}
-                    </Badge>
-                    <p>
-                      {t(
-                        "현재 이용 자격은 UNKNOWN입니다. 과거 발급 근거가 있어도 현재 접근을 허가하지 않습니다.",
-                        "Current eligibility is UNKNOWN. Past issuance evidence does not grant current access.",
-                      )}
-                    </p>
-                  </section>
-                  <section className="explorer-detail-section">
-                    <h3>{t("저장된 발급 정보", "Stored issuance details")}</h3>
-                    <dl className="backend-facts">
-                      {(["attester", "recipient"] as const).map((k) => (
-                        <div key={k}>
-                          <dt>
-                            {k === "attester"
-                              ? t("발행자", "Issued by")
-                              : t("수신자", "Issued to")}
-                          </dt>
-                          <dd>
-                            {typeof detail.issuanceEvidence!.payload[k] ===
-                            "string" ? (
-                              <AddressIdentity
-                                value={String(
-                                  detail.issuanceEvidence!.payload[k],
-                                )}
-                                full
-                              />
-                            ) : (
-                              t("미확인", "Unknown")
-                            )}
-                          </dd>
-                        </div>
-                      ))}
-                      <div>
-                        <dt>{t("발급 시각", "Issued at")}</dt>
-                        <dd>
-                          {displayDate(
-                            String(detail.issuanceEvidence.payload.time ?? ""),
-                            ko,
-                          )}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{t("만료 시각", "Expires at")}</dt>
-                        <dd>
-                          {String(
-                            detail.issuanceEvidence.payload.expirationTime,
-                          ) === "0"
-                            ? t("만료 시각 없음", "No expiration time")
-                            : displayDate(
-                                String(
-                                  detail.issuanceEvidence.payload
-                                    .expirationTime ?? "",
-                                ),
-                                ko,
-                              )}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>
-                          {t("철회 기록 시각", "Recorded revocation time")}
-                        </dt>
-                        <dd>
-                          {String(
-                            detail.issuanceEvidence.payload.revocationTime,
-                          ) === "0"
-                            ? t(
-                                "이 관측에서는 철회 시각 없음",
-                                "No revocation time in this observation",
-                              )
-                            : displayDate(
-                                String(
-                                  detail.issuanceEvidence.payload
-                                    .revocationTime ?? "",
-                                ),
-                                ko,
-                              )}
-                        </dd>
-                      </div>
-                    </dl>
-                    <p className="explorer-hint">
-                      {t("관측 기준", "Observation reference")}:{" "}
-                      {detail.issuanceEvidence.observation.atIssuance
-                        ? t("발급 블록", "Issuance block")
-                        : t("별도 저장 관측값", "Separate stored observation")}
-                      .{" "}
-                      {t(
-                        "현재 철회·만료 여부와는 별개입니다.",
-                        "Separate from current revocation or expiry.",
-                      )}
-                    </p>
-                  </section>
-                  <details className="explorer-technical">
-                    <summary>
-                      {t(
-                        "미확인 항목 및 원본 데이터",
-                        "Unresolved items and source data",
-                      )}
-                    </summary>
-                    <ul>
-                      {detail.issuanceEvidence.unknownReasons.map((r) => (
-                        <li key={r}>{historicalReason(r, ko)}</li>
-                      ))}
-                    </ul>
-                    <details>
-                      <summary>
-                        {t("저장된 Payload 원문", "Stored payload")}
-                      </summary>
-                      <pre className="historical-hash">
-                        {JSON.stringify(
-                          detail.issuanceEvidence.payload,
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </details>
-                  </details>
-                </>
+            <section className="activity-evidence">
+              <SourceContext source={recent ? "recent" : "history"} />
+              <h3>
+                {t("수집·검증 범위", "Collection and verification scope")}
+              </h3>
+              <p>
+                {t(
+                  "마지막 저장 시점 기준입니다. 서버 가동 상태를 보장하지 않으며 새로고침 시 갱신됩니다.",
+                  "As of the last stored observation. This does not confirm server health; refresh to update.",
+                )}
+              </p>
+              <p>
+                {t(
+                  "발견 범위와 Receipt 검증 범위는 다릅니다. 과거 이벤트나 Payload 해석으로 현재 자격을 판단하지 않습니다.",
+                  "Discovery and receipt-verified coverage differ. Past events and interpreted payloads do not establish current eligibility.",
+                )}
+              </p>
+              {coverage ? (
+                <SourceJSON value={coverage} name="coverage.json" ko={ko} />
               ) : (
                 <p>
-                  {t(
-                    "이 UID의 발급 Payload는 저장 범위에서 확보되지 않았습니다.",
-                    "Issuance payload for this UID is not available in the stored scope.",
-                  )}
+                  {t("수집 범위 응답 미확인", "Coverage response unavailable")}
                 </p>
               )}
-              <h3 className="explorer-results-title">
-                {t("관측된 이벤트", "Observed events")}
-              </h3>
-              {empty(detail)}
-              <EventTimeline page={detail} uid={selected} />
-              <button
-                disabled={!detail.next}
-                onClick={() => void lookup(selected, detail.next!)}
-              >
-                {t("다음 이력", "Next events")}
-              </button>
-            </>
+            </section>
           )}
         </SheetContent>
       </Sheet>

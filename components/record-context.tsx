@@ -1,7 +1,8 @@
+import { recordKind } from "@/lib/record-presentation";
 import { usePreferences } from "@/lib/preferences";
 import type { ReactNode } from "react";
 import { NETWORK } from "@/lib/giwa";
-import { displayDate, schemaTitle } from "@/lib/explorer-presentation";
+import { displayDate } from "@/lib/explorer-presentation";
 import {
   fieldLabel,
   recordEvidence,
@@ -57,50 +58,36 @@ export function RecordOverview({
   uid,
   source,
   contentSlot,
+  title,
+  evidenceElsewhere = false,
 }: {
   schema: string;
-  issuer: string;
-  recipient: string;
+  issuer: string | null;
+  recipient: string | null;
   issuedAt: string | null;
-  fields: { name: string; value: string }[];
+  fields: { name: string; value: string; type?: string }[];
   uid: string;
   source: string;
   contentSlot?: ReactNode;
+  title?: string;
+  evidenceElsewhere?: boolean;
 }) {
   const [language] = usePreferences();
   const ko = language === "ko";
   const t = (a: string, b: string) => (ko ? a : b);
-  const content = fields.filter(
-    (f) => !["salt", "proofs", "root", "codeHash"].includes(f.name),
-  );
+  const technical = (f: (typeof fields)[number]) =>
+    ["salt", "proofs", "root", "codeHash"].includes(f.name) ||
+    f.type === "bytes32" ||
+    (f.type?.startsWith("uint") && !["balance", "totalAmount"].includes(f.name)) ||
+    /^0x[0-9a-f]{64,}$/i.test(f.value);
+  const content = fields.filter((f) => !technical(f));
+  const identifiers = fields.filter(technical);
   return (
     <section className="record-overview">
       <span className="record-source">{source}</span>
-      <h2>{schemaTitle(schema, ko)}</h2>
-      <dl className="record-parties">
-        <div>
-          <dt>{t("발행자", "Issued by")}</dt>
-          <dd>
-            <AddressIdentity value={issuer} />
-          </dd>
-        </div>
-        <div>
-          <dt>{t("수신자", "Issued to")}</dt>
-          <dd>
-            {/^0x0{40}$/i.test(recipient) ? (
-              t("개별 수신 지갑 없음", "No individual recipient")
-            ) : (
-              <AddressIdentity value={recipient} />
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt>{t("발급 시점", "Issued at")}</dt>
-          <dd>{displayDate(issuedAt, ko)}</dd>
-        </div>
-      </dl>
+      <h2>{title ?? recordKind(schema, uid, ko)}</h2>
       <div className="record-content">
-        <h3>{t("발행자가 기록한 내용", "Content recorded by the issuer")}</h3>
+        <h3>{t("기록 내용", "Recorded content")}</h3>
         {contentSlot ?? (
           <>
             {content.length ? (
@@ -115,20 +102,63 @@ export function RecordOverview({
             ) : (
               <p>
                 {t(
-                  "해석된 요약 내용이 없거나 식별값만 제공됩니다. 원문은 상세 정보에서 확인할 수 있습니다.",
-                  "No decoded summary, or only identifiers are available. See source details below.",
+                  "읽을 수 있는 기록 내용이 아직 없습니다.",
+                  "Readable record content is not yet available.",
                 )}
               </p>
             )}
+            {!evidenceElsewhere && !!identifiers.length && (
+              <details className="content-evidence">
+                <summary>
+                  {t("원본 필드·식별값", "Source fields and identifiers")}
+                </summary>
+                <dl>
+                  {identifiers.map((f) => (
+                    <div key={f.name}>
+                      <dt>{fieldLabel(f.name, ko)}</dt>
+                      <dd>{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </details>
+            )}
             <p className="fine-print">
               {t(
-                "발행자의 기록이며, 내용의 사실성이나 현재 서비스 이용 자격을 보증하지 않습니다.",
-                "Issuer assertions, not a guarantee of truth or current eligibility.",
+                "발행자의 기록이며, 내용의 사실성을 보증하지 않습니다.",
+                "Issuer assertions, not a guarantee of truth.",
               )}
             </p>
           </>
         )}
       </div>
+      <dl className="record-parties">
+        <div>
+          <dt>{t("발행자", "Issued by")}</dt>
+          <dd>
+            {issuer ? (
+              <AddressIdentity value={issuer} role="issuer" />
+            ) : (
+              t("미확인", "Unknown")
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>{t("수신자", "Issued to")}</dt>
+          <dd>
+            {!recipient ? (
+              t("미확인", "Unknown")
+            ) : /^0x0{40}$/i.test(recipient) ? (
+              t("개별 수신 지갑 없음", "No individual recipient")
+            ) : (
+              <AddressIdentity value={recipient} />
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>{t("발급 시점", "Issued at")}</dt>
+          <dd>{displayDate(issuedAt, ko)}</dd>
+        </div>
+      </dl>
       <div className="record-actions">
         <span>
           {t("UID 복사", "Copy UID")}
@@ -144,16 +174,6 @@ export function RecordOverview({
             label={t("링크 복사", "Copy link")}
           />
         </span>
-        {!/^0x0{40}$/i.test(recipient) && (
-          <a
-            href={`?view=recipient-records&source=backend&recipient=${recipient}`}
-          >
-            {t("이 주소의 저장된 기록", "Stored records for this address")} ↗
-          </a>
-        )}
-        <a href={`?view=issuer-records&source=backend&issuer=${issuer}`}>
-          {t("이 발행자의 저장된 기록", "Stored records by this issuer")} ↗
-        </a>
       </div>
     </section>
   );
@@ -179,34 +199,13 @@ export function RecordObservation({ detail }: { detail: BackendDetail }) {
       <h3>{t("관측된 상태", "Observed state")}</h3>
       <div className="record-state-grid">
         <div>
-          <span>EAS</span>
+          <span>{t("발급 상태", "Issuance state")}</span>
           <strong>{status[e.status]}</strong>
-          <p>
-            {t("현재 자격 승인과 별개", "Separate from eligibility approval")}
-          </p>
-        </div>
-        <div>
-          <span>Indexer</span>
-          <strong>
-            {e.index === "selected"
-              ? t("관측에서 선택됨", "Selected in the observation")
-              : e.index === "not-selected"
-                ? t("관측에서 선택되지 않음", "Not selected in the observation")
-                : t("선택 여부 확인 불가", "Selection unconfirmed")}
-          </strong>
-          <p>
-            {t(
-              "미선택은 철회가 아닙니다.",
-              "Not selected does not mean revoked.",
-            )}
-          </p>
         </div>
       </div>
       <p>
         {t("관측 시각", "Observed at")}:{" "}
-        {displayDate(detail.meta.observedAt, ko)} ·{" "}
-        {t("평가 블록", "Evaluation block")}{" "}
-        {p.evaluatedBlock ?? detail.meta.evaluatedBlock ?? "UNKNOWN"}
+        {displayDate(detail.meta.observedAt, ko)}
       </p>
       <p>
         {t("만료 시각", "Expiry time")}:{" "}
@@ -260,6 +259,25 @@ export function RecordEvidence({ detail }: { detail: BackendDetail }) {
           </dd>
         </div>
       </dl>
+      <div className="indexer-evidence">
+        {" "}
+        <div>
+          <span>Indexer</span>
+          <strong>
+            {e.index === "selected"
+              ? t("관측에서 선택됨", "Selected in the observation")
+              : e.index === "not-selected"
+                ? t("관측에서 선택되지 않음", "Not selected in the observation")
+                : t("선택 여부 확인 불가", "Selection unconfirmed")}
+          </strong>
+          <p>
+            {t(
+              "미선택은 철회가 아닙니다.",
+              "Not selected does not mean revoked.",
+            )}
+          </p>
+        </div>
+      </div>
       <div className="record-limit">
         <strong>
           {t("현재 이용 자격: 확인 불가", "Current eligibility: unconfirmed")} ·
@@ -272,8 +290,8 @@ export function RecordEvidence({ detail }: { detail: BackendDetail }) {
           )}
         </p>
       </div>
-      <details>
-        <summary>{t("내부 판단 근거", "Underlying reasons")}</summary>
+      <section>
+        <h4>{t("내부 판단 근거", "Underlying reasons")}</h4>
         <ul>
           {e.reasons.map((r, i) => (
             <li key={i}>
@@ -289,7 +307,7 @@ export function RecordEvidence({ detail }: { detail: BackendDetail }) {
             )}
           </p>
         )}
-      </details>
+      </section>
     </section>
   );
 }
@@ -353,7 +371,7 @@ export function EventTimeline({
                 target="_blank"
                 rel="noreferrer"
               >
-                {t("트랜잭션 확인", "View transaction")} ↗
+                {t("트랜잭션 확인", "View transaction")}
               </a>
               <details>
                 <summary>

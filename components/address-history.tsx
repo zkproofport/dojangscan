@@ -76,7 +76,7 @@ export function AddressHistory({
   return (
     <section
       className="address-history"
-      aria-label={tr(role === "issuer" ? "발행한 도장" : "받은 도장")}
+      aria-label={tr(role === "issuer" ? "발급 내역" : "수신 내역")}
     >
       {role === "issuer" && (
         <div className="wallet-summary">
@@ -87,7 +87,7 @@ export function AddressHistory({
           </div>
           <p>
             {tr(
-              "이 주소가 발행한 EAS 기록입니다. 현재 등록에서 제외된 발행자의 기록도 조회합니다.",
+              "이 주소의 발급 내역입니다. 현재 등록에서 제외된 발행자의 기록도 포함합니다.",
             )}
           </p>
         </div>
@@ -96,7 +96,7 @@ export function AddressHistory({
         <ChainLoading
           title={
             lastMore.current
-              ? "이전 기록을 불러오고 있습니다."
+              ? "이전 기록 조회 중…"
               : "발행 이력을 불러오고 있습니다."
           }
         />

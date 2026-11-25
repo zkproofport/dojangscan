@@ -110,7 +110,7 @@ export default function RelatedRecords({ uid }: { uid: string }) {
           "과거 발급 증거·수집 범위 열기",
           "Open historical issuance evidence and coverage",
         )}{" "}
-        ↗
+
       </a>
     </section>
   );
