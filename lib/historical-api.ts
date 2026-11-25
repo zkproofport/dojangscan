@@ -14,6 +14,9 @@ export type HistoricalEvent = {
   recipient: string | null;
   indexKey: string | null;
   receiptVerified: boolean;
+  verification?: "receipt-verified" | "discovery-only";
+  refUID?: string | null;
+  eventFields?: Record<string, unknown>;
 };
 export type HistoricalMeta = {
   network: string;
@@ -32,6 +35,7 @@ export type HistoricalPage = {
   meta: HistoricalMeta;
   data: HistoricalEvent[];
   next: string | null;
+  content?: import("./recorded-content").RecordedContent;
   issuanceEvidence?: {
     payload: Record<string, string | boolean>;
     observation: { atIssuance: boolean };

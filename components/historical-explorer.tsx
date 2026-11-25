@@ -1,3 +1,4 @@
+import { RecordedContentPanel } from "./recorded-content";
 import { EventTimeline } from "./record-context";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -156,7 +157,10 @@ export default function HistoricalExplorer({
                 <Badge>
                   {e.receiptVerified
                     ? t("Receipt 검증 완료", "Receipt verified")
-                    : t("로그 수집", "Log collected")}
+                    : t(
+                        "이벤트 발견 · Receipt 미검증",
+                        "Discovered · receipt unverified",
+                      )}
                 </Badge>
               </div>
               <h3>
@@ -215,6 +219,35 @@ export default function HistoricalExplorer({
                           value={e.uid}
                           label={t("UID 복사", "Copy UID")}
                         />
+                      </dd>
+                    </div>
+                  )}
+                  {e.refUID && (
+                    <div>
+                      <dt>{t("연결된 기록", "Referenced record")}</dt>
+                      <dd>
+                        <button onClick={() => void lookup(e.refUID!)}>
+                          {short(e.refUID)} ↗
+                        </button>
+                        <CopyButton
+                          value={e.refUID}
+                          label={t("연결 UID 복사", "Copy reference UID")}
+                        />
+                      </dd>
+                    </div>
+                  )}
+                  {e.eventFields && (
+                    <div>
+                      <dt>{t("로그에 기록된 값", "Recorded log fields")}</dt>
+                      <dd>
+                        <pre
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            overflowWrap: "anywhere",
+                          }}
+                        >
+                          {JSON.stringify(e.eventFields, null, 2)}
+                        </pre>
                       </dd>
                     </div>
                   )}
@@ -617,7 +650,14 @@ export default function HistoricalExplorer({
             <p>{t("조회 중…", "Loading…")}</p>
           ) : (
             <>
-              {recent && !detail.issuanceEvidence && (
+              {detail.content && (
+                <RecordedContentPanel
+                  value={detail.content}
+                  schema={detail.content.schema}
+                  ko={ko}
+                />
+              )}
+              {recent && !detail.issuanceEvidence && !detail.content && (
                 <p className="explorer-hint">
                   {t(
                     "이 구간에 저장된 발급 Payload가 없습니다. 아래 이벤트의 발행자·수신자·Receipt 근거를 확인할 수 있지만 기록 내용이나 현재 자격을 추정하지 않습니다.",

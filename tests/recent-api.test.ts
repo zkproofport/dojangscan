@@ -91,3 +91,41 @@ test("Main search explicitly selects Recent and preserves the source of old past
   );
   assert.equal(resolveProductLookup(address, "wallet")?.source, "backend");
 });
+
+test("Discovery-only and selected Recorded Content remain observations without fallback", async () => {
+  const content = {
+    version: "recorded-content-v1",
+    purpose: "recorded_content_only",
+    status: "unavailable",
+    schema: uid,
+    fields: [],
+    reasons: ["STORED_PAYLOAD_UNAVAILABLE"],
+  };
+  const client = createRecentClient(
+    network,
+    async () =>
+      new Response(
+        JSON.stringify({
+          meta,
+          data: [
+            {
+              id: "log",
+              uid,
+              event: "Attested",
+              receiptVerified: false,
+              verification: "discovery-only",
+              refUID: null,
+              eventFields: { schemaUID: uid },
+            },
+          ],
+          next: null,
+          content,
+        }),
+      ),
+  );
+  const detail = await client.uid(uid);
+  assert.equal(detail.data[0].verification, "discovery-only");
+  assert.equal(detail.data[0].receiptVerified, false);
+  assert.equal(detail.data[0].refUID, null);
+  assert.deepEqual(detail.content, content);
+});
