@@ -29,6 +29,7 @@ export type HistoricalMeta = {
     collectionStatus: string;
     completedThrough: number;
     unscannedGap: { from: number; through: number } | null;
+    tailing?: { phase: string; cursor: number; finalizedHead: number; gap: number; observedAt: string };
   };
 };
 export type HistoricalPage = {

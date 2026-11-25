@@ -361,6 +361,13 @@ export default function HistoricalExplorer({
             " 이후 블록은 포함하지 않습니다.",
             " Later blocks are not included.",
           )}
+          {coverage.meta.window.tailing && <>
+            <br />
+            {t("다음 수집 블록", "Next collection block")}: {coverage.meta.window.tailing.cursor.toLocaleString()} · {t("관측된 finalized 블록", "Observed finalized block")}: {coverage.meta.window.tailing.finalizedHead.toLocaleString()} · {t("남은 격차", "Remaining gap")}: {coverage.meta.window.tailing.gap.toLocaleString()}
+            {coverage.meta.window.tailing.gap > 0
+              ? t("블록 · 따라잡기 중입니다.", " blocks · Catching up.")
+              : t("블록 · 마지막 관측 head까지 검색했습니다. 현재 화면은 저장된 관측 결과입니다.", " blocks · Searched through the last observed head. This screen shows a saved observation.")}
+          </>}
         </p>
       )}
       <form
