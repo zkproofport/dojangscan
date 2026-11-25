@@ -28,7 +28,7 @@ test("eight saved Payload interpretations use the existing optional content cont
         }
       }
       assert.match(summary, /UNKNOWN/);
-      assert.ok(summary.includes(ko ? "의미·단위·날짜를 임의로 추정하지" : "meanings, units and dates are not inferred"));
+      assert.ok(summary.includes(ko ? "숫자 코드는 단위·날짜 변환 없이 표시됩니다." : "Numeric codes are shown without unit or date conversion."));
       assert.doesNotMatch(summary, /ALLOW|유효한 도장|verified eligibility/);
     }
     assert.deepEqual(sample, before);
