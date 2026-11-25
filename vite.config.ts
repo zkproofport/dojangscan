@@ -28,6 +28,17 @@ export default defineConfig(({ mode, command }) => {
       port: 4317,
       strictPort: true,
       proxy: {
+        "/api/recent": {
+          target: publicAPI
+            ? "https://api.dojangscan.com"
+            : "http://127.0.0.1:18098",
+          ...(publicAPI
+            ? { headers: { Origin: "https://dojangscan.com" } }
+            : {}),
+          changeOrigin: true,
+          rewrite: (path) =>
+            path.replace(/^\/api\/recent/, publicAPI ? "/recent" : ""),
+        },
         "/api/historical": {
           target: publicAPI
             ? "https://api.dojangscan.com"

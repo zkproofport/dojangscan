@@ -13,10 +13,12 @@ export default function ProductHome() {
   const id = useId();
   const [input, setInput] = useState("");
   const [role, setRole] = useState<"wallet" | "issuer">("wallet");
+  const [source, setSource] = useState<"backend" | "recent">("backend");
   const [invalid, setInvalid] = useState(false);
   const target = resolveProductLookup(
     input,
     isIssuerAddress(input) ? role : "record",
+    source,
   );
   return (
     <div className="product-home product-home-focused">
@@ -68,6 +70,30 @@ export default function ProductHome() {
             </button>
           </div>
           <div className="home-address-role">
+            <label>
+              {t("조회 범위", "Search scope")}{" "}
+              <select
+                value={source}
+                onChange={(e) =>
+                  setSource(e.target.value as "backend" | "recent")
+                }
+              >
+                <option value="backend">
+                  {t("기존 저장 기록 (Live)", "Stored records (Live)")}
+                </option>
+                <option value="recent">
+                  {t(
+                    "최근 확정 이벤트 · 고정 구간",
+                    "Recent finalized events · fixed window",
+                  )}
+                </option>
+              </select>
+            </label>
+            <a href="?view=explore&source=backend&history=recent">
+              {t("최근 확정 이벤트 보기", "Browse recent finalized events")} ↗
+            </a>
+          </div>
+          <div className="home-address-role">
             <span>{t("주소 조회 역할", "Address lookup role")}</span>
             <div
               className="record-role-control"
@@ -101,20 +127,25 @@ export default function ProductHome() {
             className="product-search-context"
             aria-live="polite"
           >
-            {target?.source === "public"
+            {target?.source === "recent" || (!target && source === "recent")
               ? t(
-                  "이 공유 링크는 별도의 Public 조회로 연결됩니다.",
-                  "This share link opens a separate Public lookup.",
+                  "최근 확정 구간의 발급·철회·Indexer 이벤트입니다. 실시간 추적이나 현재 유효성 판단이 아니며 기존 Live 기록과 합치지 않습니다.",
+                  "Issuance, revocation and Indexer events in a fixed finalized window. No real-time tracking or current validity determination; separate from Live records.",
                 )
-              : target?.source === "history"
+              : target?.source === "public"
                 ? t(
-                    "이 공유 링크는 한정된 과거 기록으로 연결됩니다. 현재 상태를 확정하지 않습니다.",
-                    "This share link opens a bounded historical record, not a determination of current state.",
+                    "이 공유 링크는 별도의 Public 조회로 연결됩니다.",
+                    "This share link opens a separate Public lookup.",
                   )
-                : t(
-                    "저장된 기록 조회 · 지갑 연결·서명 불필요. 수집·평가되지 않은 기록은 검색되지 않습니다.",
-                    "Stored records · no wallet connection or signature. Records not collected or evaluated are excluded.",
-                  )}
+                : target?.source === "history"
+                  ? t(
+                      "이 공유 링크는 한정된 과거 기록으로 연결됩니다. 현재 상태를 확정하지 않습니다.",
+                      "This share link opens a bounded historical record, not a determination of current state.",
+                    )
+                  : t(
+                      "저장된 기록 조회 · 지갑 연결·서명 불필요. 수집·평가되지 않은 기록은 검색되지 않습니다.",
+                      "Stored records · no wallet connection or signature. Records not collected or evaluated are excluded.",
+                    )}
           </p>
           {invalid && (
             <p className="notice danger" role="alert">

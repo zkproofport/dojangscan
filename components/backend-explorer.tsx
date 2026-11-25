@@ -291,11 +291,17 @@ function RecordStatus({ record }: { record: IndexedAttestation }) {
 }
 export default function BackendExplorer(props: { publicSearch: () => void }) {
   const t = useText();
-  const historical =
-    new URLSearchParams(location.search).get("history") === "backfill";
+  const historySource = new URLSearchParams(location.search).get("history");
+  const historical = historySource === "backfill";
   return (
     <div className="explorer-shell">
-      {historical ? <HistoricalExplorer /> : <BackendRecords {...props} />}
+      {historySource === "recent" ? (
+        <HistoricalExplorer key="recent" recent />
+      ) : historical ? (
+        <HistoricalExplorer key="history" />
+      ) : (
+        <BackendRecords {...props} />
+      )}
     </div>
   );
 }

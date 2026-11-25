@@ -28,9 +28,12 @@ export function apiDefaults(isProduction: boolean) {
     : { live: "/api/dojangscan", history: "/api/historical" };
 }
 const defaults = apiDefaults(env.PROD === true);
-export const liveAPIBase = apiBase(
-  env.VITE_DOJANGSCAN_API_BASE,
-  defaults.live,
+export const liveAPIBase = apiBase(env.VITE_DOJANGSCAN_API_BASE, defaults.live);
+export const recentAPIBase = apiBase(
+  env.VITE_DOJANGSCAN_RECENT_API_BASE,
+  env.PROD === true
+    ? production.liveAPIBase.replace(/\/live$/, "/recent")
+    : "/api/recent",
 );
 export const historicalAPIBase = apiBase(
   env.VITE_DOJANGSCAN_HISTORY_API_BASE,

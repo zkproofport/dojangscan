@@ -6,7 +6,7 @@ import { adaptProjection } from "./backend-adapter";
 export type LookupIntent = "record" | "wallet" | "issuer" | "schema";
 export type LookupTarget = {
   href: string;
-  source: "public" | "backend" | "history";
+  source: "public" | "backend" | "history" | "recent";
   kind: LookupIntent;
 };
 const uidPattern = /^0x[\da-f]{64}$/i;
@@ -49,6 +49,7 @@ const route = (params: Record<string, string>) =>
 export function resolveProductLookup(
   raw: string,
   intent: LookupIntent = "record",
+  selectedSource: "backend" | "recent" = "backend",
 ): LookupTarget | null {
   const value = raw.trim();
   if (/^https?:\/\//i.test(value) || value.startsWith("?")) {
@@ -68,24 +69,54 @@ export function resolveProductLookup(
       const uid = url.searchParams.get("uid");
       if (!uid || !uidPattern.test(uid)) return null;
       const historical = url.searchParams.get("history") === "backfill";
+      const recent = url.searchParams.get("history") === "recent";
       // Old links without a source were Public. Preserve their original meaning.
       const source =
-        historical || url.searchParams.get("source") === "backend"
+        historical || recent || url.searchParams.get("source") === "backend"
           ? "backend"
           : "public";
       return {
         kind: "record",
-        source: historical ? "history" : source,
+        source: recent ? "recent" : historical ? "history" : source,
         href: route({
           view: "explore",
           source,
-          ...(historical ? { history: "backfill" } : {}),
+          ...(recent
+            ? { history: "recent" }
+            : historical
+              ? { history: "backfill" }
+              : {}),
           uid: uid.toLowerCase(),
         }),
       };
     } catch {
       return null;
     }
+  }
+  if (selectedSource === "recent" && intent !== "schema") {
+    if (addressPattern.test(value))
+      return {
+        kind: intent === "issuer" ? "issuer" : "wallet",
+        source: "recent",
+        href: route({
+          view: "explore",
+          source: "backend",
+          history: "recent",
+          [intent === "issuer" ? "issuer" : "recipient"]: value.toLowerCase(),
+        }),
+      };
+    if (uidPattern.test(value) && intent === "record")
+      return {
+        kind: "record",
+        source: "recent",
+        href: route({
+          view: "explore",
+          source: "backend",
+          history: "recent",
+          uid: value.toLowerCase(),
+        }),
+      };
+    return null;
   }
   if (addressPattern.test(value) && intent !== "schema") {
     const issuer = intent === "issuer";

@@ -1,5 +1,5 @@
 import { EventTimeline } from "./record-context";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Badge, CopyButton } from "./scan-ui";
 import {
@@ -20,14 +20,25 @@ import {
 } from "./explorer-presentation";
 import {
   createHistoricalClient,
+  createRecentClient,
   HistoricalError,
   historicalReason,
   type HistoricalPage,
   type HistoricalCoverage,
   type HistoricalFilters,
 } from "@/lib/historical-api";
-const client = createHistoricalClient(backendNetwork);
-export default function HistoricalExplorer() {
+export default function HistoricalExplorer({
+  recent = false,
+}: {
+  recent?: boolean;
+}) {
+  const client = useMemo(
+    () =>
+      recent
+        ? createRecentClient(backendNetwork)
+        : createHistoricalClient(backendNetwork),
+    [recent],
+  );
   const [language] = usePreferences();
   const ko = language === "ko";
   const t = (a: string, b: string) => (ko ? a : b);
@@ -45,8 +56,8 @@ export default function HistoricalExplorer() {
   const explain = (e: unknown) =>
     e instanceof HistoricalError && e.status === 400
       ? t(
-          "검색 형식 오류 · UID/스키마 32바이트, 발행자 주소 20바이트",
-          "Invalid query · UID/schema: 32 bytes; issuer address: 20 bytes",
+          "검색 형식 오류 · UID/스키마 32바이트, 발행자·수신자 주소 20바이트",
+          "Invalid query · UID/schema: 32 bytes; issuer/recipient: 20 bytes",
         )
       : e instanceof HistoricalError && e.status === 409
         ? t(
@@ -54,8 +65,12 @@ export default function HistoricalExplorer() {
             "Snapshot changed · reload the first page",
           )
         : t(
-            "과거 데이터 API에 연결할 수 없습니다. 데이터가 없다는 뜻이 아닙니다.",
-            "Historical API unavailable. This does not mean the data is absent.",
+            recent
+              ? "최근 이벤트 API에 연결할 수 없습니다. 데이터가 없다는 뜻이 아닙니다."
+              : "과거 데이터 API에 연결할 수 없습니다. 데이터가 없다는 뜻이 아닙니다.",
+            recent
+              ? "Recent API unavailable. This does not mean the data is absent."
+              : "Historical API unavailable. This does not mean the data is absent.",
           );
   async function load(f: HistoricalFilters = filters, cursor?: string) {
     const n = ++seq.current;
@@ -98,8 +113,16 @@ export default function HistoricalExplorer() {
     }
   }
   useEffect(() => {
-    void load({});
-    const uid = new URLSearchParams(location.search).get("uid");
+    const query = new URLSearchParams(location.search);
+    const initial: HistoricalFilters = {};
+    if (recent)
+      for (const k of ["recipient", "issuer", "schema", "event"] as const) {
+        const v = query.get(k);
+        if (v) initial[k] = v;
+      }
+    setDraft(initial);
+    void load(initial);
+    const uid = query.get("uid");
     if (uid) void lookup(uid);
     return () => {
       seq.current++;
@@ -281,13 +304,32 @@ export default function HistoricalExplorer() {
       />
       <p className="explorer-context">
         {t(
-          "Historical · 보관된 발급·철회·Indexer 기록입니다. 과거 이벤트로 현재 유효성을 판단하지 않습니다.",
-          "Historical · stored issuance, revocation and Indexer events. Past events do not establish current validity.",
+          recent
+            ? "Recent · 고정된 최근 확정 구간의 발급·철회·Indexer 이벤트입니다. 실시간 추적이 아니며 기존 Live·Historical과 별도입니다. 현재 유효성·이용 자격은 UNKNOWN입니다."
+            : "Historical · 보관된 발급·철회·Indexer 기록입니다. 과거 이벤트로 현재 유효성을 판단하지 않습니다.",
+          recent
+            ? "Recent · issuance, revocation and Indexer events in a fixed finalized window. Not real-time tracking; separate from Live and Historical. Current validity and eligibility remain UNKNOWN."
+            : "Historical · stored issuance, revocation and Indexer events. Past events do not establish current validity.",
         )}
       </p>
       <h2 className="explorer-results-title">
-        {t("도장의 과거 기록", "Attestation history")}
+        {recent
+          ? t("최근 확정 이벤트", "Recent finalized events")
+          : t("도장의 과거 기록", "Attestation history")}
       </h2>
+      {recent && coverage?.meta.window && (
+        <p className="explorer-observation">
+          {t("수집 기준", "Collection window")}:{" "}
+          {coverage.meta.window.requestedRange.from.toLocaleString()}–
+          {coverage.meta.window.requestedRange.through.toLocaleString()} ·{" "}
+          {t("기준 관측", "Anchor observed")}:{" "}
+          {displayDate(coverage.meta.window.finalizedAnchor.observedAt, ko)}.
+          {t(
+            " 이후 블록은 포함하지 않습니다.",
+            " Later blocks are not included.",
+          )}
+        </p>
+      )}
       <form
         className="filters-row backend-filters"
         onSubmit={(e) => {
@@ -295,23 +337,27 @@ export default function HistoricalExplorer() {
           void load(draft);
         }}
       >
-        {(["uid", "schema", "issuer"] as const).map((k) => (
+        {(["uid", "schema", "issuer", "recipient"] as const).map((k) => (
           <label key={k}>
             {k === "uid"
               ? "UID"
               : k === "schema"
                 ? t("스키마", "Schema")
-                : t("발행자", "Issuer")}
+                : k === "recipient"
+                  ? t("수신자", "Recipient")
+                  : t("발행자", "Issuer")}
             <input
               placeholder={
                 k === "uid"
                   ? "0x…"
                   : k === "schema"
                     ? t("전체 종류", "All types")
-                    : t("전체 발행자", "All issuers")
+                    : k === "recipient"
+                      ? t("전체 수신자", "All recipients")
+                      : t("전체 발행자", "All issuers")
               }
               list={k === "schema" ? "historical-schemas" : undefined}
-              aria-label={`Historical ${k}`}
+              aria-label={`${recent ? "Recent" : "Historical"} ${k}`}
               value={draft[k] ?? ""}
               onChange={(e) =>
                 setDraft({ ...draft, [k]: e.target.value.trim().toLowerCase() })
@@ -396,7 +442,11 @@ export default function HistoricalExplorer() {
       {coverage && (
         <section className="records-panel backend-coverage">
           <div className="section-heading bare">
-            <h2>{t("과거 수집 범위", "Historical coverage")}</h2>
+            <h2>
+              {recent
+                ? t("최근 이벤트 수집 범위", "Recent event coverage")
+                : t("과거 수집 범위", "Historical coverage")}
+            </h2>
             <Badge>{t("부분 이력", "Partial history")}</Badge>
           </div>
           <p className="explorer-hint">
@@ -537,7 +587,9 @@ export default function HistoricalExplorer() {
         <SheetContent className="backend-detail">
           <SheetHeader>
             <SheetTitle>
-              {t("과거 UID 이력", "Historical UID history")}
+              {recent
+                ? t("최근 구간의 UID 이벤트", "UID events in the recent window")
+                : t("과거 UID 이력", "Historical UID history")}
             </SheetTitle>
             <SheetDescription>
               {t(
@@ -565,6 +617,14 @@ export default function HistoricalExplorer() {
             <p>{t("조회 중…", "Loading…")}</p>
           ) : (
             <>
+              {recent && !detail.issuanceEvidence && (
+                <p className="explorer-hint">
+                  {t(
+                    "이 구간에 저장된 발급 Payload가 없습니다. 아래 이벤트의 발행자·수신자·Receipt 근거를 확인할 수 있지만 기록 내용이나 현재 자격을 추정하지 않습니다.",
+                    "No issuance Payload is stored for this window. Issuer, recipient and receipt evidence are shown below; content and current eligibility are not inferred.",
+                  )}
+                </p>
+              )}
               {detail.issuanceEvidence ? (
                 <>
                   <section className="explorer-detail-hero">

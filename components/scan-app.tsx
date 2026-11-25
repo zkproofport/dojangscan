@@ -676,17 +676,23 @@ export default function ScanApp() {
                   ? new URLSearchParams(location.search).get("history") ===
                     "backfill"
                     ? "Historical"
-                    : "Live"
+                    : new URLSearchParams(location.search).get("history") ===
+                        "recent"
+                      ? "Recent"
+                      : "Live"
                   : "Public"}
               </summary>
               <p>
                 {language === "ko"
-                  ? "Live는 저장된 관측, Historical은 고정 과거 구간, Public은 공개 RPC·Explorer 조회입니다. 출처를 전환해도 같은 데이터 범위를 보장하지 않습니다."
-                  : "Live provides stored observations; Historical covers a fixed past range; Public uses public RPC and Explorer data. Sources do not have identical coverage."}
+                  ? "Recent는 최근 확정 이벤트의 고정 구간, Live는 저장된 관측, Historical은 고정 과거 구간, Public은 공개 RPC·Explorer 조회입니다. 출처를 전환해도 같은 데이터 범위를 보장하지 않습니다."
+                  : "Recent covers a fixed finalized event window; Live provides stored observations; Historical covers a fixed past range; Public uses public RPC and Explorer data. Sources do not have identical coverage."}
               </p>
               <nav>
                 <a href="?view=explore&source=public">Public ↗</a>
                 <a href="?view=explore&source=backend">Live ↗</a>
+                <a href="?view=explore&source=backend&history=recent">
+                  Recent ↗
+                </a>
                 <a href="?view=explore&source=backend&history=backfill">
                   Historical ↗
                 </a>

@@ -1,4 +1,4 @@
-import { historicalAPIBase } from "./api-endpoints";
+import { historicalAPIBase, recentAPIBase } from "./api-endpoints";
 export type HistoricalEvent = {
   id: string;
   uid: string | null;
@@ -19,6 +19,14 @@ export type HistoricalMeta = {
   network: string;
   observedAt: string;
   snapshot: string;
+  source?: string;
+  window?: {
+    requestedRange: { from: number; through: number };
+    finalizedAnchor: { number: number; hash: string; observedAt: string };
+    collectionStatus: string;
+    completedThrough: number;
+    unscannedGap: { from: number; through: number } | null;
+  };
 };
 export type HistoricalPage = {
   meta: HistoricalMeta;
@@ -51,6 +59,7 @@ export type HistoricalFilters = {
   event?: string;
   schema?: string;
   issuer?: string;
+  recipient?: string;
 };
 export class HistoricalError extends Error {
   constructor(
@@ -64,8 +73,9 @@ export function createHistoricalClient(
   network: string,
   request: typeof fetch = fetch,
   base = historicalAPIBase,
+  kind: "historical" | "recent" = "historical",
 ) {
-  const prefix = `${base}/v1/networks/${encodeURIComponent(network)}/historical`;
+  const prefix = `${base}/v1/networks/${encodeURIComponent(network)}/${kind}`;
   async function get<T>(
     path: string,
     params: Record<string, string | undefined> = {},
@@ -87,6 +97,14 @@ export function createHistoricalClient(
       if (!r.ok) throw new HistoricalError(r.status, v.error ?? "UNAVAILABLE");
       if (v.meta?.network !== network)
         throw new HistoricalError(0, "NETWORK_MISMATCH");
+      if (
+        kind === "recent" &&
+        (v.meta?.source !== "recent-finalized-events" ||
+          v.meta?.realTime !== false ||
+          v.meta?.currentDecision !== "UNKNOWN" ||
+          v.meta?.window?.collectionStatus !== "complete")
+      )
+        throw new HistoricalError(0, "RECENT_SCOPE_MISMATCH");
       return v;
     } finally {
       clearTimeout(timer);
@@ -105,6 +123,13 @@ export function createHistoricalClient(
       });
     },
   };
+}
+export function createRecentClient(
+  network: string,
+  request: typeof fetch = fetch,
+  base = recentAPIBase,
+) {
+  return createHistoricalClient(network, request, base, "recent");
 }
 export function historicalReason(reason: string, ko: boolean) {
   const labels: Record<string, [string, string]> = {
