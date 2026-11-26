@@ -32,9 +32,7 @@ test("Case A: real decoded content answers the question before technical evidenc
     assert.match(html, /aria-expanded="false"/);
     assert.ok(
       html.includes(
-        ko
-          ? "Dojang 분류 미확인"
-          : "Dojang classification unconfirmed",
+        ko ? "Dojang 분류 미확인" : "Dojang classification unconfirmed",
       ),
     );
     assert.ok(html.includes(ko ? "발급 기록" : "Issuance record"));
@@ -61,7 +59,7 @@ test("Case B: actual Recent issuance exists without Payload or verified receipt;
 test("Case C: Dojang classification and issuer true remain separate from eligibility and identity verification", () => {
   const live: BackendDetail = get("dojang-detail");
   const html = render({ live, uid: live.data.uid, source: "live", ko: true });
-  assert.match(html, /Dojang · 서버 분류/);
+  assert.match(html, /Dojang 관련성 확인 · 발급 근거 부족/);
   assert.match(html, /예 · 발행자가 기록한 값/);
   assert.match(html, /신원 검증 결과가 아닙니다/);
   assert.match(html, /현재 이용 자격을 보증하지 않습니다/);
@@ -124,13 +122,15 @@ test("mismatched UID or mixed-source inputs fail closed instead of constructing 
 });
 
 test("neutral hero and collapsed numeric codes preserve real values without making them claims", () => {
- const live: BackendDetail = get("content-4");
- const html = render({live, uid:live.data.uid,source:"live",ko:false});
- const title=html.match(/<h1[^>]*>(.*?)<\/h1>/)?.[1];
- assert.equal(title,"Issuance record");
- const basic=html.split("<details")[0];
- assert.match(basic,/FREE/); assert.match(basic,/COMMON/);
- assert.doesNotMatch(basic,/20261116|drawNonce|seedHash|dataHash/);
- assert.match(html.split("<details")[1],/20261116/);
- assert.match(basic,/as recorded/);
+  const live: BackendDetail = get("content-4");
+  const html = render({ live, uid: live.data.uid, source: "live", ko: false });
+  const title = html.match(/<h1[^>]*>(.*?)<\/h1>/)?.[1];
+  assert.equal(title, "Issuance record");
+  const basic = html.split("<details")[0];
+  assert.match(basic, /FREE/);
+  assert.match(basic, /COMMON/);
+  assert.doesNotMatch(basic, /20261116|drawNonce|seedHash|dataHash/);
+  assert.match(html.split("<details")[1], /20261116/);
+  assert.match(basic, /Recorded drawKind value/);
+  assert.match(basic, /Recorded rarity value/);
 });

@@ -64,6 +64,7 @@ export type BackendDetail = {
   meta: BackendMeta;
   data: BackendProjection;
   content?: RecordedContent;
+  recordInformation?: import("./record-information").RecordInformation;
 };
 export type BackendHistory = {
   historicalOnly: true;
