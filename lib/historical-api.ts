@@ -19,6 +19,14 @@ export type HistoricalEvent = {
   eventFields?: Record<string, unknown>;
 };
 export type HistoricalMeta = {
+  sync?: {
+    workerState: "running" | "stopped" | "unknown";
+    workerObservedAt: string | null;
+    lastSuccessfulCollectionAt: string | null;
+    finalizedObservedAt: string | null;
+    observationStale: boolean;
+    currentLatestnessConfirmed: false;
+  };
   network: string;
   observedAt: string;
   snapshot: string;
@@ -32,6 +40,17 @@ export type HistoricalMeta = {
     tailing?: { phase: string; cursor: number; finalizedHead: number; gap: number; observedAt: string };
   };
 };
+export function recentCollectionLabel(meta: HistoricalMeta, ko: boolean, now = Date.now()) {
+  const sync = meta.sync;
+  const age = now - Date.parse(sync?.workerObservedAt ?? "");
+  if (!sync || !Number.isFinite(age) || age < 0 || age > 90000 || sync.workerState === "unknown")
+    return ko ? "자동 수집 상태 확인 불가 · 최신 기록 반영 여부 확인 불가" : "Collection status unavailable · latest coverage unconfirmed";
+  if (sync.workerState === "stopped")
+    return ko ? "자동 수집 일시 중단 · 최신 기록 반영 여부 확인 불가" : "Automatic collection stopped · latest coverage unconfirmed";
+  if (sync.observationStale)
+    return ko ? "자동 수집 중 · 최신 기록 반영 여부 확인 불가" : "Automatic collection running · latest coverage unconfirmed";
+  return ko ? "자동 수집 중 · 마지막 관측 기준" : "Automatic collection running · as last observed";
+}
 export type HistoricalPage = {
   meta: HistoricalMeta;
   data: HistoricalEvent[];

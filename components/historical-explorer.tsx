@@ -35,6 +35,7 @@ import { LoadingRecords } from "./explorer-presentation";
 import {
   createHistoricalClient,
   createRecentClient,
+  recentCollectionLabel,
   HistoricalError,
   type HistoricalEvent,
   type HistoricalPage,
@@ -63,6 +64,12 @@ export default function HistoricalExplorer({
   const technical = catalog === "events" || !recent;
   const catalogUnavailable = recent && ["dojang", "eas"].includes(catalog);
   const [coverage, setCoverage] = useState<HistoricalCoverage>();
+  const [statusClock, setStatusClock] = useState(Date.now);
+  useEffect(() => {
+    if (!recent) return;
+    const timer = setInterval(() => setStatusClock(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, [recent]);
   const [page, setPage] = useState<HistoricalPage>();
   const [draft, setDraft] = useState<HistoricalFilters>({});
   const [filters, setFilters] = useState<HistoricalFilters>({});
@@ -447,13 +454,12 @@ export default function HistoricalExplorer({
           <p className="activity-observation">
             {coverage ? (
               <>
-                {t("관측", "Observed")}{" "}
+                {recent ? t("최근 기록 갱신", "Records updated") : t("관측", "Observed")}{" "}
                 {displayDate(
-                  coverage.meta.window?.tailing?.observedAt ??
-                    coverage.meta.observedAt,
+                  recent ? coverage.meta.sync?.lastSuccessfulCollectionAt ?? null : coverage.meta.observedAt,
                   ko,
                 )}{" "}
-                · {t("부분 이력", "Partial history")} ·{" "}
+                · {recent && <>{recentCollectionLabel(coverage.meta, ko, statusClock)} · </>}{t("부분 이력", "Partial history")} ·{" "}
                 {t("화면 조회", "Retrieved")}{" "}
                 {displayDate(viewedAt ?? null, ko)}
               </>
