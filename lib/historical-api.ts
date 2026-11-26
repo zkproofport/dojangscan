@@ -32,6 +32,7 @@ export type HistoricalMeta = {
   snapshot: string;
   source?: string;
   window?: {
+    sync?: HistoricalMeta["sync"];
     requestedRange: { from: number; through: number };
     finalizedAnchor: { number: number; hash: string; observedAt: string };
     collectionStatus: string;
@@ -41,7 +42,7 @@ export type HistoricalMeta = {
   };
 };
 export function recentCollectionLabel(meta: HistoricalMeta, ko: boolean, now = Date.now()) {
-  const sync = meta.sync;
+  const sync = meta.sync ?? meta.window?.sync;
   const age = now - Date.parse(sync?.workerObservedAt ?? "");
   if (!sync || !Number.isFinite(age) || age < 0 || age > 90000 || sync.workerState === "unknown")
     return ko ? "자동 수집 상태 확인 불가 · 최신 기록 반영 여부 확인 불가" : "Collection status unavailable · latest coverage unconfirmed";

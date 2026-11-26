@@ -456,7 +456,7 @@ export default function HistoricalExplorer({
               <>
                 {recent ? t("최근 기록 갱신", "Records updated") : t("관측", "Observed")}{" "}
                 {displayDate(
-                  recent ? coverage.meta.sync?.lastSuccessfulCollectionAt ?? null : coverage.meta.observedAt,
+                  recent ? (coverage.meta.sync ?? coverage.meta.window?.sync)?.lastSuccessfulCollectionAt ?? null : coverage.meta.observedAt,
                   ko,
                 )}{" "}
                 · {recent && <>{recentCollectionLabel(coverage.meta, ko, statusClock)} · </>}{t("부분 이력", "Partial history")} ·{" "}
