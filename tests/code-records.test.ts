@@ -224,7 +224,7 @@ test("verification distinguishes a negative response from stale registration, ma
   assert.equal(negative.reads.length, 3);
   await assert.rejects(
     verifyCode(verificationInput, verificationRPC(true, other).request),
-    /발행자 등록 변경 감지/,
+    /등록이 변경/,
   );
   await assert.rejects(
     verifyCode(
@@ -353,7 +353,7 @@ test("code history pins pagination and expiry to one snapshot and rejects failed
     assert.equal(heads, 1);
     assert.ok(snapshots.every((b) => b === "0x64"));
     fail = true;
-    await assert.rejects(codeHistory(first.next, first.block), /재조회 필요/);
+    await assert.rejects(codeHistory(first.next, first.block), /다시 조회/);
     fail = false;
     assert.equal(
       (await codeHistory(first.next, first.block)).attestations.length,

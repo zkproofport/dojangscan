@@ -123,7 +123,7 @@ export async function inspectContractIssuer(
   const block = await rpc("eth_blockNumber", []);
   if ((await rpc("eth_getCode", [call.to, block])) === "0x")
     throw new Error(
-      "선택한 주소가 컨트랙트가 아닙니다. 발급 방식 변경이 필요합니다.",
+      "선택한 주소는 컨트랙트가 아닙니다. 발급 방식을 확인하세요.",
     );
   const verified = new Interface(await fetchVerifiedABI(call.to));
   const schema = contractIssuerSchema(schemaUID);
@@ -150,7 +150,7 @@ export async function inspectContractIssuer(
         expected.outputs.map((p) => p.format("sighash")).join()
     )
       throw new Error(
-        "미지원 발급 인터페이스 · Contract Console 사용 가능",
+        "이 계약의 발급 방식은 지원하지 않습니다. Contract Console을 사용하세요.",
       );
   }
   const read = async (fn: string, args: unknown[] = []) =>

@@ -18,7 +18,7 @@ export function ProofInspector({ proof }: { proof: StudioProof }) {
             target="_blank"
             rel="noreferrer"
           >
-            {short(verifier)}
+            {short(verifier)} ↗
           </a>
         </dd>
       </dl>

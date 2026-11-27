@@ -118,12 +118,12 @@ export function TransactionReview({
       {busy && (
         <ChainLoading
           title="실행 상태를 확인하고 있습니다."
-          description="지갑 요청 또는 온체인 조회 처리 중입니다. 지갑 승인이 필요할 수 있습니다."
+          description="지갑 요청 또는 온체인 조회를 처리 중입니다. 지갑에 요청이 표시되면 확인하세요."
         />
       )}
       {chain !== NETWORK.chainId && address && (
         <p className="notice">
-          {tr("GIWA Sepolia 네트워크 연결 필요")}
+          {tr("지갑 네트워크를 GIWA Sepolia로 변경하세요.")}
         </p>
       )}
       {simulation && <p className="notice">{simulation}</p>}
@@ -151,7 +151,7 @@ export function TransactionReview({
             target="_blank"
             rel="noreferrer"
           >
-            {short(tx.hash, 12)}
+            {short(tx.hash, 12)} ↗
           </a>
           {tx.block && (
             <p>
@@ -160,7 +160,7 @@ export function TransactionReview({
           )}
           {tx.uids.map((uid) => (
             <a key={uid} href={`?view=explore&uid=${uid}`}>
-              UID {short(uid, 12)}
+              UID {short(uid, 12)} ↗
             </a>
           ))}
           {tx.error && <p className="notice danger">{tx.error}</p>}

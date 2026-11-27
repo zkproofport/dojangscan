@@ -1,4 +1,3 @@
-import { writeRoute } from "@/lib/record-navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { codeHistory } from "@/lib/scan-data";
@@ -98,7 +97,7 @@ export default function CodeExplorer({
   function change(next: CodeFilters) {
     setFilters(next);
     setPage(1);
-    writeRoute(localURL({ ...codeParams(next), source: "public" }));
+    window.history.replaceState(null, "", localURL(codeParams(next)));
   }
   function submitSearch() {
     if (pending.current || !searchInput.trim()) return;
@@ -301,7 +300,7 @@ export default function CodeExplorer({
         {!data && !busy && !error && (
           <p className="fine-print">
             {tr(
-              "사용처 이름으로 발급 내역을 검색합니다.",
+              "사용처를 입력하고 찾기 또는 Enter를 누르면 발급 내역을 조회합니다.",
             )}
           </p>
         )}
@@ -310,7 +309,7 @@ export default function CodeExplorer({
             <p className="fine-print">
               {tr(
                 filters.query && !matchingDomains.length
-                  ? "조회된 기록에 일치하는 사용처 없음"
+                  ? "불러온 기록에는 일치하는 사용처가 없습니다. 아래 사용처를 선택해 보세요."
                   : "불러온 기록의 사용처",
               )}
             </p>
@@ -386,7 +385,7 @@ export default function CodeExplorer({
                     <option value="all">{tr("전체")}</option>
                     <option value="active">{tr("활성")}</option>
                     <option value="expired">{tr("만료")}</option>
-                    <option value="revoked">{tr("철회")}</option>
+                    <option value="revoked">{tr("취소")}</option>
                   </select>
                 </label>
                 <label>
@@ -457,8 +456,8 @@ export default function CodeExplorer({
         )}
         {busy && (
           <ChainLoading
-            title="코드 발급 내역 조회 중…"
-            description="발급 이벤트와 EAS 상태 조회"
+            title="코드 인증 기록을 불러오고 있습니다."
+            description="코드 인증 이벤트를 조회하고 온체인 상태를 확인합니다."
           />
         )}
         {error && (
@@ -482,10 +481,10 @@ export default function CodeExplorer({
           <>
             <div className="code-results-heading">
               <div>
-                <h2>{tr("발급 내역")}</h2>
+                <h2>{tr("발급 내역 보기")}</h2>
                 <p className="fine-print">
                   {tr(
-                    "조회 시점의 발급 기록과 철회·만료 상태입니다. 코드 식별값은 코드를, UID는 개별 발급 기록을 구분합니다.",
+                    "조회 시점의 발급 기록과 취소·만료 상태입니다. 코드 식별값은 코드를, UID는 개별 발급 기록을 구분합니다.",
                   )}
                 </p>
               </div>
@@ -519,7 +518,7 @@ export default function CodeExplorer({
               </p>
               <p className="fine-print">
                 {tr(
-                  "상태와 CSV는 조회 기준 시점의 결과입니다. 새로고침으로 발급·철회·만료 상태를 갱신하며, 탐색기 반영은 지연될 수 있습니다.",
+                  "상태와 CSV는 조회 기준 시점의 결과입니다. 최신 발급·취소·만료를 확인하려면 새로고침하세요. 탐색기 반영이 지연될 수 있습니다.",
                 )}
               </p>
               <p className="fine-print">
@@ -635,7 +634,7 @@ export default function CodeExplorer({
               <p className="empty-state">
                 {tr(
                   data.next
-                    ? "조회 범위 내 일치 기록 없음 · 이전 기록 추가 조회 가능"
+                    ? "불러온 범위에는 조건에 맞는 기록이 없습니다. 이전 기록을 더 조회하세요."
                     : "조회한 이력에는 조건에 맞는 기록이 없습니다.",
                 )}
               </p>
@@ -702,8 +701,8 @@ export default function CodeExplorer({
           <p>
             {tr(
               inputKind === "code"
-                ? "입력한 코드의 발급·철회·만료 상태를 조회합니다."
-                : "공개된 코드 해시로 현재 상태를 다시 조회합니다. 목록 조회 이후 철회·만료되었거나 현재 조회되는 발급 기록이 달라졌을 수 있습니다.",
+                ? "실제로 전달받은 코드가 해당 사용처·발행자의 유효한 코드인지 확인합니다. 발급 내역을 보는 데 필수인 단계는 아닙니다."
+                : "공개된 코드 해시로 현재 상태를 다시 조회합니다. 목록 조회 이후 취소·만료되었거나 현재 조회되는 발급 기록이 달라졌을 수 있습니다.",
             )}
           </p>
           <form
@@ -767,7 +766,7 @@ export default function CodeExplorer({
                     resetVerification();
                   }}
                 >
-                  <option value="">{tr("등록 발행자 선택 필요")}</option>
+                  <option value="">{tr("등록 발행자를 선택하세요.")}</option>
                   {data?.issuers.map((i) => (
                     <option key={i.id} value={i.id}>
                       {tr(i.name)} · {short(i.address, 8)}
@@ -789,7 +788,7 @@ export default function CodeExplorer({
                   autoCapitalize="none"
                   placeholder={
                     inputKind === "code"
-                      ? tr("원본 인증 코드 입력")
+                      ? tr("전달받은 코드를 그대로 입력하세요.")
                       : "0x… (bytes32)"
                   }
                   value={inputKind === "code" ? originalCode : codeHash}
@@ -839,7 +838,7 @@ export default function CodeExplorer({
             )}
           </p>
           {verifyBusy && (
-            <ChainLoading title="현재 발급 상태 조회 중…" />
+            <ChainLoading title="현재 유효한 발급 기록을 조회하고 있습니다." />
           )}
           {verifyError && (
             <p className="notice danger" role="alert">
@@ -879,7 +878,7 @@ export default function CodeExplorer({
                   selectedRecordUID.toLowerCase() && (
                   <p>
                     {tr(
-                      "현재 발급 기록의 UID가 선택한 기록과 다릅니다. 현재 기록은 아래 상세에 표시됩니다.",
+                      "현재 조회되는 발급 기록은 선택한 기록과 UID가 다릅니다. 아래 상세에서 확인하세요.",
                     )}
                   </p>
                 )}
@@ -897,7 +896,7 @@ export default function CodeExplorer({
               {!verification.valid && (
                 <p>
                   {tr(
-                    "입력값 불일치, 기록 없음, 만료 또는 철회 등이 원인일 수 있습니다.",
+                    "입력값 불일치, 기록 없음, 만료 또는 취소 등이 원인일 수 있습니다.",
                   )}
                 </p>
               )}

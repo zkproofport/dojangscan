@@ -77,7 +77,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
         <Fingerprint size={24} aria-hidden="true" />
         <span>
           <strong id={`${id}-title`}>Identity Footprint</strong>
-          <span>{tr("지갑 공개 활동")}</span>
+          <span>{tr("이 인증 지갑의 공개 활동은 어디까지 연결될까요?")}</span>
         </span>
         <ChevronDown
           size={18}
@@ -262,7 +262,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                                     e.attestation.status === "active"
                                       ? "활성"
                                       : e.attestation.status === "revoked"
-                                        ? "철회됨"
+                                        ? "취소됨"
                                         : "만료됨",
                                   )}
                                 </p>
@@ -327,7 +327,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                       </p>
                       <p className="fine-print">
                         {tr(
-                          "발급 기록과 현재 인증 상태는 별개입니다. 상세에서 발행자·내용·철회·만료 상태를 조회할 수 있습니다.",
+                          "EAS 발급 기록과 현재 인증 상태는 다릅니다. 발급자·내용·취소·만료 여부를 상세에서 확인하세요.",
                         )}
                       </p>
                     </>
@@ -353,7 +353,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
                       :{" "}
                       {tr(
                         issue === "rate-limit"
-                          ? "조회 한도 도달 · 잠시 후 재조회 가능"
+                          ? "조회 한도에 도달했습니다. 잠시 후 다시 시도하세요."
                           : "활동을 불러오지 못했습니다. 확인된 다른 근거만 표시합니다.",
                       )}
                     </p>
@@ -387,7 +387,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
               </p>
               <p className="fine-print">
                 {tr(
-                  "주소 인증 내역은 조회된 기록 범위에 한정됩니다. 현재 인증에 해당하는 발급 기록이 포함되지 않을 수 있습니다.",
+                  "주소 인증은 이미 불러온 EAS 기록만 사용합니다. 현재 인증이 확인되어도 해당 발급 기록이 이 범위에 없을 수 있습니다.",
                 )}
               </p>
             </>
@@ -431,7 +431,7 @@ export function IdentityFootprint({ data, onSelect, onStudio }: Props) {
           )}
           <div className="footprint-footer">
             <button className="secondary-button" onClick={onStudio}>
-              {tr("비공개 자격 증명")}
+              {tr("비공개 자격 증명 알아보기")}
               <ArrowRight size={15} />
             </button>
           </div>

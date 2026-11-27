@@ -43,7 +43,7 @@ export function historyRequest(
   role: HistoryRole,
   cursor?: LogCursor | null,
 ) {
-  if (!isAddress(address)) throw new Error("지갑 주소 형식 오류");
+  if (!isAddress(address)) throw new Error("유효한 지갑 주소를 입력해 주세요.");
   if (role !== "recipient" && role !== "issuer")
     throw new Error("지원하지 않는 조회입니다.");
   const topic = zeroPadValue(getAddress(address), 32).toLowerCase();

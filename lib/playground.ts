@@ -75,7 +75,7 @@ export async function checkPlaygroundAttestation(
   input: string,
 ): Promise<PlaygroundResult> {
   if (!isAddress(input.trim()))
-    throw new Error("지갑 주소 형식 오류");
+    throw new Error("유효한 지갑 주소를 입력해 주세요.");
   const address = getAddress(input.trim());
   // Bypass cached catalog/head data after issuance. Pin all reads to this block.
   const blockTag: string = await rpc("eth_blockNumber", []);

@@ -17,11 +17,11 @@ export function Relationship({
     <section className={"relationship " + (full ? "full" : "")}>
       <div className="relationship-caption">
         <span className="section-kicker">
-          {tr("EAS·Dojang 구조")}
+          {tr("EAS와 Dojang, 어떤 관계일까요?")}
         </span>
         {onGuide && (
           <button className="text-button" onClick={onGuide}>
-            {tr("구조 및 용어")}
+            {tr("처음 보는 분을 위한 안내")}
             <ChevronRight size={15} />
           </button>
         )}
@@ -31,7 +31,7 @@ export function Relationship({
           <Layers3 size={21} />
           <span>
             <strong>EAS</strong>
-            <small>{tr("스키마·발급·철회 계약")}</small>
+            <small>{tr("스키마·발급·취소 계약")}</small>
           </span>
         </div>
         <ArrowRight className="flow-arrow" size={18} />

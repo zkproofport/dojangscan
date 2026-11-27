@@ -1,6 +1,5 @@
 import { historyRequest, historyEvents, historyCursor, schemaHistoryRequest, schemaHistoryEvents, type HistoryRole, type LogCursor } from "./history";
 import { issuerMetadata, PLAYGROUND_ATTESTER_ID } from "./issuer-metadata";
-import { publicReadURL } from './public-read-transport';
 import { AbiCoder, Interface, id, isAddress, getAddress, ZeroAddress } from 'ethers';
 import { CONTRACTS, TEST_ATTESTER, NETWORK, SCHEMAS, UPBIT_ID, ZERO, type Attestation, type SchemaRecord, type Issuer, type GovernanceRole } from './giwa';
 import { classifyIssuer } from './trust';
@@ -27,9 +26,9 @@ async function json(url:string,options?:RequestInit):Promise<any>{
  const request=async()=>{
   for(let attempt=0;attempt<4;attempt++){
    if(url===NETWORK.rpc){await pause(Math.max(0,650-(Date.now()-rpcStartedAt)));rpcStartedAt=Date.now();}
-   const response=await fetch(import.meta.env?.DEV === true && import.meta.env?.MODE === 'public-readonly' ? publicReadURL(url, true) : url,{...options,signal:AbortSignal.timeout(18000)});
+   const response=await fetch(url,{...options,signal:AbortSignal.timeout(18000)});
    if(response.status===429&&attempt<3){const seconds=Number(response.headers.get('retry-after'));await pause(Math.min(5000,Math.max(1000,Number.isFinite(seconds)?seconds*1000:1000)*(attempt+1)));continue;}
-   if(!response.ok)throw new Error(response.status===429?'공개 RPC 조회 한도 도달 · 잠시 후 재조회 가능':`공개 데이터 서비스 응답 오류 (${response.status}) · 재조회 필요`);
+   if(!response.ok)throw new Error(response.status===429?'공개 RPC의 조회 한도에 도달했습니다. 잠시 후 다시 조회하세요.':`공개 데이터 서비스 응답 오류 (${response.status}). 잠시 후 다시 시도해 주세요.`);
    const body=await response.json();
    const entries=Array.isArray(body)?body:[body];
    const limited=entries.some((entry:{error?:{code:number;message?:string}})=>entry.error&&(entry.error.code===429||entry.error.code===-32005||/rate.?limit|too many|exceed.*request|request.*limit/i.test(entry.error.message??'')));
@@ -113,7 +112,7 @@ export async function codeHistory(cursor: LogCursor | null = null, snapshot?: nu
  const schema = cat.schemas.find(s => s.id === SCHEMAS[3].id && s.current && s.registered);
  if (!schema || schema.definition !== SCHEMAS[3].definition) throw new Error('현재 코드 인증 스키마를 확인할 수 없습니다.');
  const page: Page = await json(schemaHistoryRequest(schema.uid, cursor));
- if (!Array.isArray(page.items) || !Object.hasOwn(page, 'next_page_params')) throw new Error('공개 데이터 서비스 응답 오류 · 재조회 필요');
+ if (!Array.isArray(page.items) || !Object.hasOwn(page, 'next_page_params')) throw new Error('공개 데이터 서비스 응답 오류. 잠시 후 다시 시도해 주세요.');
  const block = await rpc('eth_getBlockByNumber', ['0x'+height.toString(16), false]);
  if (!block?.timestamp) throw new Error('조회 기준 블록을 확인할 수 없습니다.');
  const at = Number(BigInt(block.timestamp));
@@ -121,7 +120,7 @@ export async function codeHistory(cursor: LogCursor | null = null, snapshot?: nu
  const values = await batchCalls(events.map(l => ({target: CONTRACTS.EAS, abi: eas, method: 'getAttestation', args: [l.data]})), height);
  const attestations = values.map((v,i) => {
   if (!v || v[0].uid.toLowerCase() !== events[i].data.toLowerCase() || v[0].schema.toLowerCase() !== schema.uid.toLowerCase())
-   throw new Error('일부 코드 인증 기록 조회 실패 · 재조회 필요');
+   throw new Error('일부 코드 인증 기록을 확인하지 못했습니다. 다시 조회하세요.');
   const record = normalize(v[0], cat, at);
   if (record.fields.length !== 2) throw new Error('코드 인증 데이터 형식을 확인할 수 없습니다.');
   return {...record, tx: events[i].transaction_hash, block: events[i].block_number};
@@ -141,21 +140,8 @@ export async function recent(cursor: Record<string, number> | null = null, filte
  return { ...cat, attestations, next: page.next_page_params, warnings, coverage: '최신 EAS 로그 50개를 조회합니다. 숫자는 조회 범위 내 집계이며 네트워크 전체 통계가 아닙니다.' };
 }
 export async function attestation(uid: string) {
- if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('32바이트 UID가 필요합니다.');
- return attestationAtCatalog(uid, await catalog(await headBlock()));
-}
-export async function attestationAtCatalog(uid: string, cat: Awaited<ReturnType<typeof catalog>>) {
- if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('32바이트 UID가 필요합니다.');
- const result=await batchCalls([{target:CONTRACTS.EAS,abi:eas,method:'getAttestation',args:[uid]}],cat.block);
- if(!result[0])throw new Error('EAS에서 도장을 조회하지 못했습니다.');
- const raw=result[0][0]; if(raw.uid===ZERO)return null;
- if(String(raw.uid).toLowerCase()!==uid.toLowerCase())throw new Error('EAS_UID_MISMATCH');
- let detail=normalize(raw,cat);
- if(!detail.fields.length){
-  const value=(await batchCalls([{target:CONTRACTS.SchemaRegistry,abi:registry,method:'getSchema',args:[detail.schema]}],cat.block))[0]?.[0];
-  if(value && String(value.uid).toLowerCase()===detail.schema.toLowerCase())detail={...detail,fields:formatFields(value.schema,detail.data)};
- }
- return {...detail,checkedAt:cat.checkedAt,checkedBlock:cat.block};
+ if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('32바이트 UID가 필요합니다.'); const cat = await catalog(await headBlock()); const result = await batchCalls([{ target: CONTRACTS.EAS, abi: eas, method: 'getAttestation', args: [uid] }], cat.block); if (!result[0]) throw new Error('EAS에서 도장을 조회하지 못했습니다.'); const raw = result[0][0]; if (raw.uid === ZERO) return null;
+ let detail = normalize(raw, cat); if (!detail.fields.length) { const schema = await getSchema(detail.schema, cat.block); if (schema) detail = { ...detail, fields: formatFields(schema.definition, detail.data) }; } return { ...detail, checkedAt: cat.checkedAt, checkedBlock: cat.block };
 }
 export async function getSchema(uid: string, block?: number) {
  if (!/^0x[0-9a-fA-F]{64}$/.test(uid)) throw new Error('유효한 스키마 UID가 필요합니다.'); const cat = await catalog(block); const found = cat.schemas.find(s => s.uid.toLowerCase() === uid.toLowerCase()); if (found) return found;
@@ -165,14 +151,14 @@ export async function getSchema(uid: string, block?: number) {
 export async function addressHistory(address: string, role: HistoryRole, cursor: LogCursor | null = null) {
  const request = historyRequest(address, role, cursor);
  const page = await json(request.url);
- if (!Array.isArray(page.items) || !Object.hasOwn(page, 'next_page_params')) throw new Error('공개 데이터 서비스 응답 오류 · 재조회 필요');
+ if (!Array.isArray(page.items) || !Object.hasOwn(page, 'next_page_params')) throw new Error('공개 데이터 서비스 응답 오류. 잠시 후 다시 시도해 주세요.');
  const events = historyEvents(page.items, request.topic, role);
  let height = await headBlock();
  if (events.some(e => e.block_number > height)) height = parseInt(await rpc('eth_blockNumber', []), 16);
  const cat = await catalog(height);
  const records = await batchCalls(events.map(e => ({ target: CONTRACTS.EAS, abi: eas, method: 'getAttestation', args: [e.data] })), cat.block);
  // Do not advance past a record we failed to hydrate. A retry reuses this cursor.
- if (records.some(r => !r || r[0].uid === ZERO)) throw new Error('일부 도장의 현재 상태 조회 실패 · 재조회 필요');
+ if (records.some(r => !r || r[0].uid === ZERO)) throw new Error('일부 도장의 현재 상태를 읽지 못했습니다. 다시 조회하세요.');
  const attestations = await Promise.all(records.map(async (r, i) => {
   let record = normalize(r![0], cat);
   if (record.uid.toLowerCase() !== events[i].data.toLowerCase() || (role === 'issuer' ? record.attester : record.recipient).toLowerCase() !== address.toLowerCase()) throw new Error('발급 기록이 조회한 주소·발행자·스키마와 일치하지 않습니다.');
@@ -201,7 +187,6 @@ export async function queryScan(kind: string, params: Record<string,string> = {}
   case 'attestation':result=await attestation(params.uid??'');break;
   case 'schema':result=await getSchema(params.uid??'');break;
   case 'schemas':result=await catalog();break;
-  case 'catalog-view':result={...await catalog(),catalogOnly:true,attestations:[],next:null,coverage:'Catalog only; no issuance query performed'};break;
   case 'wallet':result=await wallet(params.address??'');break;
   case 'history': if((params.cursor?.length??0)>300)throw new Error('페이지 값이 잘못되었습니다.'); result=await addressHistory(params.address??'',params.role as HistoryRole,params.cursor?JSON.parse(params.cursor):null);break;
   case 'transaction':result=await transaction(params.hash??'');break;

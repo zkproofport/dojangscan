@@ -1,6 +1,5 @@
 node_modules/
 dist/
-dist-public/
 .env*
 .DS_Store
 *.tsbuildinfo

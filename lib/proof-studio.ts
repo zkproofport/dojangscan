@@ -89,7 +89,7 @@ export function prepareStudioProof(
 ): StudioProof {
   const profile = STUDIO_PROFILES[circuit];
   if (result.requestId !== requestId)
-    throw new Error("다른 요청의 증명 수신 · 새 요청 필요");
+    throw new Error("다른 요청의 증명이 도착했습니다. 새로 시작해 주세요.");
   if (
     result.status !== "completed" ||
     result.circuit !== circuit ||
@@ -134,14 +134,14 @@ export function prepareStudioProof(
     field(profile.scopeOffset) !== keccak256(toUtf8Bytes(profile.scope))
   ) {
     throw new Error(
-      "현재 요청과 증명 불일치 · 증명 재생성 필요",
+      "이번 실습 요청에 대한 증명이 아닙니다. 새로 생성해 주세요.",
     );
   }
   if (circuit === "giwa_attestation" && field(96) !== MOCK_KYC_SIGNER_ROOT)
-    throw new Error("허용된 목업 발행자의 증명이 아닙니다.");
+    throw new Error("허용된 목업 발급자의 증명이 아닙니다.");
   if (field(profile.nullifierOffset) !== walletNullifier(address, circuit))
     throw new Error(
-      "조회 지갑과 서명 지갑이 다릅니다. 발급 지갑과 일치해야 합니다.",
+      "조회한 지갑과 앱에서 서명한 지갑이 다릅니다. 발급에 사용한 같은 지갑을 선택해 주세요.",
     );
   return {
     circuit,
@@ -173,7 +173,7 @@ export async function verifyStudioProof(proof: StudioProof): Promise<boolean> {
       // Do not render ethers' full calldata (the proof) in a user-facing error.
       if ((error as { code?: string }).code === "CALL_EXCEPTION") return false;
       throw new Error(
-        "검증 네트워크 연결 실패 · 재검증 필요",
+        "검증 네트워크에 연결하지 못했습니다. 잠시 후 다시 검증해 주세요.",
       );
     }
   } finally {
@@ -184,13 +184,13 @@ export async function verifyStudioProof(proof: StudioProof): Promise<boolean> {
 /** Reassemble the circuit's byte-valued fields for inspection, preserving the raw response separately. */
 export function studioPublicFields(proof: StudioProof) {
   const definitions = [
-    ["signal_hash", "현재 증명 유형에서 미사용 (0)"],
+    ["signal_hash", "이 실습에서는 사용하지 않는 값 (0)"],
     ["domain_hash", "증명을 요청한 서비스의 도메인 해시"],
-    ["action_hash", "현재 Practice 요청 해시"],
+    ["action_hash", "이번 실습 요청의 해시"],
     ...(proof.circuit === "giwa_attestation"
-      ? [["signer_list_merkle_root", "허용된 목업 발행자 목록의 Merkle root"]]
+      ? [["signer_list_merkle_root", "허용된 목업 발급자 목록의 Merkle root"]]
       : []),
-    ["scope_hash", "Practice 범위 식별 해시"],
+    ["scope_hash", "실습 범위를 구분하는 해시"],
     ["nullifier", "같은 지갑과 범위를 연결하는 식별값"],
   ];
   return definitions.map(([name, description], index) => ({
